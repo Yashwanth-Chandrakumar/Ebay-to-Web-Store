@@ -11,6 +11,7 @@ urlpatterns = [
     path('',views.landing_page , name='landing_page'),
     path('product/', views.product_list, name='product_list'),
     path('product/<int:product_id>/', views.product_detail, name='product_detail'),
+    path('cron/', views.cron, name='cron'),
     # path('viewp/')
     
 ]

@@ -623,3 +623,7 @@ def product_detail(request, product_id):
         return HttpResponse(html_content)
     else:
         return HttpResponseNotFound('Page not found')
+
+
+def cron(request):
+    return HttpResponse("Happy")
