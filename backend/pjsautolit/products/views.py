@@ -1,3 +1,4 @@
+import ast
 import json
 import os
 import re
@@ -7,7 +8,7 @@ from datetime import datetime
 
 import requests
 from django.conf import settings
-from django.http import JsonResponse
+from django.http import HttpResponse, HttpResponseNotFound, JsonResponse
 from django.template import Context, Template
 from django.views.decorators.http import require_GET
 from django.views.generic.detail import DetailView
@@ -294,10 +295,6 @@ def generate_html_view(request):
         print(f"Error generating HTML pages: {e}")
         return JsonResponse({"status": "error", "message": str(e)}, status=500)
 
-def get_products(request):
-    products = Product.objects.all().values()
-    return JsonResponse(list(products), safe=False)
-
 def update_product(item_id):
     data = fetch_product_data(item_id)
     product = save_product_data(data)
@@ -540,11 +537,21 @@ function changeImage(src) {
 
     """
 
-
     for product in products:
+        # Parse the string representation of the list into an actual list
+        if product.additional_image_urls:
+            try:
+                additional_images = ast.literal_eval(product.additional_image_urls)
+                # Ensure all items are strings and strip any whitespace
+                additional_images = [str(url).strip() for url in additional_images if url]
+            except:
+                # If there's any error in parsing, default to an empty list
+                additional_images = []
+        else:
+            additional_images = []
         context = {
             'product': product,
-            'additional_images': product.additional_image_urls.split(',') if product.additional_image_urls else []
+            'additional_images': additional_images
         }
         rendered_html = Template(html_template).render(Context(context))
         filename = f"{product.item_id}.html"
@@ -563,3 +570,36 @@ function changeImage(src) {
 def sanitize_filename(filename):
     # Replace invalid characters with underscores
     return re.sub(r'[<>:"/\\|?*]', '_', filename)
+
+
+from django.shortcuts import render
+
+
+def landing_page(request):
+    return render(request, 'pages/landing.html')
+
+
+from django.core.paginator import Paginator
+# views.py
+from django.shortcuts import get_object_or_404, render
+
+from .models import Product
+
+
+def product_list(request):
+    products = Product.objects.all()
+    paginator = Paginator(products, 10)  # Show 10 products per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    return render(request, 'pages/product_list.html', {'page_obj': page_obj})
+
+def product_detail(request, product_id):
+    html_file_path = os.path.join('products','viewproduct', f'{product_id}.html')
+
+    # Check if the file exists
+    if os.path.exists(html_file_path):
+        with open(html_file_path, 'r') as file:
+            html_content = file.read()
+        return HttpResponse(html_content)
+    else:
+        return HttpResponseNotFound('Page not found')
