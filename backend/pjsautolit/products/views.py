@@ -1,7 +1,9 @@
 import ast
 import json
 import os
+import queue
 import re
+import threading
 import time
 import xml.etree.ElementTree as ET
 from datetime import datetime
@@ -24,6 +26,14 @@ BROWSE_API_URL = "https://api.ebay.com/buy/browse/v1/item/v1|{item_id}|0"
 
 MAX_RETRIES = 5
 RETRY_DELAY = 2  # Initial delay in seconds
+def process_queue(q):
+    while True:
+        item = q.get()
+        if item is None:
+            break
+        save_product_data(item)
+        time.sleep(2)  # 2-second delay
+        q.task_done()
 
 @require_GET
 def fetch_all_items(request):
@@ -32,6 +42,15 @@ def fetch_all_items(request):
         total_pages = 1
         current_page = 1
 
+        # Create a queue and start worker threads
+        q = queue.Queue()
+        num_worker_threads = 5
+        threads = []
+        for _ in range(num_worker_threads):
+            t = threading.Thread(target=process_queue, args=(q,))
+            t.start()
+            threads.append(t)
+
         while current_page <= total_pages:
             items, total_pages = fetch_finding_api_data(page_number=current_page)
             
@@ -39,10 +58,19 @@ def fetch_all_items(request):
                 item_id = item['item_id']
                 browse_data = fetch_browse_api_data(item_id)
                 combined_data = {**item, **browse_data}
-                save_product_data(combined_data)
+                q.put(combined_data)
                 total_items += 1
 
             current_page += 1
+
+        # Block until all tasks are done
+        q.join()
+
+        # Stop worker threads
+        for _ in range(num_worker_threads):
+            q.put(None)
+        for t in threads:
+            t.join()
 
         return JsonResponse({
             "status": "success",
@@ -274,6 +302,7 @@ def save_product_data(data):
             'additional_image_urls': data.get('additional_image_urls')
         }
     )
+    print(f"Saved product: {product.title}") 
     return product
 
 class ProductDetailView(DetailView):

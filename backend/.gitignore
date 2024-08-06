@@ -150,4 +150,5 @@ migrations/
 *.sublime-workspace
 *.sublime-project
 pjsautolit/products/viewproduct
-pjsautolit/frontend/viewproduct
+pjsautolit/products/
+pjsautolit/db.sqlite3
