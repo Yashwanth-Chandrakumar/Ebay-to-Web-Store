@@ -41,9 +41,9 @@ TEMPLATES = [
 SECRET_KEY = 'django-insecure-ydu@0gbnw*q_q*+^k!&vn!%zcmz(d)%&+%l6&wcsh46!k5c()b'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['https://ebay-to-web-store-1.onrender.com']
 
 
 # Application definition
@@ -77,12 +77,10 @@ WSGI_APPLICATION = 'pjsautolit.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
+import dj_database_url
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default': dj_database_url.config(default="postgresql://products_icpj_user:yoMTBiYQ0GfDCONDTjFbuIgj7ceWwUnD@dpg-cqp4lsij1k6c73dd27ng-a.oregon-postgres.render.com/products_icpj", conn_max_age=1800)
 }
 
 
