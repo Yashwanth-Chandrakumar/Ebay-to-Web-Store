@@ -4,6 +4,7 @@ FROM python:3.11
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
+ENV DJANGO_SETTINGS_MODULE=your_project_name.settings
 
 # Set the working directory in the container
 WORKDIR /app
@@ -20,8 +21,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the project code into the container
 COPY . /app/
 
-# Collect static files
-RUN python manage.py collectstatic --noinput
+# Make migrations and migrate
+RUN python manage.py makemigrations
+RUN python manage.py migrate
 
 # Run the application
 CMD ["gunicorn", "--bind", "0.0.0.0:8000", "pjsautolit.wsgi:application"]
