@@ -4,7 +4,7 @@ FROM python:3.11
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
-ENV DJANGO_SETTINGS_MODULE=your_project_name.settings
+ENV DJANGO_SETTINGS_MODULE=pjsautolit.settings
 
 # Set the working directory in the container
 WORKDIR /app

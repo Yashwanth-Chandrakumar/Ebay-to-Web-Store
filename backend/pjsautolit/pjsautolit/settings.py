@@ -80,7 +80,11 @@ WSGI_APPLICATION = 'pjsautolit.wsgi.application'
 import dj_database_url
 
 DATABASES = {
-    'default': dj_database_url.config(default="postgresql://products_icpj_user:yoMTBiYQ0GfDCONDTjFbuIgj7ceWwUnD@dpg-cqp4lsij1k6c73dd27ng-a.oregon-postgres.render.com/products_icpj", conn_max_age=1800)
+    'default': dj_database_url.config(default="postgresql://products_icpj_user:yoMTBiYQ0GfDCONDTjFbuIgj7ceWwUnD@dpg-cqp4lsij1k6c73dd27ng-a.oregon-postgres.render.com/products_icpj", conn_max_age=1800),
+    'sqlite': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }
 }
 
 
