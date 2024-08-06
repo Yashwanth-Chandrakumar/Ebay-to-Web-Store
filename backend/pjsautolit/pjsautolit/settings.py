@@ -43,7 +43,7 @@ SECRET_KEY = 'django-insecure-ydu@0gbnw*q_q*+^k!&vn!%zcmz(d)%&+%l6&wcsh46!k5c()b
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ['https://ebay-to-web-store-1.onrender.com']
+ALLOWED_HOSTS = ['ebay-to-web-store-1.onrender.com']
 
 
 # Application definition
