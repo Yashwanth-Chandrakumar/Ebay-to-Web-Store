@@ -329,15 +329,6 @@ def update_product(item_id):
     product = save_product_data(data)
     return product
 
-@require_GET
-def generate_html_view(request):
-    try:
-        generate_html_pages()
-        return JsonResponse({"status": "success"}, status=200)
-    except Exception as e:
-        print(f"Error generating HTML pages: {e}")
-        return JsonResponse({"status": "error", "message": str(e)}, status=500)
-
 def get_products(request):
     products = Product.objects.all().values()
     return JsonResponse(list(products), safe=False)
