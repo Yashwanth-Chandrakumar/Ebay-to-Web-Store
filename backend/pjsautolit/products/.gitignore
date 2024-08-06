@@ -6,7 +6,7 @@ __pycache__/
 # C extensions
 *.c
 *.o
-
+viewproduct/
 # Distribution / packaging
 .Python
 build/
@@ -149,4 +149,3 @@ migrations/
 .idea/
 *.sublime-workspace
 *.sublime-project
-pjsautolit/products/viewproduct
