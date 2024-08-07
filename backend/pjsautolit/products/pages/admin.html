@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Admin Page</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        .button {
+            padding: 10px 20px;
+            margin: 10px;
+            border: none;
+            color: white;
+            background-color: #007BFF;
+            cursor: pointer;
+        }
+        .button:hover {
+            background-color: #0056b3;
+        }
+        .response {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Admin Page</h1>
+
+<div class="object-tools">
+    <button class="button" id="fetch-items">Fetch Items</button>
+    <button class="button" id="generate-html">Generate HTML</button>
+</div>
+
+<div class="response" id="response-message"></div>
+
+<script>
+    document.getElementById('fetch-items').addEventListener('click', function() {
+        fetch('/fetch-items/', {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+        })
+        .then(response => response.text())
+        .then(data => {
+            document.getElementById('response-message').innerText = data;
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('response-message').innerText = 'An error occurred.';
+        });
+    });
+
+    document.getElementById('generate-html').addEventListener('click', function() {
+        fetch('/generate-html/', {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+        })
+        .then(response => response.text())
+        .then(data => {
+            document.getElementById('response-message').innerText = data;
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('response-message').innerText = 'An error occurred.';
+        });
+    });
+</script>
+
+</body>
+</html>
