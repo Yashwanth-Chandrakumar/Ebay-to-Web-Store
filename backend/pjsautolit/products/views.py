@@ -46,7 +46,6 @@ def fetch_all_items(request):
         total_pages = 1
         current_page = 1
 
-        # Create a queue and start worker threads
         q = queue.Queue()
         num_worker_threads = 5
         threads = []
@@ -67,14 +66,15 @@ def fetch_all_items(request):
 
             current_page += 1
 
-        # Block until all tasks are done
         q.join()
 
-        # Stop worker threads
         for _ in range(num_worker_threads):
             q.put(None)
         for t in threads:
             t.join()
+
+        # Generate HTML pages after fetching all items
+        generate_html_pages()
 
         return JsonResponse({
             "status": "success",
@@ -88,27 +88,11 @@ def fetch_all_items(request):
             "status": "error",
             "message": str(e)
         }, status=500)
-
-@require_GET
-def update_product_view(request, item_id):
-    try:
-        product = update_product(item_id)
-        return JsonResponse({
-            "status": "success",
-            "message": f"Product {item_id} updated successfully",
-            "product_id": product.id
-        }, status=200)
-    except Exception as e:
-        print(f"Error in update_product_view: {e}")
-        return JsonResponse({
-            "status": "error",
-            "message": str(e)
-        }, status=500)
-
-def fetch_product_data(item_id):
-    finding_data = fetch_finding_api_data(item_id)
-    browse_data = fetch_browse_api_data(item_id)
-    return {**finding_data, **browse_data}
+    
+# def fetch_product_data(item_id):
+#     finding_data = fetch_finding_api_data(item_id)
+#     browse_data = fetch_browse_api_data(item_id)
+#     return {**finding_data, **browse_data}
 
 def fetch_finding_api_data(item_id=None, page_number=1):
     headers = {
@@ -320,52 +304,12 @@ def save_product_data(product_data):
     except Exception as e:
         print(f"Error saving product data: {e}")
 
-def update_product(item_id):
-    product_data = fetch_product_data(item_id)
-    product, created = Product.objects.update_or_create(
-        item_id=item_id,
-        defaults={
-            'title': product_data.get('product_name', ''),
-            'product_description': product_data.get('product_description', ''),
-            'product_price': product_data.get('product_price', 0.0),
-            'currency': product_data.get('currency', ''),
-            'additional_image_urls': json.dumps(product_data.get('additional_image_urls', []))
-        }
-    )
-    return product
-
-class ProductDetailView(DetailView):
-    model = Product
-    template_name = 'product_detail.html'
-    context_object_name = 'product'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['additional_image_urls'] = self.object.additional_image_urls.split(',')
-        return context
-
-@require_GET
 def generate_html_view(request):
     try:
         generate_html_pages()
-        return JsonResponse({"status": "success"}, status=200)
+        return JsonResponse({"status": "success", "message": "HTML pages generated successfully"})
     except Exception as e:
-        print(f"Error generating HTML pages: {e}")
         return JsonResponse({"status": "error", "message": str(e)}, status=500)
-
-def update_product(item_id):
-    data = fetch_product_data(item_id)
-    product = save_product_data(data)
-    return product
-
-def get_products(request):
-    products = Product.objects.all().values()
-    return JsonResponse(list(products), safe=False)
-
-def update_product(item_id):
-    data = fetch_product_data(item_id)
-    product = save_product_data(data)
-    return product
 
 def generate_html_pages():
     output_dir = os.path.join(settings.BASE_DIR, 'products', 'viewproduct')
@@ -416,10 +360,6 @@ def generate_html_pages():
         print(f"Errors encountered while generating HTML pages: {errors}")
     else:
         print("HTML pages generated successfully.")
-
-def sanitize_filename(filename):
-    # Replace invalid characters with underscores
-    return re.sub(r'[<>:"/\\|?*]', '_', filename)
 
 
 from django.shortcuts import render

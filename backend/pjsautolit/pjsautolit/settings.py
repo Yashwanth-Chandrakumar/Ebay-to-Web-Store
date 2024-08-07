@@ -41,7 +41,7 @@ TEMPLATES = [
 SECRET_KEY = 'django-insecure-ydu@0gbnw*q_q*+^k!&vn!%zcmz(d)%&+%l6&wcsh46!k5c()b'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['ebay-to-web-store-1.onrender.com', '127.0.0.1', 'localhost','0.0.0.0']
 
