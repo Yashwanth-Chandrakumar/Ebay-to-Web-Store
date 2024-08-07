@@ -379,11 +379,21 @@ from .models import Product
 
 
 def product_list(request):
+    query = request.GET.get('query', '')
     products = Product.objects.all()
-    paginator = Paginator(products, 10)  # Show 10 products per page
+
+    if query:
+        products = products.filter(title__icontains=query)
+
+    paginator = Paginator(products, 10)  # Show 10 products per page.
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    return render(request, 'pages/product_list.html', {'page_obj': page_obj})
+
+    context = {
+        'page_obj': page_obj,
+        'query': query
+    }
+    return render(request, 'pages/product_list.html', context)
 
 def product_detail(request, product_id):
     html_file_path = os.path.join('products','viewproduct', f'{product_id}.html')
