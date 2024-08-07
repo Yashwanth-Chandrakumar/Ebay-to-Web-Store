@@ -1,3 +1,4 @@
+
 import ast
 import json
 import os
@@ -23,15 +24,18 @@ EBAY_AUTH_TOKEN = settings.EBAY_AUTH_TOKEN
 FINDING_API_URL = "https://svcs.ebay.com/services/search/FindingService/v1"
 BROWSE_API_URL = "https://api.ebay.com/buy/browse/v1/item/v1|{item_id}|0"
 
-
 MAX_RETRIES = 5
 RETRY_DELAY = 2  # Initial delay in seconds
+
 def process_queue(q):
     while True:
         item = q.get()
         if item is None:
             break
-        save_product_data(item)
+        try:
+            save_product_data(item)
+        except Exception as e:
+            print(f"Error saving product data: {e}")
         time.sleep(2)  # 2-second delay
         q.task_done()
 
@@ -79,6 +83,7 @@ def fetch_all_items(request):
         }, status=200)
 
     except Exception as e:
+        print(f"Error in fetch_all_items: {e}")
         return JsonResponse({
             "status": "error",
             "message": str(e)
@@ -94,10 +99,12 @@ def update_product_view(request, item_id):
             "product_id": product.id
         }, status=200)
     except Exception as e:
+        print(f"Error in update_product_view: {e}")
         return JsonResponse({
             "status": "error",
             "message": str(e)
         }, status=500)
+
 def fetch_product_data(item_id):
     finding_data = fetch_finding_api_data(item_id)
     browse_data = fetch_browse_api_data(item_id)
@@ -125,7 +132,6 @@ def fetch_finding_api_data(item_id=None, page_number=1):
     """
     if item_id:
         xml_payload = xml_payload.replace('</findItemsAdvancedRequest>', f'<keywords>{item_id}</keywords></findItemsAdvancedRequest>')
-    
     
     attempt = 0
     while attempt < MAX_RETRIES:
@@ -192,8 +198,7 @@ def fetch_browse_api_data(item_id):
     headers = {
         "Authorization": f"Bearer {EBAY_AUTH_TOKEN}",
         "X-EBAY-C-MARKETPLACE-ID": "EBAY_US",
-        "X-EBAY-C-ENDUSERCTX": "affiliateCampaignId=<ePNCampaignId>,affiliateReferenceId=<referenceId>",
-        "Content-Type": "application/json"
+        "X-EBAY-C-ENDUSERCTX": "sessionId=12345"
     }
     
     attempt = 0
@@ -202,10 +207,9 @@ def fetch_browse_api_data(item_id):
             response = requests.get(url, headers=headers)
             response.raise_for_status()
             data = response.json()
-            
+            item_data = data.get('item', {})
             additional_images = data.get('additionalImages', [])
             additional_image_urls = [img['imageUrl'] for img in additional_images]
-            
             return {
                 'short_description': data.get('shortDescription', ''),
                 'price': float(data['price']['value']),
@@ -232,6 +236,7 @@ def fetch_browse_api_data(item_id):
                 'primary_image_url': data['image']['imageUrl'],
                 'additional_image_urls': additional_image_urls,
             }
+        
         except (RequestException, HTTPError) as e:
             print(f"Error fetching Browse API data (attempt {attempt + 1}): {e}")
             attempt += 1
@@ -240,69 +245,93 @@ def fetch_browse_api_data(item_id):
     print(f"Failed to fetch Browse API data after {MAX_RETRIES} attempts")
     return {}
 
-def save_product_data(data):
+
+
+def save_product_data(product_data):
+    try:
+        product, created = Product.objects.update_or_create(
+            item_id=product_data['item_id'],
+            defaults={
+            'title': product_data['title'],
+            'global_id': product_data.get('global_id'),
+            'category_id': product_data.get('category_id'),
+            'category_name': product_data.get('category_name'),
+            'gallery_url': product_data.get('gallery_url'),
+            'view_item_url': product_data.get('view_item_url'),
+            'auto_pay': product_data.get('auto_pay', False),
+            'postal_code': product_data.get('postal_code'),
+            'location': product_data.get('location'),
+            'country': product_data.get('country'),
+            'selling_state': product_data.get('selling_state'),
+            'time_left': product_data.get('time_left'),
+            'best_offer_enabled': product_data.get('best_offer_enabled', False),
+            'buy_it_now_available': product_data.get('buy_it_now_available', False),
+            'start_time': product_data.get('start_time'),
+            'end_time': product_data.get('end_time'),
+            'listing_type': product_data.get('listing_type'),
+            'gift': product_data.get('gift', False),
+            'watch_count': product_data.get('watch_count'),
+            'returns_accepted': product_data.get('returns_accepted', False),
+            'is_multi_variation_listing': product_data.get('is_multi_variation_listing', False),
+            'top_rated_listing': product_data.get('top_rated_listing', False),
+            'short_description': product_data.get('short_description', ''),
+            'price': product_data.get('price'),
+            'currency': product_data.get('currency'),
+            'category_path': product_data.get('category_path', ''),
+            'category_id_path': product_data.get('category_id_path', ''),
+            'item_creation_date': product_data.get('item_creation_date'),
+            'estimated_availability_status': product_data.get('estimated_availability_status', ''),
+            'estimated_available_quantity': product_data.get('estimated_available_quantity'),
+            'estimated_sold_quantity': product_data.get('estimated_sold_quantity'),
+            'enabled_for_guest_checkout': product_data.get('enabled_for_guest_checkout', False),
+            'eligible_for_inline_checkout': product_data.get('eligible_for_inline_checkout', False),
+            'lot_size': product_data.get('lot_size', 0),
+            'legacy_item_id': product_data.get('legacy_item_id', ''),
+            'priority_listing': product_data.get('priority_listing', False),
+            'adult_only': product_data.get('adult_only', False),
+            'listing_marketplace_id': product_data.get('listing_marketplace_id', ''),
+            'seller_username': product_data.get('seller_username'),
+            'feedback_score': product_data.get('feedback_score'),
+            'positive_feedback_percent': product_data.get('positive_feedback_percent'),
+            'feedback_rating_star': product_data.get('feedback_rating_star'),
+            'top_rated_seller': product_data.get('top_rated_seller', False),
+            'shipping_type': product_data.get('shipping_type'),
+            'ship_to_locations': product_data.get('ship_to_locations'),
+            'expedited_shipping': product_data.get('expedited_shipping', False),
+            'one_day_shipping_available': product_data.get('one_day_shipping_available', False),
+            'handling_time': product_data.get('handling_time'),
+            'shipping_service_code': product_data.get('shipping_service_code'),
+            'shipping_carrier_code': product_data.get('shipping_carrier_code'),
+            'min_estimated_delivery_date': product_data.get('min_estimated_delivery_date'),
+            'max_estimated_delivery_date': product_data.get('max_estimated_delivery_date'),
+            'shipping_cost': product_data.get('shipping_cost'),
+            'shipping_cost_type': product_data.get('shipping_cost_type'),
+            'primary_image_url': product_data.get('primary_image_url'),
+            'additional_image_urls': product_data.get('additional_image_urls')
+            }
+        )
+        if created:
+            print(f"Created new product: {product_data['title']}")
+        else:
+            print(f"Updated existing product: {product_data['title']}")
+        
+        # Generate and save HTML
+
+    except Exception as e:
+        print(f"Error saving product data: {e}")
+
+def update_product(item_id):
+    product_data = fetch_product_data(item_id)
     product, created = Product.objects.update_or_create(
-        item_id=data['item_id'],
+        item_id=item_id,
         defaults={
-            'title': data['title'],
-            'global_id': data.get('global_id'),
-            'category_id': data.get('category_id'),
-            'category_name': data.get('category_name'),
-            'gallery_url': data.get('gallery_url'),
-            'view_item_url': data.get('view_item_url'),
-            'auto_pay': data.get('auto_pay', False),
-            'postal_code': data.get('postal_code'),
-            'location': data.get('location'),
-            'country': data.get('country'),
-            'selling_state': data.get('selling_state'),
-            'time_left': data.get('time_left'),
-            'best_offer_enabled': data.get('best_offer_enabled', False),
-            'buy_it_now_available': data.get('buy_it_now_available', False),
-            'start_time': data.get('start_time'),
-            'end_time': data.get('end_time'),
-            'listing_type': data.get('listing_type'),
-            'gift': data.get('gift', False),
-            'watch_count': data.get('watch_count'),
-            'returns_accepted': data.get('returns_accepted', False),
-            'is_multi_variation_listing': data.get('is_multi_variation_listing', False),
-            'top_rated_listing': data.get('top_rated_listing', False),
-            'short_description': data.get('short_description', ''),
-            'price': data.get('price'),
-            'currency': data.get('currency'),
-            'category_path': data.get('category_path', ''),
-            'category_id_path': data.get('category_id_path', ''),
-            'item_creation_date': data.get('item_creation_date'),
-            'estimated_availability_status': data.get('estimated_availability_status', ''),
-            'estimated_available_quantity': data.get('estimated_available_quantity'),
-            'estimated_sold_quantity': data.get('estimated_sold_quantity'),
-            'enabled_for_guest_checkout': data.get('enabled_for_guest_checkout', False),
-            'eligible_for_inline_checkout': data.get('eligible_for_inline_checkout', False),
-            'lot_size': data.get('lot_size', 0),
-            'legacy_item_id': data.get('legacy_item_id', ''),
-            'priority_listing': data.get('priority_listing', False),
-            'adult_only': data.get('adult_only', False),
-            'listing_marketplace_id': data.get('listing_marketplace_id', ''),
-            'seller_username': data.get('seller_username'),
-            'feedback_score': data.get('feedback_score'),
-            'positive_feedback_percent': data.get('positive_feedback_percent'),
-            'feedback_rating_star': data.get('feedback_rating_star'),
-            'top_rated_seller': data.get('top_rated_seller', False),
-            'shipping_type': data.get('shipping_type'),
-            'ship_to_locations': data.get('ship_to_locations'),
-            'expedited_shipping': data.get('expedited_shipping', False),
-            'one_day_shipping_available': data.get('one_day_shipping_available', False),
-            'handling_time': data.get('handling_time'),
-            'shipping_service_code': data.get('shipping_service_code'),
-            'shipping_carrier_code': data.get('shipping_carrier_code'),
-            'min_estimated_delivery_date': data.get('min_estimated_delivery_date'),
-            'max_estimated_delivery_date': data.get('max_estimated_delivery_date'),
-            'shipping_cost': data.get('shipping_cost'),
-            'shipping_cost_type': data.get('shipping_cost_type'),
-            'primary_image_url': data.get('primary_image_url'),
-            'additional_image_urls': data.get('additional_image_urls')
+            'title': product_data.get('product_name', ''),
+            'product_description': product_data.get('product_description', ''),
+            'product_price': product_data.get('product_price', 0.0),
+            'currency': product_data.get('currency', ''),
+            'additional_image_urls': json.dumps(product_data.get('additional_image_urls', []))
         }
     )
-    print(f"Saved product: {product.title}") 
     return product
 
 class ProductDetailView(DetailView):
@@ -344,218 +373,14 @@ def generate_html_pages():
 
     products = Product.objects.all()
     errors = []
+    from django.template import loader
 
     # HTML template (you should replace this with your actual template)
-    html_template = """
-    <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ product.title }}</title>
-    <meta name="description" content="{{ product.short_description }}. Buy {{ product.title }} at the best price. Explore more details including condition, seller information, and shipping options.">
-    <meta name="keywords" content="{{ product.title }}, {{ product.short_description }}, buy {{ product.title }}, {{ product.condition }}, {{ product.category_name }}, {{ product.category_id }}, eBay">
-    <meta name="robots" content="index, follow">
-    <meta property="og:title" content="{{ product.title }}">
-    <meta property="og:description" content="{{ product.short_description }}. Buy {{ product.title }} at the best price.">
-    <meta property="og:image" content="{{ product.primary_image_url }}">
-    <meta property="og:url" content="{% url 'product_detail' product_id=product.id %}">
-        <meta property="og:type" content="product">
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #ffffff;
-            color: #333;
-        }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        .product-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 40px;
-        }
-        .left-column {
-            flex: 0 1 500px;
-        }
-        .right-column {
-            flex: 1 1 300px;
-        }
-        .large-image-container {
-            width: 500px;
-            height: 500px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            background-color: #f8f8f8;
-        }
-        .large-image {
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: contain;
-        }
-        .small-images {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: flex-start;
-            margin-top: 10px;
-        }
-        .small-images img {
-            width: 60px;
-            height: 60px;
-            margin-right: 10px;
-            margin-bottom: 10px;
-            cursor: pointer;
-            border: 1px solid #e5e5e5;
-        }
-        .product-title {
-            font-size: 24px;
-            font-weight: 700;
-            margin-bottom: 10px;
-        }
-        .product-subtitle {
-            font-size: 14px;
-            color: #767676;
-            margin-bottom: 20px;
-        }
-        .price {
-            font-size: 24px;
-            font-weight: 700;
-            margin-bottom: 20px;
-        }
-        .add-to-cart-button {
-            background-color: #3665f3;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            cursor: pointer;
-            font-size: 16px;
-            border-radius: 3px;
-        }
-        .add-to-cart-button:hover {
-            background-color: #2b53cc;
-        }
-        .product-details {
-            margin-top: 20px;
-            border-top: 1px solid #e5e5e5;
-            padding-top: 20px;
-        }
-        .product-details h2 {
-            font-size: 18px;
-            margin-bottom: 10px;
-        }
-        .product-details table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        .product-details td {
-            padding: 8px;
-            border-bottom: 1px solid #e5e5e5;
-        }
-        .product-details td:first-child {
-            width: 40%;
-            color: #767676;
-        }
-        .more-info{
-            width: 100%;
-            display: flex;
-            justify-content: space-between;
-            gap: 5rem;
-        }
-    </style>
-</head>
-<body>
-        <div class="container">
-            <div class="product-container">
-                <div class="left-column">
-                <div class="large-image-container">
-        <img id="largeImage" class="large-image" src="{{ product.primary_image_url }}" alt="Product Image">
-    </div>
-    <div class="small-images">
-        <img src="{{ product.primary_image_url }}" alt="Product Image" onclick="changeImage(this.src)">
-        {% if additional_images %}
-            {% for image in additional_images %}
-                <img src="{{ image }}" alt="Product Image" onclick="changeImage(this.src)">
-            {% endfor %}
-        {% endif %}
-    </div>
-            </div>
-                <div class="right-column">
-                    <h1 class="product-title">{{ product.title }}</h1>
-                    <p class="product-subtitle">{{ product.short_description }}</p>
-                    <p class="price">{{ product.currency }} {{ product.price }}</p>
-                    <button class="add-to-cart-button">Add to cart</button>
-                    <div class="product-details">
-                        <h2>Item specifics</h2>
-                        <table>
-                            <tr><td>Condition:</td><td>{{ product.condition }}</td></tr>
-                            <tr><td>Category:</td><td>{{ product.category_name }}</td></tr>
-                            <tr><td>Location:</td><td>{{ product.location }}</td></tr>
-                            <tr><td>Country:</td><td>{{ product.country }}</td></tr>
-                            <tr><td>Seller:</td><td>{{ product.seller_username }} (Feedback: {{ product.feedback_score }})</td></tr>
-                            <tr><td>Listing Type:</td><td>{{ product.listing_type }}</td></tr>
-                            <tr><td>Best Offer Enabled:</td><td>{{ product.best_offer_enabled|yesno:"Yes,No" }}</td></tr>
-                            <tr><td>Buy It Now Available:</td><td>{{ product.buy_it_now_available|yesno:"Yes,No" }}</td></tr>
-                            <tr><td>Returns Accepted:</td><td>{{ product.returns_accepted|yesno:"Yes,No" }}</td></tr>
-                            <tr><td>Top Rated Listing:</td><td>{{ product.top_rated_listing|yesno:"Yes,No" }}</td></tr>
-                        </table>
-                    </div>
-                </div>
-                <div class="more-info">
-                    <div class="product-details">
-                        <h2>Availability</h2>
-                        <table>
-                            <tr><td>Status:</td><td>{{ product.estimated_availability_status }}</td></tr>
-                            <tr><td>Available Quantity:</td><td>{{ product.estimated_available_quantity }}</td></tr>
-                            <tr><td>Sold Quantity:</td><td>{{ product.estimated_sold_quantity }}</td></tr>
-                            <tr><td>Lot Size:</td><td>{{ product.lot_size }}</td></tr>
-                        </table>
-                    </div>
-                    <div class="product-details">
-                        <h2>Shipping</h2>
-                        <table>
-                            <tr><td>Shipping Type:</td><td>{{ product.shipping_type }}</td></tr>
-                            <tr><td>Ship To Locations:</td><td>{{ product.ship_to_locations }}</td></tr>
-                            <tr><td>Expedited Shipping:</td><td>{{ product.expedited_shipping|yesno:"Yes,No" }}</td></tr>
-                            <tr><td>One Day Shipping:</td><td>{{ product.one_day_shipping_available|yesno:"Yes,No" }}</td></tr>
-                            <tr><td>Handling Time:</td><td>{{ product.handling_time }} day(s)</td></tr>
-                            <tr><td>Shipping Service:</td><td>{{ product.shipping_service_code }}</td></tr>
-                            <tr><td>Shipping Carrier:</td><td>{{ product.shipping_carrier_code }}</td></tr>
-                            <tr><td>Estimated Delivery:</td><td>{{ product.min_estimated_delivery_date|date:"Y-m-d" }} - {{ product.max_estimated_delivery_date|date:"Y-m-d" }}</td></tr>
-                            <tr><td>Shipping Cost:</td><td>{{ product.currency }} {{ product.shipping_cost }}</td></tr>
-                        </table>
-                    </div>
-                </div>
-                <div class="product-details">
-                    <h2>Additional Information</h2>
-                    <table>
-                        <tr><td>Item ID:</td><td>{{ product.item_id }}</td></tr>
-                        <tr><td>Global ID:</td><td>{{ product.global_id }}</td></tr>
-                        <tr><td>Start Time:</td><td>{{ product.start_time|date:"Y-m-d H:i:s" }}</td></tr>
-                        <tr><td>End Time:</td><td>{{ product.end_time|date:"Y-m-d H:i:s" }}</td></tr>
-                        <tr><td>Time Left:</td><td>{{ product.time_left }}</td></tr>
-                        <tr><td>Watch Count:</td><td>{{ product.watch_count }}</td></tr>
-                        <tr><td>Adult Only:</td><td>{{ product.adult_only|yesno:"Yes,No" }}</td></tr>
-                        <tr><td>Top Rated Seller:</td><td>{{ product.top_rated_seller|yesno:"Yes,No" }}</td></tr>
-                    </table>
-                </div>
-            </div>
-        </div>
-        <script>
-function changeImage(src) {
-    document.getElementById('largeImage').src = src;
-}
-</script>
-    </body>
-</html>
-
-
-    """
+    try:
+        template = loader.get_template('pages/template.html')
+    except Exception as e:
+        print(f"Error loading template: {e}")
+        return
 
     for product in products:
         # Parse the string representation of the list into an actual list
@@ -566,6 +391,7 @@ function changeImage(src) {
                 additional_images = [str(url).strip() for url in additional_images if url]
             except:
                 # If there's any error in parsing, default to an empty list
+                print(f"Error parsing additional image URLs for product {product.item_id}: {e}")
                 additional_images = []
         else:
             additional_images = []
@@ -573,7 +399,11 @@ function changeImage(src) {
             'product': product,
             'additional_images': additional_images
         }
-        rendered_html = Template(html_template).render(Context(context))
+        try:
+            rendered_html = template.render(context)
+        except Exception as e:
+            errors.append(f"Error rendering HTML for product {product.item_id}: {e}")
+            continue
         filename = f"{product.item_id}.html"
         filepath = os.path.join(output_dir, filename)
         try:
@@ -598,6 +428,8 @@ from django.shortcuts import render
 def landing_page(request):
     return render(request, 'pages/landing.html')
 
+def admin_page(request):
+    return render(request,'pages/admin.html')
 
 from django.core.paginator import Paginator
 # views.py
