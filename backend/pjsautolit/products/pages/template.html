@@ -10,7 +10,7 @@
     <meta property="og:title" content="{{ product.title }}">
     <meta property="og:description" content="{{ product.short_description }}. Buy {{ product.title }} at the best price.">
     <meta property="og:image" content="{{ product.primary_image_url }}">
-    <meta property="og:url" content="{% url 'product_detail' product_id=product.id %}">
+    <meta property="og:url" content="{% url 'product_detail' product_slug=product.html_link %}">
         <meta property="og:type" content="product">
     <style>
         body {

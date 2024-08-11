@@ -126,9 +126,9 @@
                 <div class="product">
                     <img src="{{ product.primary_image_url }}" alt="{{ product.title }}">
                     <div class="product-details">
-                        <h2><a href="{% url 'product_detail' product.item_id %}" style="text-decoration: none; color: #333;">{{ product.title }}</a></h2>
+                        <h2><a href="{% url 'product_detail' product.html_link %}" style="text-decoration: none; color: #333;">{{ product.title }}</a></h2>
                         <p>Price: ${{ product.price }}</p>
-                        <a href="{% url 'product_detail' product.item_id %}" class="btn">View Details</a>
+                        <a href="{% url 'product_detail' product.html_link %}" class="btn">View Details</a>
                     </div>
                 </div>
             {% empty %}

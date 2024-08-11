@@ -59,6 +59,7 @@ class Product(models.Model):
     shipping_cost_type = models.CharField(max_length=20, blank=True, null=True)
     primary_image_url = models.URLField(blank=True, null=True)
     additional_image_urls = models.TextField(blank=True, null=True)
+    html_link = models.CharField(max_length=255, blank=True, null=True)
 
     def __str__(self):
         return self.title
