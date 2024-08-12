@@ -2,8 +2,8 @@
 FROM python:3.11
 
 # Set environment variables
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 ENV DJANGO_SETTINGS_MODULE=pjsautolit.settings
 
 # Set the working directory in the container
@@ -21,9 +21,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the project code into the container
 COPY . /app/
 
-# Make migrations and migrate
-RUN python manage.py makemigrations
-RUN python manage.py migrate
+# Expose the port Gunicorn will run on
+EXPOSE 8000
 
 # Run the application with a timeout of 600 seconds
 CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--timeout", "600", "pjsautolit.wsgi:application"]
