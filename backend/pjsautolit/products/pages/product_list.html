@@ -1,109 +1,92 @@
-<!-- product_list.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PJ's Auto Literature - Product List</title>
     <meta name="description" content="PJ's Auto Literature. Buy Auto literature at the best price. Explore more details including condition, seller information, and shipping options.">
-    <title>Product List</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <style>
-        body {
-            font-family: Arial, sans-serif;
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2c3e50;
+            --accent-color: #e74c3c;
+            --light-color: #ecf0f1;
+            --dark-color: #34495e;
+        }
+
+        * {
             margin: 0;
             padding: 0;
-            background-color: #f4f4f4;
+            box-sizing: border-box;
         }
-        h1 {
-            text-align: center;
-            margin: 20px 0;
-            color: #333;
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            line-height: 1.6;
+            color: var(--dark-color);
+            background-color: var(--light-color);
         }
+
         .container {
             width: 90%;
             max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
-            background-color: #fff;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            border-radius: 8px;
         }
-        .product {
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 20px;
+
+        .navbar {
+            background-color: var(--secondary-color);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+        }
+
+        .navbar .container {
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            background-color: #fff;
         }
-        .product img {
-            width: 150px; /* Set the width */
-            height: 150px; /* Set the height */
-            margin-right: 20px;
-            border-radius: 8px;
-            object-fit: cover; /* Ensure the image covers the dimensions */
-        }
-        .product-details {
-            flex: 1;
-        }
-        .product-details h2 {
-            margin: 0;
-            font-size: 1.5em;
-            color: #333;
-        }
-        .product-details p {
-            margin: 5px 0;
-            color: #555;
-        }
-        .btn {
-            display: inline-block;
-            padding: 10px 15px;
-            font-size: 1em;
-            color: #fff;
-            background-color: #007bff;
-            border: none;
-            border-radius: 5px;
+
+        .navbar-brand {
+            color: var(--light-color);
+            font-size: 1.5rem;
+            font-weight: 700;
             text-decoration: none;
-            text-align: center;
-            cursor: pointer;
-            transition: background-color 0.3s;
         }
-        .btn:hover {
-            background-color: #0056b3;
-        }
-        .pagination {
+
+        .navbar-nav {
             display: flex;
-            justify-content: center;
-            margin-top: 30px;
+            list-style: none;
         }
-        .pagination a {
-            padding: 10px 15px;
-            margin: 0 5px;
-            font-size: 1em;
-            color: #007bff;
+
+        .nav-link {
+            color: var(--light-color);
             text-decoration: none;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            transition: background-color 0.3s, color 0.3s;
+            padding: 0.5rem 1rem;
+            transition: color 0.3s ease;
         }
-        .pagination a:hover {
-            background-color: #007bff;
-            color: #fff;
+
+        .nav-link:hover {
+            color: var(--primary-color);
         }
-        .pagination .current {
-            padding: 10px 15px;
-            margin: 0 5px;
-            font-size: 1em;
-            color: #333;
-            border: 1px solid #ddd;
-            border-radius: 5px;
+
+        h1 {
+            text-align: center;
+            margin: 80px 0 20px;
+            color: var(--secondary-color);
         }
+
         .search-bar {
             display: flex;
             justify-content: center;
             margin-bottom: 20px;
         }
+
         .search-bar input[type="text"] {
             width: 300px;
             padding: 10px;
@@ -112,9 +95,109 @@
             border-radius: 5px;
             box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
         }
+
+        .product {
+            background-color: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .product:hover {
+            transform: translateY(-5px);
+        }
+
+        .product img {
+            width: 150px;
+            height: 150px;
+            margin-right: 20px;
+            border-radius: 8px;
+            object-fit: cover;
+        }
+
+        .product-details {
+            flex: 1;
+        }
+
+        .product-details h2 {
+            margin: 0 0 10px;
+            font-size: 1.5em;
+            color: var(--secondary-color);
+        }
+
+        .product-details p {
+            margin: 5px 0;
+            color: var(--dark-color);
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 10px 15px;
+            font-size: 1em;
+            color: #fff;
+            background-color: var(--primary-color);
+            border: none;
+            border-radius: 5px;
+            text-decoration: none;
+            text-align: center;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .btn:hover {
+            background-color: var(--accent-color);
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            margin-top: 30px;
+        }
+
+        .pagination a {
+            padding: 10px 15px;
+            margin: 0 5px;
+            font-size: 1em;
+            color: var(--primary-color);
+            text-decoration: none;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .pagination a:hover {
+            background-color: var(--primary-color);
+            color: #fff;
+        }
+
+        .pagination .current {
+            padding: 10px 15px;
+            margin: 0 5px;
+            font-size: 1em;
+            color: var(--dark-color);
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: var(--light-color);
+        }
     </style>
 </head>
 <body>
+    <nav class="navbar">
+        <div class="container">
+            <a href="#" class="navbar-brand">PJ's Auto Literature</a>
+            <ul class="navbar-nav">
+                <li><a href="#" class="nav-link">Home</a></li>
+                <li><a href="#" class="nav-link">About Us</a></li>
+                <li><a href="#" class="nav-link">Contact</a></li>
+                <li><a href="#" class="nav-link">Cart</a></li>
+            </ul>
+        </div>
+    </nav>
+
     <h1>Product List</h1>
     <div class="search-bar">
         <form method="get" action="{% url 'product_list' %}" id="search-form">
@@ -127,7 +210,7 @@
                 <div class="product">
                     <img src="{{ product.primary_image_url }}" alt="{{ product.title }}">
                     <div class="product-details">
-                        <h2><a href="{% url 'product_detail' product.html_link %}" style="text-decoration: none; color: #333;">{{ product.title }}</a></h2>
+                        <h2><a href="{% url 'product_detail' product.html_link %}" style="text-decoration: none; color: var(--secondary-color);">{{ product.title }}</a></h2>
                         <p>Price: ${{ product.price }}</p>
                         <a href="{% url 'product_detail' product.html_link %}" class="btn">View Details</a>
                     </div>

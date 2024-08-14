@@ -9,5 +9,5 @@ urlpatterns = [
     path('admin-view/', views.admin_page, name='admin_page'),
     path('product/', views.product_list, name='product_list'),
     path('product/<slug:product_slug>/', views.product_detail, name='product_detail'),
-    path('cron/', views.cron, name='cron'),
+    path('cron/', views.cron, name='cron'), 
 ]

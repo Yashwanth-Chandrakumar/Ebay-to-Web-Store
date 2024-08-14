@@ -6,213 +6,1799 @@
     <title>PJ's Auto Literature</title>
     <meta name="description" content="PJ's Auto Literature. Buy Auto literature at the best price. Explore more details including condition, seller information, and shipping options.">
 
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.carousel.min.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.theme.default.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2c3e50;
+            --accent-color: #e74c3c;
+            --light-color: #ecf0f1;
+            --dark-color: #34495e;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            line-height: 1.6;
+            color: var(--dark-color);
+            background-color: var(--light-color);
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
         .navbar {
+            background-color: var(--secondary-color);
+            padding: 1rem 0;
             position: fixed;
             top: 0;
-            width: 100%;
+            left: 0;
+            right: 0;
             z-index: 1000;
-            transition: all 0.3s ease-in-out;
         }
+
         .navbar .container {
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
+
         .navbar-brand {
-            font-weight: bold;
+            color: var(--light-color);
+            font-size: 1.5rem;
+            font-weight: 700;
+            text-decoration: none;
         }
-        .navbar-nav .nav-link {
-            margin-right: 1rem;
-        }
-        .navbar-nav .nav-link.cart {
-            margin-right: 0;
-        }
-        .search-container {
-            margin-top: 5rem;
-            width: 100%;
-            
+
+        .navbar-nav {
             display: flex;
-            justify-content: center;
+            list-style: none;
         }
-        .search-container input {
-            width: 50%;
-            border: none;
+
+        .nav-link {
+            color: var(--light-color);
+            text-decoration: none;
             padding: 0.5rem 1rem;
-            border-radius: 0.25rem;
+            transition: color 0.3s ease;
         }
-        .jumbotron {
-            margin-top: 80px;
-            background-color: black;
+
+        .nav-link:hover {
+            color: var(--primary-color);
+        }
+
+        .hero {
+            background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https://source.unsplash.com/1600x900/?car,literature');
             background-size: cover;
             background-position: center;
-            color: white;
-            padding: 6rem 2rem;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            text-align: center;
+            color: var(--light-color);
         }
-        .section {
-            padding: 4rem 0;
+
+        .hero-content {
+            max-width: 800px;
+            margin: 0 auto;
         }
-        .section-title {
+
+        .hero h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
             margin-bottom: 2rem;
         }
-        .owl-carousel .item {
-            margin: 0 0.5rem;
+
+        .btn {
+            display: inline-block;
+            background-color: var(--primary-color);
+            color: var(--light-color);
+            padding: 0.8rem 2rem;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
         }
-        .product-card {
-            border: 1px solid #dee2e6;
-            border-radius: 0.25rem;
-            padding: 1rem;
+
+        .btn:hover {
+            background-color: var(--accent-color);
+        }
+
+        .search-container {
+            margin: 2rem 0;
+        }
+
+        .search-container input {
+            width: 100%;
+            padding: 0.8rem;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+
+        .features {
+            padding: 4rem 0;
+            background-color: #fff;
+        }
+
+        .features h2 {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+        }
+
+        .feature-item {
+            text-align: center;
+            padding: 2rem;
+            background-color: var(--light-color);
+            border-radius: 5px;
+            transition: transform 0.3s ease;
+        }
+
+        .feature-item:hover {
+            transform: translateY(-5px);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+
+        .brands {
+            padding: 4rem 0;
+        }
+
+        .brands h2 {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .brand-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 1rem;
+        }
+
+        .brand-item {
             text-align: center;
         }
-        .product-card img {
-            max-width: 100%;
-            height: auto;
+
+        .brand-grid a {
+            display: block;
+            padding: 1rem;
+            background-color: #fff;
+            color: var(--dark-color);
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        .brand-grid a:hover {
+            background-color: var(--primary-color);
+            color: var(--light-color);
+        }
+
+        footer {
+            background-color: var(--secondary-color);
+            color: var(--light-color);
+            text-align: center;
+            padding: 2rem 0;
         }
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <nav class="navbar">
         <div class="container">
-            <a class="navbar-brand" href="#">PJ's Auto Literature</a>
+            <a href="#" class="navbar-brand">PJ's Auto Literature</a>
             <ul class="navbar-nav">
-                <li class="nav-item">
-                    <a class="nav-link" href="#">Home</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#">About Us</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#">Contact</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link cart" href="#">Cart</a>
-                </li>
+                <li><a href="#" class="nav-link">Home</a></li>
+                <li><a href="#" class="nav-link">About Us</a></li>
+                <li><a href="#" class="nav-link">Contact</a></li>
+                <li><a href="#" class="nav-link">Cart</a></li>
             </ul>
         </div>
     </nav>
 
-    <div class="search-container">
-        <input type="text" placeholder="Search...">
+    <header class="hero">
+        <div class="hero-content">
+            <h1>Welcome to PJ's Auto Literature</h1>
+            <p>Discover the best auto literature for your collection</p>
+            <a href="/product" class="btn">Shop Now</a>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="search-container">
+            <input type="text" id="search-input" placeholder="Search for auto literature...">
+        </div>
     </div>
 
-    <div class="jumbotron text-center">
-        <h1 class="display-4">Welcome to PJ's Auto Literature</h1>
-        <p class="lead">Discover the best auto literature for your collection</p>
-        <a class="btn btn-primary btn-lg" href="/product" role="button">Shop Now</a>
-    </div>
-
-    <div class="section">
+    <section class="features">
         <div class="container">
-            <h2 class="section-title">Featured Products</h2>
-            <div class="owl-carousel owl-theme">
-                <div class="item">
-                    <div class="product-card">
-                        <img src="product1.jpg" alt="Product 1">
-                        <h5>Product 1</h5>
-                        <p>$19.99</p>
-                        <a href="#" class="btn btn-primary">Add to Cart</a>
-                    </div>
+            <h2>Why Choose PJ's Auto Literature?</h2>
+            <div class="feature-grid">
+                <div class="feature-item">
+                    <i class="fas fa-book feature-icon"></i>
+                    <h3>Vast Collection</h3>
+                    <p>Our website offers a wide range of auto literature, from classic car manuals to the latest industry publications.</p>
                 </div>
-                <div class="item">
-                    <div class="product-card">
-                        <img src="product2.jpg" alt="Product 2">
-                        <h5>Product 2</h5>
-                        <p>$24.99</p>
-                        <a href="#" class="btn btn-primary">Add to Cart</a>
-                    </div>
+                <div class="feature-item">
+                    <i class="fas fa-shield-alt feature-icon"></i>
+                    <h3>Trusted Source</h3>
+                    <p>With years of experience in the auto industry, we ensure that all our products are authentic and of the highest quality.</p>
                 </div>
-                <div class="item">
-                    <div class="product-card">
-                        <img src="product3.jpg" alt="Product 3">
-                        <h5>Product 3</h5>
-                        <p>$14.99</p>
-                        <a href="#" class="btn btn-primary">Add to Cart</a>
-                    </div>
-                </div>
-                <div class="item">
-                    <div class="product-card">
-                        <img src="product4.jpg" alt="Product 4">
-                        <h5>Product 4</h5>
-                        <p>$29.99</p>
-                        <a href="#" class="btn btn-primary">Add to Cart</a>
-                    </div>
+                <div class="feature-item">
+                    <i class="fas fa-headset feature-icon"></i>
+                    <h3>Exceptional Service</h3>
+                    <p>Our dedicated customer service team is always available to assist you with your queries and ensure a seamless shopping experience.</p>
                 </div>
             </div>
         </div>
-    </div>
+    </section>
 
-    <div class="section">
+    <section class="brands">
         <div class="container">
-            <h2 class="section-title">Why Choose PJ's Auto Literature?</h2>
-            <div class="row">
-                <div class="col-md-4">
-                    <div class="card">
-                        <div class="card-body">
-                            <h5 class="card-title">Vast Collection</h5>
-                            <p class="card-text">Our website offers a wide range of auto literature, from classic car manuals to the latest industry publications.</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card">
-                        <div class="card-body">
-                            <h5 class="card-title">Trusted Source</h5>
-                            <p class="card-text">With years of experience in the auto industry, we ensure that all our products are authentic and of the highest quality.</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card">
-                        <div class="card-body">
-                            <h5 class="card-title">Exceptional Service</h5>
-                            <p class="card-text">Our dedicated customer service team is always available to assist you with your queries and ensure a seamless shopping experience.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <h2>Popular Searches</h2>
+            <div class="brand-grid" id="brand-list">
+                <a href="{% url 'product_list' %}?query=ACR">ACR</a>
+            <a href="{% url 'product_list' %}?query=AMC">AMC</a>
+            <a href="{% url 'product_list' %}?query=AMF">AMF</a>
+            <a href="{% url 'product_list' %}?query=AMG">AMG</a>
+            <a href="{% url 'product_list' %}?query=AMX">AMX</a>
+            <a href="{% url 'product_list' %}?query=ATS">ATS</a>
+            <a href="{% url 'product_list' %}?query=ATV">ATV</a>
+            <a href="{% url 'product_list' %}?query=AWD">AWD</a>
+            <a href="{% url 'product_list' %}?query=Acadia">Acadia</a>
+            <a href="{% url 'product_list' %}?query=Accent">Accent</a>
+            <a href="{% url 'product_list' %}?query=Accessories">Accessories</a>
+            <a href="{% url 'product_list' %}?query=Accessory">Accessory</a>
+            <a href="{% url 'product_list' %}?query=Acclaim">Acclaim</a>
+            <a href="{% url 'product_list' %}?query=Accord">Accord</a>
+            <a href="{% url 'product_list' %}?query=Achieva">Achieva</a>
+            <a href="{% url 'product_list' %}?query=Acura">Acura</a>
+            <a href="{% url 'product_list' %}?query=Adjustment">Adjustment</a>
+            <a href="{% url 'product_list' %}?query=Advance">Advance</a>
+            <a href="{% url 'product_list' %}?query=Advanced">Advanced</a>
+            <a href="{% url 'product_list' %}?query=Advantage">Advantage</a>
+            <a href="{% url 'product_list' %}?query=Advertising">Advertising</a>
+            <a href="{% url 'product_list' %}?query=Aerio">Aerio</a>
+            <a href="{% url 'product_list' %}?query=Aerobus">Aerobus</a>
+            <a href="{% url 'product_list' %}?query=Aeroforce">Aeroforce</a>
+            <a href="{% url 'product_list' %}?query=Aeromax">Aeromax</a>
+            <a href="{% url 'product_list' %}?query=Aerostar">Aerostar</a>
+            <a href="{% url 'product_list' %}?query=Air">Air</a>
+            <a href="{% url 'product_list' %}?query=Aircraft">Aircraft</a>
+            <a href="{% url 'product_list' %}?query=Airplane">Airplane</a>
+            <a href="{% url 'product_list' %}?query=Album">Album</a>
+            <a href="{% url 'product_list' %}?query=Alero">Alero</a>
+            <a href="{% url 'product_list' %}?query=Alfa">Alfa</a>
+            <a href="{% url 'product_list' %}?query=Alice">Alice</a>
+            <a href="{% url 'product_list' %}?query=Allante">Allante</a>
+            <a href="{% url 'product_list' %}?query=Alliance">Alliance</a>
+            <a href="{% url 'product_list' %}?query=Allroad">Allroad</a>
+            <a href="{% url 'product_list' %}?query=Altima">Altima</a>
+            <a href="{% url 'product_list' %}?query=Aluminum">Aluminum</a>
+            <a href="{% url 'product_list' %}?query=Ambassador">Ambassador</a>
+            <a href="{% url 'product_list' %}?query=Ambulance">Ambulance</a>
+            <a href="{% url 'product_list' %}?query=America">America</a>
+            <a href="{% url 'product_list' %}?query=American">American</a>
+            <a href="{% url 'product_list' %}?query=Americana">Americana</a>
+            <a href="{% url 'product_list' %}?query=Andy">Andy</a>
+            <a href="{% url 'product_list' %}?query=Anniversary">Anniversary</a>
+            <a href="{% url 'product_list' %}?query=Annual">Annual</a>
+            <a href="{% url 'product_list' %}?query=Antonick">Antonick</a>
+            <a href="{% url 'product_list' %}?query=Appearance">Appearance</a>
+            <a href="{% url 'product_list' %}?query=Applications">Applications</a>
+            <a href="{% url 'product_list' %}?query=April">April</a>
+            <a href="{% url 'product_list' %}?query=Archive">Archive</a>
+            <a href="{% url 'product_list' %}?query=Ariens">Ariens</a>
+            <a href="{% url 'product_list' %}?query=Aries">Aries</a>
+            <a href="{% url 'product_list' %}?query=Army">Army</a>
+            <a href="{% url 'product_list' %}?query=Arrow">Arrow</a>
+            <a href="{% url 'product_list' %}?query=Ascender">Ascender</a>
+            <a href="{% url 'product_list' %}?query=Aspen">Aspen</a>
+            <a href="{% url 'product_list' %}?query=Assembly">Assembly</a>
+            <a href="{% url 'product_list' %}?query=Assistance">Assistance</a>
+            <a href="{% url 'product_list' %}?query=Aston">Aston</a>
+            <a href="{% url 'product_list' %}?query=Astro">Astro</a>
+            <a href="{% url 'product_list' %}?query=Atlas">Atlas</a>
+            <a href="{% url 'product_list' %}?query=Attack">Attack</a>
+            <a href="{% url 'product_list' %}?query=Audi">Audi</a>
+            <a href="{% url 'product_list' %}?query=Auditorium">Auditorium</a>
+            <a href="{% url 'product_list' %}?query=Aurora">Aurora</a>
+            <a href="{% url 'product_list' %}?query=Austin">Austin</a>
+            <a href="{% url 'product_list' %}?query=Auto">Auto</a>
+            <a href="{% url 'product_list' %}?query=Automobile">Automobile</a>
+            <a href="{% url 'product_list' %}?query=Automotive">Automotive</a>
+            <a href="{% url 'product_list' %}?query=Avalanche">Avalanche</a>
+            <a href="{% url 'product_list' %}?query=Avalon">Avalon</a>
+            <a href="{% url 'product_list' %}?query=Ave">Ave</a>
+            <a href="{% url 'product_list' %}?query=Avenger">Avenger</a>
+            <a href="{% url 'product_list' %}?query=Avenue">Avenue</a>
+            <a href="{% url 'product_list' %}?query=Aviator">Aviator</a>
+            <a href="{% url 'product_list' %}?query=Avro">Avro</a>
+            <a href="{% url 'product_list' %}?query=Axiom">Axiom</a>
+            <a href="{% url 'product_list' %}?query=Axle">Axle</a>
+            <a href="{% url 'product_list' %}?query=Axxess">Axxess</a>
+            <a href="{% url 'product_list' %}?query=Aztek">Aztek</a>
+            <a href="{% url 'product_list' %}?query=BMW">BMW</a>
+            <a href="{% url 'product_list' %}?query=BRAT">BRAT</a>
+            <a href="{% url 'product_list' %}?query=Babies">Babies</a>
+            <a href="{% url 'product_list' %}?query=Backhoe">Backhoe</a>
+            <a href="{% url 'product_list' %}?query=Baja">Baja</a>
+            <a href="{% url 'product_list' %}?query=Balboa">Balboa</a>
+            <a href="{% url 'product_list' %}?query=Baler">Baler</a>
+            <a href="{% url 'product_list' %}?query=Bantam">Bantam</a>
+            <a href="{% url 'product_list' %}?query=Barracuda">Barracuda</a>
+            <a href="{% url 'product_list' %}?query=Bauer">Bauer</a>
+            <a href="{% url 'product_list' %}?query=Bay">Bay</a>
+            <a href="{% url 'product_list' %}?query=Bayliner">Bayliner</a>
+            <a href="{% url 'product_list' %}?query=Beat">Beat</a>
+            <a href="{% url 'product_list' %}?query=Bedford">Bedford</a>
+            <a href="{% url 'product_list' %}?query=Bee">Bee</a>
+            <a href="{% url 'product_list' %}?query=Beetle">Beetle</a>
+            <a href="{% url 'product_list' %}?query=Behme">Behme</a>
+            <a href="{% url 'product_list' %}?query=Bel">Bel</a>
+            <a href="{% url 'product_list' %}?query=Belvedere">Belvedere</a>
+            <a href="{% url 'product_list' %}?query=Bentley">Bentley</a>
+            <a href="{% url 'product_list' %}?query=Benz">Benz</a>
+            <a href="{% url 'product_list' %}?query=Beretta">Beretta</a>
+            <a href="{% url 'product_list' %}?query=Berliet">Berliet</a>
+            <a href="{% url 'product_list' %}?query=Berlina">Berlina</a>
+            <a href="{% url 'product_list' %}?query=Berlinetta">Berlinetta</a>
+            <a href="{% url 'product_list' %}?query=Bermuda">Bermuda</a>
+            <a href="{% url 'product_list' %}?query=Best">Best</a>
+            <a href="{% url 'product_list' %}?query=Bethany">Bethany</a>
+            <a href="{% url 'product_list' %}?query=Biarritz">Biarritz</a>
+            <a href="{% url 'product_list' %}?query=Bicycle">Bicycle</a>
+            <a href="{% url 'product_list' %}?query=Big">Big</a>
+            <a href="{% url 'product_list' %}?query=Biggest">Biggest</a>
+            <a href="{% url 'product_list' %}?query=Bike">Bike</a>
+            <a href="{% url 'product_list' %}?query=Bikini">Bikini</a>
+            <a href="{% url 'product_list' %}?query=Bill">Bill</a>
+            <a href="{% url 'product_list' %}?query=Billion">Billion</a>
+            <a href="{% url 'product_list' %}?query=Black">Black</a>
+            <a href="{% url 'product_list' %}?query=Blackhawk">Blackhawk</a>
+            <a href="{% url 'product_list' %}?query=Blackwood">Blackwood</a>
+            <a href="{% url 'product_list' %}?query=Blazer">Blazer</a>
+            <a href="{% url 'product_list' %}?query=Block">Block</a>
+            <a href="{% url 'product_list' %}?query=Blue">Blue</a>
+            <a href="{% url 'product_list' %}?query=Boat">Boat</a>
+            <a href="{% url 'product_list' %}?query=Boats">Boats</a>
+            <a href="{% url 'product_list' %}?query=Bobcat">Bobcat</a>
+            <a href="{% url 'product_list' %}?query=Body">Body</a>
+            <a href="{% url 'product_list' %}?query=Boeing">Boeing</a>
+            <a href="{% url 'product_list' %}?query=Bolens">Bolens</a>
+            <a href="{% url 'product_list' %}?query=Bonneville">Bonneville</a>
+            <a href="{% url 'product_list' %}?query=Bonus">Bonus</a>
+            <a href="{% url 'product_list' %}?query=Book">Book</a>
+            <a href="{% url 'product_list' %}?query=Booklet">Booklet</a>
+            <a href="{% url 'product_list' %}?query=Bosch">Bosch</a>
+            <a href="{% url 'product_list' %}?query=Boss">Boss</a>
+            <a href="{% url 'product_list' %}?query=Bound">Bound</a>
+            <a href="{% url 'product_list' %}?query=Bowling">Bowling</a>
+            <a href="{% url 'product_list' %}?query=Bowrider">Bowrider</a>
+            <a href="{% url 'product_list' %}?query=Box">Box</a>
+            <a href="{% url 'product_list' %}?query=Boxster">Boxster</a>
+            <a href="{% url 'product_list' %}?query=Bradley">Bradley</a>
+            <a href="{% url 'product_list' %}?query=Brake">Brake</a>
+            <a href="{% url 'product_list' %}?query=Bravada">Bravada</a>
+            <a href="{% url 'product_list' %}?query=Breeze">Breeze</a>
+            <a href="{% url 'product_list' %}?query=Brigadier">Brigadier</a>
+            <a href="{% url 'product_list' %}?query=Brochue">Brochue</a>
+            <a href="{% url 'product_list' %}?query=Brochure">Brochure</a>
+            <a href="{% url 'product_list' %}?query=Brochures">Brochures</a>
+            <a href="{% url 'product_list' %}?query=Bronco">Bronco</a>
+            <a href="{% url 'product_list' %}?query=Brookwood">Brookwood</a>
+            <a href="{% url 'product_list' %}?query=Bros">Bros</a>
+            <a href="{% url 'product_list' %}?query=Brougham">Brougham</a>
+            <a href="{% url 'product_list' %}?query=Brown">Brown</a>
+            <a href="{% url 'product_list' %}?query=Buick">Buick</a>
+            <a href="{% url 'product_list' %}?query=Building">Building</a>
+            <a href="{% url 'product_list' %}?query=Bulk">Bulk</a>
+            <a href="{% url 'product_list' %}?query=Bulldog">Bulldog</a>
+            <a href="{% url 'product_list' %}?query=Bulletin">Bulletin</a>
+            <a href="{% url 'product_list' %}?query=Bulletins">Bulletins</a>
+            <a href="{% url 'product_list' %}?query=Bullitt">Bullitt</a>
+            <a href="{% url 'product_list' %}?query=Bumper">Bumper</a>
+            <a href="{% url 'product_list' %}?query=Burton">Burton</a>
+            <a href="{% url 'product_list' %}?query=Bus">Bus</a>
+            <a href="{% url 'product_list' %}?query=Business">Business</a>
+            <a href="{% url 'product_list' %}?query=Buyer">Buyer</a>
+            <a href="{% url 'product_list' %}?query=Buyers">Buyers</a>
+            <a href="{% url 'product_list' %}?query=Buying">Buying</a>
+            <a href="{% url 'product_list' %}?query=CCR">CCR</a>
+            <a href="{% url 'product_list' %}?query=CID">CID</a>
+            <a href="{% url 'product_list' %}?query=CLA">CLA</a>
+            <a href="{% url 'product_list' %}?query=CLK">CLK</a>
+            <a href="{% url 'product_list' %}?query=CLS">CLS</a>
+            <a href="{% url 'product_list' %}?query=CLT">CLT</a>
+            <a href="{% url 'product_list' %}?query=CRX">CRX</a>
+            <a href="{% url 'product_list' %}?query=CTS">CTS</a>
+            <a href="{% url 'product_list' %}?query=CVCC">CVCC</a>
+            <a href="{% url 'product_list' %}?query=CXL">CXL</a>
+            <a href="{% url 'product_list' %}?query=CXS">CXS</a>
+            <a href="{% url 'product_list' %}?query=Cab">Cab</a>
+            <a href="{% url 'product_list' %}?query=Cabrio">Cabrio</a>
+            <a href="{% url 'product_list' %}?query=Cabriolet">Cabriolet</a>
+            <a href="{% url 'product_list' %}?query=Cadillac">Cadillac</a>
+            <a href="{% url 'product_list' %}?query=Calais">Calais</a>
+            <a href="{% url 'product_list' %}?query=Calendar">Calendar</a>
+            <a href="{% url 'product_list' %}?query=Caliente">Caliente</a>
+            <a href="{% url 'product_list' %}?query=California">California</a>
+            <a href="{% url 'product_list' %}?query=Camaro">Camaro</a>
+            <a href="{% url 'product_list' %}?query=Cambridge">Cambridge</a>
+            <a href="{% url 'product_list' %}?query=Camino">Camino</a>
+            <a href="{% url 'product_list' %}?query=Campmobile">Campmobile</a>
+            <a href="{% url 'product_list' %}?query=Camry">Camry</a>
+            <a href="{% url 'product_list' %}?query=Canada">Canada</a>
+            <a href="{% url 'product_list' %}?query=Canyon">Canyon</a>
+            <a href="{% url 'product_list' %}?query=Capri">Capri</a>
+            <a href="{% url 'product_list' %}?query=Caprice">Caprice</a>
+            <a href="{% url 'product_list' %}?query=Captain">Captain</a>
+            <a href="{% url 'product_list' %}?query=Car">Car</a>
+            <a href="{% url 'product_list' %}?query=Carat">Carat</a>
+            <a href="{% url 'product_list' %}?query=Caravan">Caravan</a>
+            <a href="{% url 'product_list' %}?query=Card">Card</a>
+            <a href="{% url 'product_list' %}?query=Care">Care</a>
+            <a href="{% url 'product_list' %}?query=Cargo">Cargo</a>
+            <a href="{% url 'product_list' %}?query=Caring">Caring</a>
+            <a href="{% url 'product_list' %}?query=Carlo">Carlo</a>
+            <a href="{% url 'product_list' %}?query=Carpenter">Carpenter</a>
+            <a href="{% url 'product_list' %}?query=Carrera">Carrera</a>
+            <a href="{% url 'product_list' %}?query=Carrier">Carrier</a>
+            <a href="{% url 'product_list' %}?query=Carroll">Carroll</a>
+            <a href="{% url 'product_list' %}?query=Carryall">Carryall</a>
+            <a href="{% url 'product_list' %}?query=Cars">Cars</a>
+            <a href="{% url 'product_list' %}?query=Cartier">Cartier</a>
+            <a href="{% url 'product_list' %}?query=Case">Case</a>
+            <a href="{% url 'product_list' %}?query=Casting">Casting</a>
+            <a href="{% url 'product_list' %}?query=Catalina">Catalina</a>
+            <a href="{% url 'product_list' %}?query=Catalog">Catalog</a>
+            <a href="{% url 'product_list' %}?query=Catalogue">Catalogue</a>
+            <a href="{% url 'product_list' %}?query=Caterpillar">Caterpillar</a>
+            <a href="{% url 'product_list' %}?query=Cavalier">Cavalier</a>
+            <a href="{% url 'product_list' %}?query=Cavallino">Cavallino</a>
+            <a href="{% url 'product_list' %}?query=Celebrity">Celebrity</a>
+            <a href="{% url 'product_list' %}?query=Celica">Celica</a>
+            <a href="{% url 'product_list' %}?query=Cellular">Cellular</a>
+            <a href="{% url 'product_list' %}?query=Century">Century</a>
+            <a href="{% url 'product_list' %}?query=Challenge">Challenge</a>
+            <a href="{% url 'product_list' %}?query=Challenger">Challenger</a>
+            <a href="{% url 'product_list' %}?query=Chalmers">Chalmers</a>
+            <a href="{% url 'product_list' %}?query=Champ">Champ</a>
+            <a href="{% url 'product_list' %}?query=Champagne">Champagne</a>
+            <a href="{% url 'product_list' %}?query=Champion">Champion</a>
+            <a href="{% url 'product_list' %}?query=Championship">Championship</a>
+            <a href="{% url 'product_list' %}?query=Chapter">Chapter</a>
+            <a href="{% url 'product_list' %}?query=Charade">Charade</a>
+            <a href="{% url 'product_list' %}?query=Charger">Charger</a>
+            <a href="{% url 'product_list' %}?query=Chart">Chart</a>
+            <a href="{% url 'product_list' %}?query=Chassis">Chassis</a>
+            <a href="{% url 'product_list' %}?query=Check">Check</a>
+            <a href="{% url 'product_list' %}?query=Checker">Checker</a>
+            <a href="{% url 'product_list' %}?query=Cherokee">Cherokee</a>
+            <a href="{% url 'product_list' %}?query=Chevelle">Chevelle</a>
+            <a href="{% url 'product_list' %}?query=Chevette">Chevette</a>
+            <a href="{% url 'product_list' %}?query=Chevrolet">Chevrolet</a>
+            <a href="{% url 'product_list' %}?query=Chevy">Chevy</a>
+            <a href="{% url 'product_list' %}?query=Chief">Chief</a>
+            <a href="{% url 'product_list' %}?query=Chieftain">Chieftain</a>
+            <a href="{% url 'product_list' %}?query=Chip">Chip</a>
+            <a href="{% url 'product_list' %}?query=Choice">Choice</a>
+            <a href="{% url 'product_list' %}?query=Chrysler">Chrysler</a>
+            <a href="{% url 'product_list' %}?query=Cien">Cien</a>
+            <a href="{% url 'product_list' %}?query=Ciera">Ciera</a>
+            <a href="{% url 'product_list' %}?query=Cimarron">Cimarron</a>
+            <a href="{% url 'product_list' %}?query=Citation">Citation</a>
+            <a href="{% url 'product_list' %}?query=Civic">Civic</a>
+            <a href="{% url 'product_list' %}?query=Clarity">Clarity</a>
+            <a href="{% url 'product_list' %}?query=Clarke">Clarke</a>
+            <a href="{% url 'product_list' %}?query=Class">Class</a>
+            <a href="{% url 'product_list' %}?query=Classic">Classic</a>
+            <a href="{% url 'product_list' %}?query=Classics">Classics</a>
+            <a href="{% url 'product_list' %}?query=Clip">Clip</a>
+            <a href="{% url 'product_list' %}?query=Clipper">Clipper</a>
+            <a href="{% url 'product_list' %}?query=Cloud">Cloud</a>
+            <a href="{% url 'product_list' %}?query=Club">Club</a>
+            <a href="{% url 'product_list' %}?query=Cluster">Cluster</a>
+            <a href="{% url 'product_list' %}?query=Coach">Coach</a>
+            <a href="{% url 'product_list' %}?query=Coachmate">Coachmate</a>
+            <a href="{% url 'product_list' %}?query=Cobalt">Cobalt</a>
+            <a href="{% url 'product_list' %}?query=Cobra">Cobra</a>
+            <a href="{% url 'product_list' %}?query=Coffee">Coffee</a>
+            <a href="{% url 'product_list' %}?query=Collectible">Collectible</a>
+            <a href="{% url 'product_list' %}?query=Collection">Collection</a>
+            <a href="{% url 'product_list' %}?query=Collector">Collector</a>
+            <a href="{% url 'product_list' %}?query=Collectors">Collectors</a>
+            <a href="{% url 'product_list' %}?query=Colony">Colony</a>
+            <a href="{% url 'product_list' %}?query=Color">Color</a>
+            <a href="{% url 'product_list' %}?query=Colorado">Colorado</a>
+            <a href="{% url 'product_list' %}?query=Colors">Colors</a>
+            <a href="{% url 'product_list' %}?query=Colt">Colt</a>
+            <a href="{% url 'product_list' %}?query=Columbia">Columbia</a>
+            <a href="{% url 'product_list' %}?query=Comanche">Comanche</a>
+            <a href="{% url 'product_list' %}?query=Combat">Combat</a>
+            <a href="{% url 'product_list' %}?query=Combine">Combine</a>
+            <a href="{% url 'product_list' %}?query=Comet">Comet</a>
+            <a href="{% url 'product_list' %}?query=Commander">Commander</a>
+            <a href="{% url 'product_list' %}?query=Commando">Commando</a>
+            <a href="{% url 'product_list' %}?query=Commercial">Commercial</a>
+            <a href="{% url 'product_list' %}?query=Commuter">Commuter</a>
+            <a href="{% url 'product_list' %}?query=Comparison">Comparison</a>
+            <a href="{% url 'product_list' %}?query=Competitive">Competitive</a>
+            <a href="{% url 'product_list' %}?query=Complete">Complete</a>
+            <a href="{% url 'product_list' %}?query=Concept">Concept</a>
+            <a href="{% url 'product_list' %}?query=Concert">Concert</a>
+            <a href="{% url 'product_list' %}?query=Concord">Concord</a>
+            <a href="{% url 'product_list' %}?query=Concorde">Concorde</a>
+            <a href="{% url 'product_list' %}?query=Concours">Concours</a>
+            <a href="{% url 'product_list' %}?query=Condition">Condition</a>
+            <a href="{% url 'product_list' %}?query=Conditioner">Conditioner</a>
+            <a href="{% url 'product_list' %}?query=Confederate">Confederate</a>
+            <a href="{% url 'product_list' %}?query=Conquest">Conquest</a>
+            <a href="{% url 'product_list' %}?query=Conquista">Conquista</a>
+            <a href="{% url 'product_list' %}?query=Constellation">Constellation</a>
+            <a href="{% url 'product_list' %}?query=Consultant">Consultant</a>
+            <a href="{% url 'product_list' %}?query=Consumer">Consumer</a>
+            <a href="{% url 'product_list' %}?query=Contest">Contest</a>
+            <a href="{% url 'product_list' %}?query=Continental">Continental</a>
+            <a href="{% url 'product_list' %}?query=Control">Control</a>
+            <a href="{% url 'product_list' %}?query=Conventional">Conventional</a>
+            <a href="{% url 'product_list' %}?query=Conversion">Conversion</a>
+            <a href="{% url 'product_list' %}?query=Convert">Convert</a>
+            <a href="{% url 'product_list' %}?query=Convertible">Convertible</a>
+            <a href="{% url 'product_list' %}?query=Cooper">Cooper</a>
+            <a href="{% url 'product_list' %}?query=Coralette">Coralette</a>
+            <a href="{% url 'product_list' %}?query=Corbin">Corbin</a>
+            <a href="{% url 'product_list' %}?query=Cordoba">Cordoba</a>
+            <a href="{% url 'product_list' %}?query=Corniche">Corniche</a>
+            <a href="{% url 'product_list' %}?query=Corolla">Corolla</a>
+            <a href="{% url 'product_list' %}?query=Coronado">Coronado</a>
+            <a href="{% url 'product_list' %}?query=Coronet">Coronet</a>
+            <a href="{% url 'product_list' %}?query=Corsair">Corsair</a>
+            <a href="{% url 'product_list' %}?query=Corvair">Corvair</a>
+            <a href="{% url 'product_list' %}?query=Corvette">Corvette</a>
+            <a href="{% url 'product_list' %}?query=Cost">Cost</a>
+            <a href="{% url 'product_list' %}?query=Cougar">Cougar</a>
+            <a href="{% url 'product_list' %}?query=Country">Country</a>
+            <a href="{% url 'product_list' %}?query=County">County</a>
+            <a href="{% url 'product_list' %}?query=Coupe">Coupe</a>
+            <a href="{% url 'product_list' %}?query=Coupon">Coupon</a>
+            <a href="{% url 'product_list' %}?query=Courier">Courier</a>
+            <a href="{% url 'product_list' %}?query=Cover">Cover</a>
+            <a href="{% url 'product_list' %}?query=Cowl">Cowl</a>
+            <a href="{% url 'product_list' %}?query=Craft">Craft</a>
+            <a href="{% url 'product_list' %}?query=Crawler">Crawler</a>
+            <a href="{% url 'product_list' %}?query=Cressida">Cressida</a>
+            <a href="{% url 'product_list' %}?query=Crestline">Crestline</a>
+            <a href="{% url 'product_list' %}?query=Crew">Crew</a>
+            <a href="{% url 'product_list' %}?query=Crop">Crop</a>
+            <a href="{% url 'product_list' %}?query=Crossfire">Crossfire</a>
+            <a href="{% url 'product_list' %}?query=Crown">Crown</a>
+            <a href="{% url 'product_list' %}?query=Crownline">Crownline</a>
+            <a href="{% url 'product_list' %}?query=Cruise">Cruise</a>
+            <a href="{% url 'product_list' %}?query=Cruiser">Cruiser</a>
+            <a href="{% url 'product_list' %}?query=Crusher">Crusher</a>
+            <a href="{% url 'product_list' %}?query=Cruze">Cruze</a>
+            <a href="{% url 'product_list' %}?query=Crystal">Crystal</a>
+            <a href="{% url 'product_list' %}?query=Cubic">Cubic</a>
+            <a href="{% url 'product_list' %}?query=Cuddy">Cuddy</a>
+            <a href="{% url 'product_list' %}?query=Curve">Curve</a>
+            <a href="{% url 'product_list' %}?query=Custom">Custom</a>
+            <a href="{% url 'product_list' %}?query=Customer">Customer</a>
+            <a href="{% url 'product_list' %}?query=Customline">Customline</a>
+            <a href="{% url 'product_list' %}?query=Cutlass">Cutlass</a>
+            <a href="{% url 'product_list' %}?query=Cycle">Cycle</a>
+            <a href="{% url 'product_list' %}?query=Cyclone">Cyclone</a>
+            <a href="{% url 'product_list' %}?query=Cylinder">Cylinder</a>
+            <a href="{% url 'product_list' %}?query=DRW">DRW</a>
+            <a href="{% url 'product_list' %}?query=DTS">DTS</a>
+            <a href="{% url 'product_list' %}?query=DVD">DVD</a>
+            <a href="{% url 'product_list' %}?query=Daihatsu">Daihatsu</a>
+            <a href="{% url 'product_list' %}?query=Dakota">Dakota</a>
+            <a href="{% url 'product_list' %}?query=Dance">Dance</a>
+            <a href="{% url 'product_list' %}?query=Dardevle">Dardevle</a>
+            <a href="{% url 'product_list' %}?query=Dart">Dart</a>
+            <a href="{% url 'product_list' %}?query=Dasher">Dasher</a>
+            <a href="{% url 'product_list' %}?query=Data">Data</a>
+            <a href="{% url 'product_list' %}?query=Datsun">Datsun</a>
+            <a href="{% url 'product_list' %}?query=Davidson">Davidson</a>
+            <a href="{% url 'product_list' %}?query=Daytona">Daytona</a>
+            <a href="{% url 'product_list' %}?query=Dealer">Dealer</a>
+            <a href="{% url 'product_list' %}?query=Dealership">Dealership</a>
+            <a href="{% url 'product_list' %}?query=Dec">Dec</a>
+            <a href="{% url 'product_list' %}?query=Decal">Decal</a>
+            <a href="{% url 'product_list' %}?query=Decatur">Decatur</a>
+            <a href="{% url 'product_list' %}?query=December">December</a>
+            <a href="{% url 'product_list' %}?query=Deck">Deck</a>
+            <a href="{% url 'product_list' %}?query=Decoder">Decoder</a>
+            <a href="{% url 'product_list' %}?query=Decor">Decor</a>
+            <a href="{% url 'product_list' %}?query=Deere">Deere</a>
+            <a href="{% url 'product_list' %}?query=Defender">Defender</a>
+            <a href="{% url 'product_list' %}?query=Definitive">Definitive</a>
+            <a href="{% url 'product_list' %}?query=Del">Del</a>
+            <a href="{% url 'product_list' %}?query=Delco">Delco</a>
+            <a href="{% url 'product_list' %}?query=Delivered">Delivered</a>
+            <a href="{% url 'product_list' %}?query=Delivery">Delivery</a>
+            <a href="{% url 'product_list' %}?query=Delorean">Delorean</a>
+            <a href="{% url 'product_list' %}?query=Delorenzo">Delorenzo</a>
+            <a href="{% url 'product_list' %}?query=Delta">Delta</a>
+            <a href="{% url 'product_list' %}?query=Deluxe">Deluxe</a>
+            <a href="{% url 'product_list' %}?query=Demon">Demon</a>
+            <a href="{% url 'product_list' %}?query=Denali">Denali</a>
+            <a href="{% url 'product_list' %}?query=Department">Department</a>
+            <a href="{% url 'product_list' %}?query=Dept">Dept</a>
+            <a href="{% url 'product_list' %}?query=Design">Design</a>
+            <a href="{% url 'product_list' %}?query=Designs">Designs</a>
+            <a href="{% url 'product_list' %}?query=Development">Development</a>
+            <a href="{% url 'product_list' %}?query=Deville">Deville</a>
+            <a href="{% url 'product_list' %}?query=Diagnosis">Diagnosis</a>
+            <a href="{% url 'product_list' %}?query=Diagnostic">Diagnostic</a>
+            <a href="{% url 'product_list' %}?query=Diagram">Diagram</a>
+            <a href="{% url 'product_list' %}?query=Diagrams">Diagrams</a>
+            <a href="{% url 'product_list' %}?query=Diesel">Diesel</a>
+            <a href="{% url 'product_list' %}?query=Digest">Digest</a>
+            <a href="{% url 'product_list' %}?query=Dimensional">Dimensional</a>
+            <a href="{% url 'product_list' %}?query=Diplomat">Diplomat</a>
+            <a href="{% url 'product_list' %}?query=Direct">Direct</a>
+            <a href="{% url 'product_list' %}?query=Directory">Directory</a>
+            <a href="{% url 'product_list' %}?query=Discovery">Discovery</a>
+            <a href="{% url 'product_list' %}?query=Distinctive">Distinctive</a>
+            <a href="{% url 'product_list' %}?query=Dodge">Dodge</a>
+            <a href="{% url 'product_list' %}?query=Dollar">Dollar</a>
+            <a href="{% url 'product_list' %}?query=Doo">Doo</a>
+            <a href="{% url 'product_list' %}?query=Door">Door</a>
+            <a href="{% url 'product_list' %}?query=Double">Double</a>
+            <a href="{% url 'product_list' %}?query=Dove">Dove</a>
+            <a href="{% url 'product_list' %}?query=Drawings">Drawings</a>
+            <a href="{% url 'product_list' %}?query=Dream">Dream</a>
+            <a href="{% url 'product_list' %}?query=Drive">Drive</a>
+            <a href="{% url 'product_list' %}?query=Driver">Driver</a>
+            <a href="{% url 'product_list' %}?query=Dual">Dual</a>
+            <a href="{% url 'product_list' %}?query=Dupont">Dupont</a>
+            <a href="{% url 'product_list' %}?query=Durango">Durango</a>
+            <a href="{% url 'product_list' %}?query=Duster">Duster</a>
+            <a href="{% url 'product_list' %}?query=Duty">Duty</a>
+            <a href="{% url 'product_list' %}?query=Dyna">Dyna</a>
+            <a href="{% url 'product_list' %}?query=Dynasty">Dynasty</a>
+            <a href="{% url 'product_list' %}?query=Dyno">Dyno</a>
+            <a href="{% url 'product_list' %}?query=ECO">ECO</a>
+            <a href="{% url 'product_list' %}?query=EMI">EMI</a>
+            <a href="{% url 'product_list' %}?query=EPA">EPA</a>
+            <a href="{% url 'product_list' %}?query=ESV">ESV</a>
+            <a href="{% url 'product_list' %}?query=EVTM">EVTM</a>
+            <a href="{% url 'product_list' %}?query=EXT">EXT</a>
+            <a href="{% url 'product_list' %}?query=Eagle">Eagle</a>
+            <a href="{% url 'product_list' %}?query=Early">Early</a>
+            <a href="{% url 'product_list' %}?query=Easier">Easier</a>
+            <a href="{% url 'product_list' %}?query=Eclipse">Eclipse</a>
+            <a href="{% url 'product_list' %}?query=Econoline">Econoline</a>
+            <a href="{% url 'product_list' %}?query=Eddie">Eddie</a>
+            <a href="{% url 'product_list' %}?query=Edge">Edge</a>
+            <a href="{% url 'product_list' %}?query=Edition">Edition</a>
+            <a href="{% url 'product_list' %}?query=Eight">Eight</a>
+            <a href="{% url 'product_list' %}?query=Eighty">Eighty</a>
+            <a href="{% url 'product_list' %}?query=Elantra">Elantra</a>
+            <a href="{% url 'product_list' %}?query=Eldorado">Eldorado</a>
+            <a href="{% url 'product_list' %}?query=Electra">Electra</a>
+            <a href="{% url 'product_list' %}?query=Electric">Electric</a>
+            <a href="{% url 'product_list' %}?query=Electrical">Electrical</a>
+            <a href="{% url 'product_list' %}?query=Electronic">Electronic</a>
+            <a href="{% url 'product_list' %}?query=Electronics">Electronics</a>
+            <a href="{% url 'product_list' %}?query=Elektra">Elektra</a>
+            <a href="{% url 'product_list' %}?query=Elevation">Elevation</a>
+            <a href="{% url 'product_list' %}?query=Eliminator">Eliminator</a>
+            <a href="{% url 'product_list' %}?query=Elite">Elite</a>
+            <a href="{% url 'product_list' %}?query=Emission">Emission</a>
+            <a href="{% url 'product_list' %}?query=Empire">Empire</a>
+            <a href="{% url 'product_list' %}?query=Enclave">Enclave</a>
+            <a href="{% url 'product_list' %}?query=Encore">Encore</a>
+            <a href="{% url 'product_list' %}?query=Engine">Engine</a>
+            <a href="{% url 'product_list' %}?query=Engineering">Engineering</a>
+            <a href="{% url 'product_list' %}?query=Engines">Engines</a>
+            <a href="{% url 'product_list' %}?query=English">English</a>
+            <a href="{% url 'product_list' %}?query=Enthusiasts">Enthusiasts</a>
+            <a href="{% url 'product_list' %}?query=Envelope">Envelope</a>
+            <a href="{% url 'product_list' %}?query=Envoy">Envoy</a>
+            <a href="{% url 'product_list' %}?query=Epic">Epic</a>
+            <a href="{% url 'product_list' %}?query=Eppinger">Eppinger</a>
+            <a href="{% url 'product_list' %}?query=Equipment">Equipment</a>
+            <a href="{% url 'product_list' %}?query=Eric">Eric</a>
+            <a href="{% url 'product_list' %}?query=Escalade">Escalade</a>
+            <a href="{% url 'product_list' %}?query=Escape">Escape</a>
+            <a href="{% url 'product_list' %}?query=Escort">Escort</a>
+            <a href="{% url 'product_list' %}?query=Esprit">Esprit</a>
+            <a href="{% url 'product_list' %}?query=Estate">Estate</a>
+            <a href="{% url 'product_list' %}?query=Eurosport">Eurosport</a>
+            <a href="{% url 'product_list' %}?query=Evernham">Evernham</a>
+            <a href="{% url 'product_list' %}?query=Excel">Excel</a>
+            <a href="{% url 'product_list' %}?query=Excursion">Excursion</a>
+            <a href="{% url 'product_list' %}?query=Exhaust">Exhaust</a>
+            <a href="{% url 'product_list' %}?query=Expedition">Expedition</a>
+            <a href="{% url 'product_list' %}?query=Experience">Experience</a>
+            <a href="{% url 'product_list' %}?query=Exploded">Exploded</a>
+            <a href="{% url 'product_list' %}?query=Explorer">Explorer</a>
+            <a href="{% url 'product_list' %}?query=Expo">Expo</a>
+            <a href="{% url 'product_list' %}?query=Express">Express</a>
+            <a href="{% url 'product_list' %}?query=Expressions">Expressions</a>
+            <a href="{% url 'product_list' %}?query=Exterior">Exterior</a>
+            <a href="{% url 'product_list' %}?query=FLH">FLH</a>
+            <a href="{% url 'product_list' %}?query=FLHS">FLHS</a>
+            <a href="{% url 'product_list' %}?query=FWD">FWD</a>
+            <a href="{% url 'product_list' %}?query=FXDC">FXDC</a>
+            <a href="{% url 'product_list' %}?query=FXDX">FXDX</a>
+            <a href="{% url 'product_list' %}?query=FXR">FXR</a>
+            <a href="{% url 'product_list' %}?query=FXRS">FXRS</a>
+            <a href="{% url 'product_list' %}?query=FXSTD">FXSTD</a>
+            <a href="{% url 'product_list' %}?query=Fabric">Fabric</a>
+            <a href="{% url 'product_list' %}?query=Fact">Fact</a>
+            <a href="{% url 'product_list' %}?query=Factory">Factory</a>
+            <a href="{% url 'product_list' %}?query=Facts">Facts</a>
+            <a href="{% url 'product_list' %}?query=Fairlane">Fairlane</a>
+            <a href="{% url 'product_list' %}?query=Falcon">Falcon</a>
+            <a href="{% url 'product_list' %}?query=Fall">Fall</a>
+            <a href="{% url 'product_list' %}?query=Family">Family</a>
+            <a href="{% url 'product_list' %}?query=Fan">Fan</a>
+            <a href="{% url 'product_list' %}?query=Farm">Farm</a>
+            <a href="{% url 'product_list' %}?query=Farmall">Farmall</a>
+            <a href="{% url 'product_list' %}?query=Fastback">Fastback</a>
+            <a href="{% url 'product_list' %}?query=Feature">Feature</a>
+            <a href="{% url 'product_list' %}?query=Features">Features</a>
+            <a href="{% url 'product_list' %}?query=Fellows">Fellows</a>
+            <a href="{% url 'product_list' %}?query=Ferguson">Ferguson</a>
+            <a href="{% url 'product_list' %}?query=Ferrari">Ferrari</a>
+            <a href="{% url 'product_list' %}?query=Festiva">Festiva</a>
+            <a href="{% url 'product_list' %}?query=Fiat">Fiat</a>
+            <a href="{% url 'product_list' %}?query=Fiberglass">Fiberglass</a>
+            <a href="{% url 'product_list' %}?query=Fiero">Fiero</a>
+            <a href="{% url 'product_list' %}?query=Fiesta">Fiesta</a>
+            <a href="{% url 'product_list' %}?query=Fifth">Fifth</a>
+            <a href="{% url 'product_list' %}?query=Fighters">Fighters</a>
+            <a href="{% url 'product_list' %}?query=Files">Files</a>
+            <a href="{% url 'product_list' %}?query=Final">Final</a>
+            <a href="{% url 'product_list' %}?query=Finder">Finder</a>
+            <a href="{% url 'product_list' %}?query=Fine">Fine</a>
+            <a href="{% url 'product_list' %}?query=Finger">Finger</a>
+            <a href="{% url 'product_list' %}?query=Firearms">Firearms</a>
+            <a href="{% url 'product_list' %}?query=Firebird">Firebird</a>
+            <a href="{% url 'product_list' %}?query=Firedome">Firedome</a>
+            <a href="{% url 'product_list' %}?query=Fireflite">Fireflite</a>
+            <a href="{% url 'product_list' %}?query=Firehawk">Firehawk</a>
+            <a href="{% url 'product_list' %}?query=Firenza">Firenza</a>
+            <a href="{% url 'product_list' %}?query=First">First</a>
+            <a href="{% url 'product_list' %}?query=Fisher">Fisher</a>
+            <a href="{% url 'product_list' %}?query=Fishing">Fishing</a>
+            <a href="{% url 'product_list' %}?query=Flareside">Flareside</a>
+            <a href="{% url 'product_list' %}?query=Flatheads">Flatheads</a>
+            <a href="{% url 'product_list' %}?query=Fleet">Fleet</a>
+            <a href="{% url 'product_list' %}?query=Fleetline">Fleetline</a>
+            <a href="{% url 'product_list' %}?query=Fleetmaster">Fleetmaster</a>
+            <a href="{% url 'product_list' %}?query=Fleetside">Fleetside</a>
+            <a href="{% url 'product_list' %}?query=Fleetwood">Fleetwood</a>
+            <a href="{% url 'product_list' %}?query=Flight">Flight</a>
+            <a href="{% url 'product_list' %}?query=Flint">Flint</a>
+            <a href="{% url 'product_list' %}?query=Flower">Flower</a>
+            <a href="{% url 'product_list' %}?query=Flywheel">Flywheel</a>
+            <a href="{% url 'product_list' %}?query=Focus">Focus</a>
+            <a href="{% url 'product_list' %}?query=Folder">Folder</a>
+            <a href="{% url 'product_list' %}?query=Folding">Folding</a>
+            <a href="{% url 'product_list' %}?query=Foldout">Foldout</a>
+            <a href="{% url 'product_list' %}?query=Force">Force</a>
+            <a href="{% url 'product_list' %}?query=Ford">Ford</a>
+            <a href="{% url 'product_list' %}?query=Forester">Forester</a>
+            <a href="{% url 'product_list' %}?query=Formula">Formula</a>
+            <a href="{% url 'product_list' %}?query=Forum">Forum</a>
+            <a href="{% url 'product_list' %}?query=Forward">Forward</a>
+            <a href="{% url 'product_list' %}?query=Four">Four</a>
+            <a href="{% url 'product_list' %}?query=Fox">Fox</a>
+            <a href="{% url 'product_list' %}?query=Frame">Frame</a>
+            <a href="{% url 'product_list' %}?query=Free">Free</a>
+            <a href="{% url 'product_list' %}?query=Freelander">Freelander</a>
+            <a href="{% url 'product_list' %}?query=Freestyle">Freestyle</a>
+            <a href="{% url 'product_list' %}?query=Fuel">Fuel</a>
+            <a href="{% url 'product_list' %}?query=Full">Full</a>
+            <a href="{% url 'product_list' %}?query=Fun">Fun</a>
+            <a href="{% url 'product_list' %}?query=Funeral">Funeral</a>
+            <a href="{% url 'product_list' %}?query=Fury">Fury</a>
+            <a href="{% url 'product_list' %}?query=Fusion">Fusion</a>
+            <a href="{% url 'product_list' %}?query=Futura">Futura</a>
+            <a href="{% url 'product_list' %}?query=GBK">GBK</a>
+            <a href="{% url 'product_list' %}?query=GBO">GBO</a>
+            <a href="{% url 'product_list' %}?query=GHIA">GHIA</a>
+            <a href="{% url 'product_list' %}?query=GLA">GLA</a>
+            <a href="{% url 'product_list' %}?query=GLB">GLB</a>
+            <a href="{% url 'product_list' %}?query=GLC">GLC</a>
+            <a href="{% url 'product_list' %}?query=GLE">GLE</a>
+            <a href="{% url 'product_list' %}?query=GLI">GLI</a>
+            <a href="{% url 'product_list' %}?query=GLM">GLM</a>
+            <a href="{% url 'product_list' %}?query=GLR">GLR</a>
+            <a href="{% url 'product_list' %}?query=GLS">GLS</a>
+            <a href="{% url 'product_list' %}?query=GLT">GLT</a>
+            <a href="{% url 'product_list' %}?query=GLX">GLX</a>
+            <a href="{% url 'product_list' %}?query=GMC">GMC</a>
+            <a href="{% url 'product_list' %}?query=GNX">GNX</a>
+            <a href="{% url 'product_list' %}?query=GROS">GROS</a>
+            <a href="{% url 'product_list' %}?query=GSX">GSX</a>
+            <a href="{% url 'product_list' %}?query=GTA">GTA</a>
+            <a href="{% url 'product_list' %}?query=GTC">GTC</a>
+            <a href="{% url 'product_list' %}?query=GTI">GTI</a>
+            <a href="{% url 'product_list' %}?query=GTO">GTO</a>
+            <a href="{% url 'product_list' %}?query=GTP">GTP</a>
+            <a href="{% url 'product_list' %}?query=GTS">GTS</a>
+            <a href="{% url 'product_list' %}?query=GTX">GTX</a>
+            <a href="{% url 'product_list' %}?query=GXE">GXE</a>
+            <a href="{% url 'product_list' %}?query=GXP">GXP</a>
+            <a href="{% url 'product_list' %}?query=Galant">Galant</a>
+            <a href="{% url 'product_list' %}?query=Galaxie">Galaxie</a>
+            <a href="{% url 'product_list' %}?query=Garden">Garden</a>
+            <a href="{% url 'product_list' %}?query=Gas">Gas</a>
+            <a href="{% url 'product_list' %}?query=Gasoline">Gasoline</a>
+            <a href="{% url 'product_list' %}?query=Gazelle">Gazelle</a>
+            <a href="{% url 'product_list' %}?query=Gear">Gear</a>
+            <a href="{% url 'product_list' %}?query=Gem">Gem</a>
+            <a href="{% url 'product_list' %}?query=General">General</a>
+            <a href="{% url 'product_list' %}?query=Genuine">Genuine</a>
+            <a href="{% url 'product_list' %}?query=Geo">Geo</a>
+            <a href="{% url 'product_list' %}?query=Ghia">Ghia</a>
+            <a href="{% url 'product_list' %}?query=Girls">Girls</a>
+            <a href="{% url 'product_list' %}?query=Gladiator">Gladiator</a>
+            <a href="{% url 'product_list' %}?query=Glide">Glide</a>
+            <a href="{% url 'product_list' %}?query=Golf">Golf</a>
+            <a href="{% url 'product_list' %}?query=Grabber">Grabber</a>
+            <a href="{% url 'product_list' %}?query=Grader">Grader</a>
+            <a href="{% url 'product_list' %}?query=Graham">Graham</a>
+            <a href="{% url 'product_list' %}?query=Gran">Gran</a>
+            <a href="{% url 'product_list' %}?query=Granada">Granada</a>
+            <a href="{% url 'product_list' %}?query=Grand">Grand</a>
+            <a href="{% url 'product_list' %}?query=Grande">Grande</a>
+            <a href="{% url 'product_list' %}?query=Great">Great</a>
+            <a href="{% url 'product_list' %}?query=Green">Green</a>
+            <a href="{% url 'product_list' %}?query=Ground">Ground</a>
+            <a href="{% url 'product_list' %}?query=Group">Group</a>
+            <a href="{% url 'product_list' %}?query=Guarantee">Guarantee</a>
+            <a href="{% url 'product_list' %}?query=Guide">Guide</a>
+            <a href="{% url 'product_list' %}?query=Gypsy">Gypsy</a>
+            <a href="{% url 'product_list' %}?query=HHR">HHR</a>
+            <a href="{% url 'product_list' %}?query=HUGE">HUGE</a>
+            <a href="{% url 'product_list' %}?query=Halberstadt">Halberstadt</a>
+            <a href="{% url 'product_list' %}?query=Hard">Hard</a>
+            <a href="{% url 'product_list' %}?query=Hardbody">Hardbody</a>
+            <a href="{% url 'product_list' %}?query=Hardcover">Hardcover</a>
+            <a href="{% url 'product_list' %}?query=Hardtop">Hardtop</a>
+            <a href="{% url 'product_list' %}?query=Harley">Harley</a>
+            <a href="{% url 'product_list' %}?query=Harry">Harry</a>
+            <a href="{% url 'product_list' %}?query=Harvester">Harvester</a>
+            <a href="{% url 'product_list' %}?query=Harvey">Harvey</a>
+            <a href="{% url 'product_list' %}?query=Hatchback">Hatchback</a>
+            <a href="{% url 'product_list' %}?query=Haul">Haul</a>
+            <a href="{% url 'product_list' %}?query=Hauling">Hauling</a>
+            <a href="{% url 'product_list' %}?query=Hawk">Hawk</a>
+            <a href="{% url 'product_list' %}?query=Hay">Hay</a>
+            <a href="{% url 'product_list' %}?query=Healey">Healey</a>
+            <a href="{% url 'product_list' %}?query=Hearse">Hearse</a>
+            <a href="{% url 'product_list' %}?query=Heart">Heart</a>
+            <a href="{% url 'product_list' %}?query=Heartbeat">Heartbeat</a>
+            <a href="{% url 'product_list' %}?query=Heater">Heater</a>
+            <a href="{% url 'product_list' %}?query=Heavy">Heavy</a>
+            <a href="{% url 'product_list' %}?query=Heinz">Heinz</a>
+            <a href="{% url 'product_list' %}?query=Hellcat">Hellcat</a>
+            <a href="{% url 'product_list' %}?query=Hemi">Hemi</a>
+            <a href="{% url 'product_list' %}?query=Hertz">Hertz</a>
+            <a href="{% url 'product_list' %}?query=Hicks">Hicks</a>
+            <a href="{% url 'product_list' %}?query=High">High</a>
+            <a href="{% url 'product_list' %}?query=Highlander">Highlander</a>
+            <a href="{% url 'product_list' %}?query=Highlights">Highlights</a>
+            <a href="{% url 'product_list' %}?query=Highline">Highline</a>
+            <a href="{% url 'product_list' %}?query=Highway">Highway</a>
+            <a href="{% url 'product_list' %}?query=History">History</a>
+            <a href="{% url 'product_list' %}?query=Holdener">Holdener</a>
+            <a href="{% url 'product_list' %}?query=Holland">Holland</a>
+            <a href="{% url 'product_list' %}?query=Hollander">Hollander</a>
+            <a href="{% url 'product_list' %}?query=Holmes">Holmes</a>
+            <a href="{% url 'product_list' %}?query=Home">Home</a>
+            <a href="{% url 'product_list' %}?query=Homelite">Homelite</a>
+            <a href="{% url 'product_list' %}?query=Honda">Honda</a>
+            <a href="{% url 'product_list' %}?query=Honey">Honey</a>
+            <a href="{% url 'product_list' %}?query=Hornet">Hornet</a>
+            <a href="{% url 'product_list' %}?query=Hot">Hot</a>
+            <a href="{% url 'product_list' %}?query=Hotton">Hotton</a>
+            <a href="{% url 'product_list' %}?query=House">House</a>
+            <a href="{% url 'product_list' %}?query=Hurd">Hurd</a>
+            <a href="{% url 'product_list' %}?query=Hurst">Hurst</a>
+            <a href="{% url 'product_list' %}?query=Hustle">Hustle</a>
+            <a href="{% url 'product_list' %}?query=Hybrid">Hybrid</a>
+            <a href="{% url 'product_list' %}?query=Hydrostatic">Hydrostatic</a>
+            <a href="{% url 'product_list' %}?query=Hyundai">Hyundai</a>
+            <a href="{% url 'product_list' %}?query=III">III</a>
+            <a href="{% url 'product_list' %}?query=Identification">Identification</a>
+            <a href="{% url 'product_list' %}?query=Illuminated">Illuminated</a>
+            <a href="{% url 'product_list' %}?query=Illustrated">Illustrated</a>
+            <a href="{% url 'product_list' %}?query=Illustration">Illustration</a>
+            <a href="{% url 'product_list' %}?query=Illustrations">Illustrations</a>
+            <a href="{% url 'product_list' %}?query=Impala">Impala</a>
+            <a href="{% url 'product_list' %}?query=Imperial">Imperial</a>
+            <a href="{% url 'product_list' %}?query=Import">Import</a>
+            <a href="{% url 'product_list' %}?query=Imports">Imports</a>
+            <a href="{% url 'product_list' %}?query=Impreza">Impreza</a>
+            <a href="{% url 'product_list' %}?query=Impulse">Impulse</a>
+            <a href="{% url 'product_list' %}?query=Inch">Inch</a>
+            <a href="{% url 'product_list' %}?query=Includes">Includes</a>
+            <a href="{% url 'product_list' %}?query=Indy">Indy</a>
+            <a href="{% url 'product_list' %}?query=Infiniti">Infiniti</a>
+            <a href="{% url 'product_list' %}?query=Info">Info</a>
+            <a href="{% url 'product_list' %}?query=Information">Information</a>
+            <a href="{% url 'product_list' %}?query=Injection">Injection</a>
+            <a href="{% url 'product_list' %}?query=Innovate">Innovate</a>
+            <a href="{% url 'product_list' %}?query=Innovation">Innovation</a>
+            <a href="{% url 'product_list' %}?query=Inspection">Inspection</a>
+            <a href="{% url 'product_list' %}?query=Install">Install</a>
+            <a href="{% url 'product_list' %}?query=Installation">Installation</a>
+            <a href="{% url 'product_list' %}?query=Installed">Installed</a>
+            <a href="{% url 'product_list' %}?query=Instruction">Instruction</a>
+            <a href="{% url 'product_list' %}?query=Instructional">Instructional</a>
+            <a href="{% url 'product_list' %}?query=Instrument">Instrument</a>
+            <a href="{% url 'product_list' %}?query=Integra">Integra</a>
+            <a href="{% url 'product_list' %}?query=Interchange">Interchange</a>
+            <a href="{% url 'product_list' %}?query=Interior">Interior</a>
+            <a href="{% url 'product_list' %}?query=International">International</a>
+            <a href="{% url 'product_list' %}?query=Intrigue">Intrigue</a>
+            <a href="{% url 'product_list' %}?query=Invicta">Invicta</a>
+            <a href="{% url 'product_list' %}?query=Invitation">Invitation</a>
+            <a href="{% url 'product_list' %}?query=Issue">Issue</a>
+            <a href="{% url 'product_list' %}?query=Issues">Issues</a>
+            <a href="{% url 'product_list' %}?query=Isuzu">Isuzu</a>
+            <a href="{% url 'product_list' %}?query=Jacobs">Jacobs</a>
+            <a href="{% url 'product_list' %}?query=Jacobsen">Jacobsen</a>
+            <a href="{% url 'product_list' %}?query=Jaguar">Jaguar</a>
+            <a href="{% url 'product_list' %}?query=Jansen">Jansen</a>
+            <a href="{% url 'product_list' %}?query=January">January</a>
+            <a href="{% url 'product_list' %}?query=Javelin">Javelin</a>
+            <a href="{% url 'product_list' %}?query=Jay">Jay</a>
+            <a href="{% url 'product_list' %}?query=Jeep">Jeep</a>
+            <a href="{% url 'product_list' %}?query=Jeepster">Jeepster</a>
+            <a href="{% url 'product_list' %}?query=Jetta">Jetta</a>
+            <a href="{% url 'product_list' %}?query=Jim">Jim</a>
+            <a href="{% url 'product_list' %}?query=Jimmy">Jimmy</a>
+            <a href="{% url 'product_list' %}?query=Job">Job</a>
+            <a href="{% url 'product_list' %}?query=Joe">Joe</a>
+            <a href="{% url 'product_list' %}?query=John">John</a>
+            <a href="{% url 'product_list' %}?query=Journey">Journey</a>
+            <a href="{% url 'product_list' %}?query=Judge">Judge</a>
+            <a href="{% url 'product_list' %}?query=Justy">Justy</a>
+            <a href="{% url 'product_list' %}?query=Kaiser">Kaiser</a>
+            <a href="{% url 'product_list' %}?query=Kawasaki">Kawasaki</a>
+            <a href="{% url 'product_list' %}?query=Kelly">Kelly</a>
+            <a href="{% url 'product_list' %}?query=Kenworth">Kenworth</a>
+            <a href="{% url 'product_list' %}?query=Key">Key</a>
+            <a href="{% url 'product_list' %}?query=King">King</a>
+            <a href="{% url 'product_list' %}?query=Kingswood">Kingswood</a>
+            <a href="{% url 'product_list' %}?query=Kit">Kit</a>
+            <a href="{% url 'product_list' %}?query=Kizashi">Kizashi</a>
+            <a href="{% url 'product_list' %}?query=LCF">LCF</a>
+            <a href="{% url 'product_list' %}?query=LHS">LHS</a>
+            <a href="{% url 'product_list' %}?query=LNT">LNT</a>
+            <a href="{% url 'product_list' %}?query=LRV">LRV</a>
+            <a href="{% url 'product_list' %}?query=LSE">LSE</a>
+            <a href="{% url 'product_list' %}?query=LSS">LSS</a>
+            <a href="{% url 'product_list' %}?query=LTD">LTD</a>
+            <a href="{% url 'product_list' %}?query=LTL">LTL</a>
+            <a href="{% url 'product_list' %}?query=LTZ">LTZ</a>
+            <a href="{% url 'product_list' %}?query=LUV">LUV</a>
+            <a href="{% url 'product_list' %}?query=LWB">LWB</a>
+            <a href="{% url 'product_list' %}?query=Laforza">Laforza</a>
+            <a href="{% url 'product_list' %}?query=Laguna">Laguna</a>
+            <a href="{% url 'product_list' %}?query=Lancaster">Lancaster</a>
+            <a href="{% url 'product_list' %}?query=Lancer">Lancer</a>
+            <a href="{% url 'product_list' %}?query=Land">Land</a>
+            <a href="{% url 'product_list' %}?query=Landau">Landau</a>
+            <a href="{% url 'product_list' %}?query=Lane">Lane</a>
+            <a href="{% url 'product_list' %}?query=Laredo">Laredo</a>
+            <a href="{% url 'product_list' %}?query=Large">Large</a>
+            <a href="{% url 'product_list' %}?query=Lariat">Lariat</a>
+            <a href="{% url 'product_list' %}?query=Lark">Lark</a>
+            <a href="{% url 'product_list' %}?query=Laser">Laser</a>
+            <a href="{% url 'product_list' %}?query=Latin">Latin</a>
+            <a href="{% url 'product_list' %}?query=Launch">Launch</a>
+            <a href="{% url 'product_list' %}?query=Lawn">Lawn</a>
+            <a href="{% url 'product_list' %}?query=Layout">Layout</a>
+            <a href="{% url 'product_list' %}?query=Leather">Leather</a>
+            <a href="{% url 'product_list' %}?query=Lebaron">Lebaron</a>
+            <a href="{% url 'product_list' %}?query=Led">Led</a>
+            <a href="{% url 'product_list' %}?query=Legend">Legend</a>
+            <a href="{% url 'product_list' %}?query=Lemans">Lemans</a>
+            <a href="{% url 'product_list' %}?query=Lesabre">Lesabre</a>
+            <a href="{% url 'product_list' %}?query=Letourneau">Letourneau</a>
+            <a href="{% url 'product_list' %}?query=Letter">Letter</a>
+            <a href="{% url 'product_list' %}?query=Lexus">Lexus</a>
+            <a href="{% url 'product_list' %}?query=Liberte">Liberte</a>
+            <a href="{% url 'product_list' %}?query=Liberty">Liberty</a>
+            <a href="{% url 'product_list' %}?query=License">License</a>
+            <a href="{% url 'product_list' %}?query=Life">Life</a>
+            <a href="{% url 'product_list' %}?query=Liftback">Liftback</a>
+            <a href="{% url 'product_list' %}?query=Light">Light</a>
+            <a href="{% url 'product_list' %}?query=Lightning">Lightning</a>
+            <a href="{% url 'product_list' %}?query=Limited">Limited</a>
+            <a href="{% url 'product_list' %}?query=Limousine">Limousine</a>
+            <a href="{% url 'product_list' %}?query=Lincoln">Lincoln</a>
+            <a href="{% url 'product_list' %}?query=Line">Line</a>
+            <a href="{% url 'product_list' %}?query=Liner">Liner</a>
+            <a href="{% url 'product_list' %}?query=List">List</a>
+            <a href="{% url 'product_list' %}?query=Listing">Listing</a>
+            <a href="{% url 'product_list' %}?query=Loader">Loader</a>
+            <a href="{% url 'product_list' %}?query=Local">Local</a>
+            <a href="{% url 'product_list' %}?query=Lof">Lof</a>
+            <a href="{% url 'product_list' %}?query=Long">Long</a>
+            <a href="{% url 'product_list' %}?query=Longbox">Longbox</a>
+            <a href="{% url 'product_list' %}?query=Lot">Lot</a>
+            <a href="{% url 'product_list' %}?query=Low">Low</a>
+            <a href="{% url 'product_list' %}?query=Loyalty">Loyalty</a>
+            <a href="{% url 'product_list' %}?query=Lubrication">Lubrication</a>
+            <a href="{% url 'product_list' %}?query=Lucerne">Lucerne</a>
+            <a href="{% url 'product_list' %}?query=Lumina">Lumina</a>
+            <a href="{% url 'product_list' %}?query=Luxe">Luxe</a>
+            <a href="{% url 'product_list' %}?query=Luxury">Luxury</a>
+            <a href="{% url 'product_list' %}?query=Lynx">Lynx</a>
+            <a href="{% url 'product_list' %}?query=MDX">MDX</a>
+            <a href="{% url 'product_list' %}?query=MGB">MGB</a>
+            <a href="{% url 'product_list' %}?query=MKC">MKC</a>
+            <a href="{% url 'product_list' %}?query=MKT">MKT</a>
+            <a href="{% url 'product_list' %}?query=MKX">MKX</a>
+            <a href="{% url 'product_list' %}?query=MKZ">MKZ</a>
+            <a href="{% url 'product_list' %}?query=MOPAR">MOPAR</a>
+            <a href="{% url 'product_list' %}?query=MPV">MPV</a>
+            <a href="{% url 'product_list' %}?query=Mac">Mac</a>
+            <a href="{% url 'product_list' %}?query=Mach">Mach</a>
+            <a href="{% url 'product_list' %}?query=Mack">Mack</a>
+            <a href="{% url 'product_list' %}?query=Made">Made</a>
+            <a href="{% url 'product_list' %}?query=Magazine">Magazine</a>
+            <a href="{% url 'product_list' %}?query=Magnet">Magnet</a>
+            <a href="{% url 'product_list' %}?query=Magnum">Magnum</a>
+            <a href="{% url 'product_list' %}?query=Mail">Mail</a>
+            <a href="{% url 'product_list' %}?query=Mailer">Mailer</a>
+            <a href="{% url 'product_list' %}?query=Mainline">Mainline</a>
+            <a href="{% url 'product_list' %}?query=Maintenance">Maintenance</a>
+            <a href="{% url 'product_list' %}?query=Makes">Makes</a>
+            <a href="{% url 'product_list' %}?query=Malibu">Malibu</a>
+            <a href="{% url 'product_list' %}?query=Management">Management</a>
+            <a href="{% url 'product_list' %}?query=Mans">Mans</a>
+            <a href="{% url 'product_list' %}?query=Manual">Manual</a>
+            <a href="{% url 'product_list' %}?query=Marathon">Marathon</a>
+            <a href="{% url 'product_list' %}?query=Marauder">Marauder</a>
+            <a href="{% url 'product_list' %}?query=Mariner">Mariner</a>
+            <a href="{% url 'product_list' %}?query=Mark">Mark</a>
+            <a href="{% url 'product_list' %}?query=Marlin">Marlin</a>
+            <a href="{% url 'product_list' %}?query=Marmon">Marmon</a>
+            <a href="{% url 'product_list' %}?query=Marquis">Marquis</a>
+            <a href="{% url 'product_list' %}?query=Martin">Martin</a>
+            <a href="{% url 'product_list' %}?query=Masonic">Masonic</a>
+            <a href="{% url 'product_list' %}?query=Mass">Mass</a>
+            <a href="{% url 'product_list' %}?query=Master">Master</a>
+            <a href="{% url 'product_list' %}?query=Mat">Mat</a>
+            <a href="{% url 'product_list' %}?query=Matador">Matador</a>
+            <a href="{% url 'product_list' %}?query=Materials">Materials</a>
+            <a href="{% url 'product_list' %}?query=Matt">Matt</a>
+            <a href="{% url 'product_list' %}?query=Maverick">Maverick</a>
+            <a href="{% url 'product_list' %}?query=Maxima">Maxima</a>
+            <a href="{% url 'product_list' %}?query=Maxum">Maxum</a>
+            <a href="{% url 'product_list' %}?query=Mazda">Mazda</a>
+            <a href="{% url 'product_list' %}?query=Mazdaspeed">Mazdaspeed</a>
+            <a href="{% url 'product_list' %}?query=Meadowbrook">Meadowbrook</a>
+            <a href="{% url 'product_list' %}?query=Mechanic">Mechanic</a>
+            <a href="{% url 'product_list' %}?query=Media">Media</a>
+            <a href="{% url 'product_list' %}?query=Medium">Medium</a>
+            <a href="{% url 'product_list' %}?query=Mercedes">Mercedes</a>
+            <a href="{% url 'product_list' %}?query=Merchandise">Merchandise</a>
+            <a href="{% url 'product_list' %}?query=Merchandiser">Merchandiser</a>
+            <a href="{% url 'product_list' %}?query=Merchandising">Merchandising</a>
+            <a href="{% url 'product_list' %}?query=Mercury">Mercury</a>
+            <a href="{% url 'product_list' %}?query=Merkur">Merkur</a>
+            <a href="{% url 'product_list' %}?query=Metal">Metal</a>
+            <a href="{% url 'product_list' %}?query=Metallica">Metallica</a>
+            <a href="{% url 'product_list' %}?query=Meteor">Meteor</a>
+            <a href="{% url 'product_list' %}?query=Metro">Metro</a>
+            <a href="{% url 'product_list' %}?query=Miata">Miata</a>
+            <a href="{% url 'product_list' %}?query=Michael">Michael</a>
+            <a href="{% url 'product_list' %}?query=Michigan">Michigan</a>
+            <a href="{% url 'product_list' %}?query=Microcar">Microcar</a>
+            <a href="{% url 'product_list' %}?query=Midget">Midget</a>
+            <a href="{% url 'product_list' %}?query=Milan">Milan</a>
+            <a href="{% url 'product_list' %}?query=Mileage">Mileage</a>
+            <a href="{% url 'product_list' %}?query=Miles">Miles</a>
+            <a href="{% url 'product_list' %}?query=Millenia">Millenia</a>
+            <a href="{% url 'product_list' %}?query=Mini">Mini</a>
+            <a href="{% url 'product_list' %}?query=Minivan">Minivan</a>
+            <a href="{% url 'product_list' %}?query=Minor">Minor</a>
+            <a href="{% url 'product_list' %}?query=Mirada">Mirada</a>
+            <a href="{% url 'product_list' %}?query=Mirror">Mirror</a>
+            <a href="{% url 'product_list' %}?query=Mitsubishi">Mitsubishi</a>
+            <a href="{% url 'product_list' %}?query=Mix">Mix</a>
+            <a href="{% url 'product_list' %}?query=Model">Model</a>
+            <a href="{% url 'product_list' %}?query=Models">Models</a>
+            <a href="{% url 'product_list' %}?query=Modern">Modern</a>
+            <a href="{% url 'product_list' %}?query=Modification">Modification</a>
+            <a href="{% url 'product_list' %}?query=Monaco">Monaco</a>
+            <a href="{% url 'product_list' %}?query=Money">Money</a>
+            <a href="{% url 'product_list' %}?query=Montclair">Montclair</a>
+            <a href="{% url 'product_list' %}?query=Montego">Montego</a>
+            <a href="{% url 'product_list' %}?query=Monterey">Monterey</a>
+            <a href="{% url 'product_list' %}?query=Montero">Montero</a>
+            <a href="{% url 'product_list' %}?query=Monza">Monza</a>
+            <a href="{% url 'product_list' %}?query=Mopar">Mopar</a>
+            <a href="{% url 'product_list' %}?query=Morris">Morris</a>
+            <a href="{% url 'product_list' %}?query=Motor">Motor</a>
+            <a href="{% url 'product_list' %}?query=Motorcycle">Motorcycle</a>
+            <a href="{% url 'product_list' %}?query=Motorcycles">Motorcycles</a>
+            <a href="{% url 'product_list' %}?query=Motorhome">Motorhome</a>
+            <a href="{% url 'product_list' %}?query=Motors">Motors</a>
+            <a href="{% url 'product_list' %}?query=Motorsports">Motorsports</a>
+            <a href="{% url 'product_list' %}?query=Moulding">Moulding</a>
+            <a href="{% url 'product_list' %}?query=Mountaineer">Mountaineer</a>
+            <a href="{% url 'product_list' %}?query=Mower">Mower</a>
+            <a href="{% url 'product_list' %}?query=Mulsanne">Mulsanne</a>
+            <a href="{% url 'product_list' %}?query=Munro">Munro</a>
+            <a href="{% url 'product_list' %}?query=Muscle">Muscle</a>
+            <a href="{% url 'product_list' %}?query=Music">Music</a>
+            <a href="{% url 'product_list' %}?query=Mustang">Mustang</a>
+            <a href="{% url 'product_list' %}?query=NAA">NAA</a>
+            <a href="{% url 'product_list' %}?query=NASCAR">NASCAR</a>
+            <a href="{% url 'product_list' %}?query=NCM">NCM</a>
+            <a href="{% url 'product_list' %}?query=NCRS">NCRS</a>
+            <a href="{% url 'product_list' %}?query=NSX">NSX</a>
+            <a href="{% url 'product_list' %}?query=Napkin">Napkin</a>
+            <a href="{% url 'product_list' %}?query=Nascar">Nascar</a>
+            <a href="{% url 'product_list' %}?query=Nash">Nash</a>
+            <a href="{% url 'product_list' %}?query=Nassau">Nassau</a>
+            <a href="{% url 'product_list' %}?query=National">National</a>
+            <a href="{% url 'product_list' %}?query=Navigator">Navigator</a>
+            <a href="{% url 'product_list' %}?query=Neon">Neon</a>
+            <a href="{% url 'product_list' %}?query=Network">Network</a>
+            <a href="{% url 'product_list' %}?query=New">New</a>
+            <a href="{% url 'product_list' %}?query=Newport">Newport</a>
+            <a href="{% url 'product_list' %}?query=News">News</a>
+            <a href="{% url 'product_list' %}?query=Newspaper">Newspaper</a>
+            <a href="{% url 'product_list' %}?query=Niels">Niels</a>
+            <a href="{% url 'product_list' %}?query=Ninety">Ninety</a>
+            <a href="{% url 'product_list' %}?query=Nismo">Nismo</a>
+            <a href="{% url 'product_list' %}?query=Nissan">Nissan</a>
+            <a href="{% url 'product_list' %}?query=Nomad">Nomad</a>
+            <a href="{% url 'product_list' %}?query=Notebook">Notebook</a>
+            <a href="{% url 'product_list' %}?query=Nov">Nov</a>
+            <a href="{% url 'product_list' %}?query=Nova">Nova</a>
+            <a href="{% url 'product_list' %}?query=November">November</a>
+            <a href="{% url 'product_list' %}?query=Number">Number</a>
+            <a href="{% url 'product_list' %}?query=Oct">Oct</a>
+            <a href="{% url 'product_list' %}?query=October">October</a>
+            <a href="{% url 'product_list' %}?query=Odyssey">Odyssey</a>
+            <a href="{% url 'product_list' %}?query=Official">Official</a>
+            <a href="{% url 'product_list' %}?query=Olds">Olds</a>
+            <a href="{% url 'product_list' %}?query=Oldsmobile">Oldsmobile</a>
+            <a href="{% url 'product_list' %}?query=Omega">Omega</a>
+            <a href="{% url 'product_list' %}?query=Omni">Omni</a>
+            <a href="{% url 'product_list' %}?query=One">One</a>
+            <a href="{% url 'product_list' %}?query=Opel">Opel</a>
+            <a href="{% url 'product_list' %}?query=Open">Open</a>
+            <a href="{% url 'product_list' %}?query=Operating">Operating</a>
+            <a href="{% url 'product_list' %}?query=Operation">Operation</a>
+            <a href="{% url 'product_list' %}?query=Operators">Operators</a>
+            <a href="{% url 'product_list' %}?query=Optional">Optional</a>
+            <a href="{% url 'product_list' %}?query=Options">Options</a>
+            <a href="{% url 'product_list' %}?query=Order">Order</a>
+            <a href="{% url 'product_list' %}?query=Ordering">Ordering</a>
+            <a href="{% url 'product_list' %}?query=Original">Original</a>
+            <a href="{% url 'product_list' %}?query=Outback">Outback</a>
+            <a href="{% url 'product_list' %}?query=Outboard">Outboard</a>
+            <a href="{% url 'product_list' %}?query=Outdoor">Outdoor</a>
+            <a href="{% url 'product_list' %}?query=Overhaul">Overhaul</a>
+            <a href="{% url 'product_list' %}?query=Overland">Overland</a>
+            <a href="{% url 'product_list' %}?query=Oversized">Oversized</a>
+            <a href="{% url 'product_list' %}?query=Owner">Owner</a>
+            <a href="{% url 'product_list' %}?query=Owners">Owners</a>
+            <a href="{% url 'product_list' %}?query=Oxford">Oxford</a>
+            <a href="{% url 'product_list' %}?query=Ozzy">Ozzy</a>
+            <a href="{% url 'product_list' %}?query=Pace">Pace</a>
+            <a href="{% url 'product_list' %}?query=Pacer">Pacer</a>
+            <a href="{% url 'product_list' %}?query=Pacifica">Pacifica</a>
+            <a href="{% url 'product_list' %}?query=Package">Package</a>
+            <a href="{% url 'product_list' %}?query=Packard">Packard</a>
+            <a href="{% url 'product_list' %}?query=Packet">Packet</a>
+            <a href="{% url 'product_list' %}?query=Pages">Pages</a>
+            <a href="{% url 'product_list' %}?query=Paige">Paige</a>
+            <a href="{% url 'product_list' %}?query=Paint">Paint</a>
+            <a href="{% url 'product_list' %}?query=Panel">Panel</a>
+            <a href="{% url 'product_list' %}?query=Pantera">Pantera</a>
+            <a href="{% url 'product_list' %}?query=Paper">Paper</a>
+            <a href="{% url 'product_list' %}?query=Parents">Parents</a>
+            <a href="{% url 'product_list' %}?query=Park">Park</a>
+            <a href="{% url 'product_list' %}?query=Parker">Parker</a>
+            <a href="{% url 'product_list' %}?query=Part">Part</a>
+            <a href="{% url 'product_list' %}?query=Parts">Parts</a>
+            <a href="{% url 'product_list' %}?query=Passat">Passat</a>
+            <a href="{% url 'product_list' %}?query=Passenger">Passenger</a>
+            <a href="{% url 'product_list' %}?query=Patent">Patent</a>
+            <a href="{% url 'product_list' %}?query=Pathfinder">Pathfinder</a>
+            <a href="{% url 'product_list' %}?query=Patrician">Patrician</a>
+            <a href="{% url 'product_list' %}?query=Patriot">Patriot</a>
+            <a href="{% url 'product_list' %}?query=Performance">Performance</a>
+            <a href="{% url 'product_list' %}?query=Peterbilt">Peterbilt</a>
+            <a href="{% url 'product_list' %}?query=Pettitt">Pettitt</a>
+            <a href="{% url 'product_list' %}?query=Peugeot">Peugeot</a>
+            <a href="{% url 'product_list' %}?query=Phaeton">Phaeton</a>
+            <a href="{% url 'product_list' %}?query=Phantom">Phantom</a>
+            <a href="{% url 'product_list' %}?query=Phoenix">Phoenix</a>
+            <a href="{% url 'product_list' %}?query=Photo">Photo</a>
+            <a href="{% url 'product_list' %}?query=Photograph">Photograph</a>
+            <a href="{% url 'product_list' %}?query=Photography">Photography</a>
+            <a href="{% url 'product_list' %}?query=Photos">Photos</a>
+            <a href="{% url 'product_list' %}?query=Pickup">Pickup</a>
+            <a href="{% url 'product_list' %}?query=Piece">Piece</a>
+            <a href="{% url 'product_list' %}?query=Pilot">Pilot</a>
+            <a href="{% url 'product_list' %}?query=Pin">Pin</a>
+            <a href="{% url 'product_list' %}?query=Pinto">Pinto</a>
+            <a href="{% url 'product_list' %}?query=Pioneer">Pioneer</a>
+            <a href="{% url 'product_list' %}?query=Plan">Plan</a>
+            <a href="{% url 'product_list' %}?query=Plas">Plas</a>
+            <a href="{% url 'product_list' %}?query=Plastic">Plastic</a>
+            <a href="{% url 'product_list' %}?query=Plate">Plate</a>
+            <a href="{% url 'product_list' %}?query=Platform">Platform</a>
+            <a href="{% url 'product_list' %}?query=Plaza">Plaza</a>
+            <a href="{% url 'product_list' %}?query=Plymouth">Plymouth</a>
+            <a href="{% url 'product_list' %}?query=Pocket">Pocket</a>
+            <a href="{% url 'product_list' %}?query=Point">Point</a>
+            <a href="{% url 'product_list' %}?query=Polara">Polara</a>
+            <a href="{% url 'product_list' %}?query=Polaris">Polaris</a>
+            <a href="{% url 'product_list' %}?query=Police">Police</a>
+            <a href="{% url 'product_list' %}?query=Pontiac">Pontiac</a>
+            <a href="{% url 'product_list' %}?query=Pontoon">Pontoon</a>
+            <a href="{% url 'product_list' %}?query=Porsche">Porsche</a>
+            <a href="{% url 'product_list' %}?query=Portfolio">Portfolio</a>
+            <a href="{% url 'product_list' %}?query=Post">Post</a>
+            <a href="{% url 'product_list' %}?query=Postcard">Postcard</a>
+            <a href="{% url 'product_list' %}?query=Poster">Poster</a>
+            <a href="{% url 'product_list' %}?query=Power">Power</a>
+            <a href="{% url 'product_list' %}?query=Powered">Powered</a>
+            <a href="{% url 'product_list' %}?query=Powermaster">Powermaster</a>
+            <a href="{% url 'product_list' %}?query=Preferred">Preferred</a>
+            <a href="{% url 'product_list' %}?query=Preliminary">Preliminary</a>
+            <a href="{% url 'product_list' %}?query=Prelude">Prelude</a>
+            <a href="{% url 'product_list' %}?query=Premier">Premier</a>
+            <a href="{% url 'product_list' %}?query=Premiere">Premiere</a>
+            <a href="{% url 'product_list' %}?query=Premium">Premium</a>
+            <a href="{% url 'product_list' %}?query=Presentation">Presentation</a>
+            <a href="{% url 'product_list' %}?query=Press">Press</a>
+            <a href="{% url 'product_list' %}?query=Prestige">Prestige</a>
+            <a href="{% url 'product_list' %}?query=Preview">Preview</a>
+            <a href="{% url 'product_list' %}?query=Price">Price</a>
+            <a href="{% url 'product_list' %}?query=Prices">Prices</a>
+            <a href="{% url 'product_list' %}?query=Pricing">Pricing</a>
+            <a href="{% url 'product_list' %}?query=Pridmore">Pridmore</a>
+            <a href="{% url 'product_list' %}?query=Prius">Prius</a>
+            <a href="{% url 'product_list' %}?query=Prix">Prix</a>
+            <a href="{% url 'product_list' %}?query=Prizm">Prizm</a>
+            <a href="{% url 'product_list' %}?query=Probe">Probe</a>
+            <a href="{% url 'product_list' %}?query=Product">Product</a>
+            <a href="{% url 'product_list' %}?query=Products">Products</a>
+            <a href="{% url 'product_list' %}?query=Professional">Professional</a>
+            <a href="{% url 'product_list' %}?query=Profile">Profile</a>
+            <a href="{% url 'product_list' %}?query=Program">Program</a>
+            <a href="{% url 'product_list' %}?query=Project">Project</a>
+            <a href="{% url 'product_list' %}?query=Promotion">Promotion</a>
+            <a href="{% url 'product_list' %}?query=Promotional">Promotional</a>
+            <a href="{% url 'product_list' %}?query=Protection">Protection</a>
+            <a href="{% url 'product_list' %}?query=Prowler">Prowler</a>
+            <a href="{% url 'product_list' %}?query=Publications">Publications</a>
+            <a href="{% url 'product_list' %}?query=Pulverizer">Pulverizer</a>
+            <a href="{% url 'product_list' %}?query=Purpose">Purpose</a>
+            <a href="{% url 'product_list' %}?query=Quantum">Quantum</a>
+            <a href="{% url 'product_list' %}?query=Queensryche">Queensryche</a>
+            <a href="{% url 'product_list' %}?query=Quest">Quest</a>
+            <a href="{% url 'product_list' %}?query=RDX">RDX</a>
+            <a href="{% url 'product_list' %}?query=RENESIS">RENESIS</a>
+            <a href="{% url 'product_list' %}?query=RST">RST</a>
+            <a href="{% url 'product_list' %}?query=RSX">RSX</a>
+            <a href="{% url 'product_list' %}?query=Rabbit">Rabbit</a>
+            <a href="{% url 'product_list' %}?query=Racer">Racer</a>
+            <a href="{% url 'product_list' %}?query=Rack">Rack</a>
+            <a href="{% url 'product_list' %}?query=Radio">Radio</a>
+            <a href="{% url 'product_list' %}?query=Ragan">Ragan</a>
+            <a href="{% url 'product_list' %}?query=Raider">Raider</a>
+            <a href="{% url 'product_list' %}?query=Rainier">Rainier</a>
+            <a href="{% url 'product_list' %}?query=Rally">Rally</a>
+            <a href="{% url 'product_list' %}?query=Rallye">Rallye</a>
+            <a href="{% url 'product_list' %}?query=Ram">Ram</a>
+            <a href="{% url 'product_list' %}?query=Rambler">Rambler</a>
+            <a href="{% url 'product_list' %}?query=Ramcharger">Ramcharger</a>
+            <a href="{% url 'product_list' %}?query=Ramjet">Ramjet</a>
+            <a href="{% url 'product_list' %}?query=Ranch">Ranch</a>
+            <a href="{% url 'product_list' %}?query=Ranchero">Ranchero</a>
+            <a href="{% url 'product_list' %}?query=Range">Range</a>
+            <a href="{% url 'product_list' %}?query=Ranger">Ranger</a>
+            <a href="{% url 'product_list' %}?query=Raptor">Raptor</a>
+            <a href="{% url 'product_list' %}?query=Rated">Rated</a>
+            <a href="{% url 'product_list' %}?query=Ray">Ray</a>
+            <a href="{% url 'product_list' %}?query=Reatta">Reatta</a>
+            <a href="{% url 'product_list' %}?query=Rebel">Rebel</a>
+            <a href="{% url 'product_list' %}?query=Record">Record</a>
+            <a href="{% url 'product_list' %}?query=Recreation">Recreation</a>
+            <a href="{% url 'product_list' %}?query=Recreational">Recreational</a>
+            <a href="{% url 'product_list' %}?query=Redhawk">Redhawk</a>
+            <a href="{% url 'product_list' %}?query=Redlines">Redlines</a>
+            <a href="{% url 'product_list' %}?query=Reference">Reference</a>
+            <a href="{% url 'product_list' %}?query=Regal">Regal</a>
+            <a href="{% url 'product_list' %}?query=Regency">Regency</a>
+            <a href="{% url 'product_list' %}?query=Regular">Regular</a>
+            <a href="{% url 'product_list' %}?query=Reliant">Reliant</a>
+            <a href="{% url 'product_list' %}?query=Renault">Renault</a>
+            <a href="{% url 'product_list' %}?query=Rendezvous">Rendezvous</a>
+            <a href="{% url 'product_list' %}?query=Renegade">Renegade</a>
+            <a href="{% url 'product_list' %}?query=Repair">Repair</a>
+            <a href="{% url 'product_list' %}?query=Reply">Reply</a>
+            <a href="{% url 'product_list' %}?query=Report">Report</a>
+            <a href="{% url 'product_list' %}?query=Retail">Retail</a>
+            <a href="{% url 'product_list' %}?query=Retractable">Retractable</a>
+            <a href="{% url 'product_list' %}?query=Retro">Retro</a>
+            <a href="{% url 'product_list' %}?query=Rhode">Rhode</a>
+            <a href="{% url 'product_list' %}?query=Richard">Richard</a>
+            <a href="{% url 'product_list' %}?query=Ride">Ride</a>
+            <a href="{% url 'product_list' %}?query=Riding">Riding</a>
+            <a href="{% url 'product_list' %}?query=Rigid">Rigid</a>
+            <a href="{% url 'product_list' %}?query=Riviera">Riviera</a>
+            <a href="{% url 'product_list' %}?query=Road">Road</a>
+            <a href="{% url 'product_list' %}?query=Roadmaster">Roadmaster</a>
+            <a href="{% url 'product_list' %}?query=Roads">Roads</a>
+            <a href="{% url 'product_list' %}?query=Roadside">Roadside</a>
+            <a href="{% url 'product_list' %}?query=Roadster">Roadster</a>
+            <a href="{% url 'product_list' %}?query=Robert">Robert</a>
+            <a href="{% url 'product_list' %}?query=Rochester">Rochester</a>
+            <a href="{% url 'product_list' %}?query=Rod">Rod</a>
+            <a href="{% url 'product_list' %}?query=Rodeo">Rodeo</a>
+            <a href="{% url 'product_list' %}?query=Roller">Roller</a>
+            <a href="{% url 'product_list' %}?query=Rolls">Rolls</a>
+            <a href="{% url 'product_list' %}?query=Romeo">Romeo</a>
+            <a href="{% url 'product_list' %}?query=Ron">Ron</a>
+            <a href="{% url 'product_list' %}?query=Ross">Ross</a>
+            <a href="{% url 'product_list' %}?query=Rotary">Rotary</a>
+            <a href="{% url 'product_list' %}?query=Roto">Roto</a>
+            <a href="{% url 'product_list' %}?query=Roush">Roush</a>
+            <a href="{% url 'product_list' %}?query=Route">Route</a>
+            <a href="{% url 'product_list' %}?query=Router">Router</a>
+            <a href="{% url 'product_list' %}?query=Rover">Rover</a>
+            <a href="{% url 'product_list' %}?query=Row">Row</a>
+            <a href="{% url 'product_list' %}?query=Roy">Roy</a>
+            <a href="{% url 'product_list' %}?query=Royal">Royal</a>
+            <a href="{% url 'product_list' %}?query=Royce">Royce</a>
+            <a href="{% url 'product_list' %}?query=Rubicon">Rubicon</a>
+            <a href="{% url 'product_list' %}?query=Runabout">Runabout</a>
+            <a href="{% url 'product_list' %}?query=Runner">Runner</a>
+            <a href="{% url 'product_list' %}?query=Rural">Rural</a>
+            <a href="{% url 'product_list' %}?query=Rust">Rust</a>
+            <a href="{% url 'product_list' %}?query=SEL">SEL</a>
+            <a href="{% url 'product_list' %}?query=SES">SES</a>
+            <a href="{% url 'product_list' %}?query=SHO">SHO</a>
+            <a href="{% url 'product_list' %}?query=SLE">SLE</a>
+            <a href="{% url 'product_list' %}?query=SLK">SLK</a>
+            <a href="{% url 'product_list' %}?query=SLP">SLP</a>
+            <a href="{% url 'product_list' %}?query=SLS">SLS</a>
+            <a href="{% url 'product_list' %}?query=SLX">SLX</a>
+            <a href="{% url 'product_list' %}?query=SPEC">SPEC</a>
+            <a href="{% url 'product_list' %}?query=SRT">SRT</a>
+            <a href="{% url 'product_list' %}?query=SRX">SRX</a>
+            <a href="{% url 'product_list' %}?query=SSR">SSR</a>
+            <a href="{% url 'product_list' %}?query=STD">STD</a>
+            <a href="{% url 'product_list' %}?query=STI">STI</a>
+            <a href="{% url 'product_list' %}?query=STS">STS</a>
+            <a href="{% url 'product_list' %}?query=STX">STX</a>
+            <a href="{% url 'product_list' %}?query=SUV">SUV</a>
+            <a href="{% url 'product_list' %}?query=SVO">SVO</a>
+            <a href="{% url 'product_list' %}?query=SVT">SVT</a>
+            <a href="{% url 'product_list' %}?query=SXT">SXT</a>
+            <a href="{% url 'product_list' %}?query=Saab">Saab</a>
+            <a href="{% url 'product_list' %}?query=Sable">Sable</a>
+            <a href="{% url 'product_list' %}?query=Safari">Safari</a>
+            <a href="{% url 'product_list' %}?query=Safe">Safe</a>
+            <a href="{% url 'product_list' %}?query=Safety">Safety</a>
+            <a href="{% url 'product_list' %}?query=Sahara">Sahara</a>
+            <a href="{% url 'product_list' %}?query=Sale">Sale</a>
+            <a href="{% url 'product_list' %}?query=Salesman">Salesman</a>
+            <a href="{% url 'product_list' %}?query=Salesperson">Salesperson</a>
+            <a href="{% url 'product_list' %}?query=Saloon">Saloon</a>
+            <a href="{% url 'product_list' %}?query=Santa">Santa</a>
+            <a href="{% url 'product_list' %}?query=Satellite">Satellite</a>
+            <a href="{% url 'product_list' %}?query=Saturn">Saturn</a>
+            <a href="{% url 'product_list' %}?query=Savana">Savana</a>
+            <a href="{% url 'product_list' %}?query=Savoy">Savoy</a>
+            <a href="{% url 'product_list' %}?query=Schedule">Schedule</a>
+            <a href="{% url 'product_list' %}?query=Schematic">Schematic</a>
+            <a href="{% url 'product_list' %}?query=School">School</a>
+            <a href="{% url 'product_list' %}?query=Scion">Scion</a>
+            <a href="{% url 'product_list' %}?query=Scirocco">Scirocco</a>
+            <a href="{% url 'product_list' %}?query=Scott">Scott</a>
+            <a href="{% url 'product_list' %}?query=Scout">Scout</a>
+            <a href="{% url 'product_list' %}?query=Scrambler">Scrambler</a>
+            <a href="{% url 'product_list' %}?query=Sea">Sea</a>
+            <a href="{% url 'product_list' %}?query=Sealant">Sealant</a>
+            <a href="{% url 'product_list' %}?query=Sealed">Sealed</a>
+            <a href="{% url 'product_list' %}?query=Sebring">Sebring</a>
+            <a href="{% url 'product_list' %}?query=Sedan">Sedan</a>
+            <a href="{% url 'product_list' %}?query=Selected">Selected</a>
+            <a href="{% url 'product_list' %}?query=Selection">Selection</a>
+            <a href="{% url 'product_list' %}?query=Selections">Selections</a>
+            <a href="{% url 'product_list' %}?query=Selector">Selector</a>
+            <a href="{% url 'product_list' %}?query=Selling">Selling</a>
+            <a href="{% url 'product_list' %}?query=Semi">Semi</a>
+            <a href="{% url 'product_list' %}?query=Sentra">Sentra</a>
+            <a href="{% url 'product_list' %}?query=Sept">Sept</a>
+            <a href="{% url 'product_list' %}?query=Sequoia">Sequoia</a>
+            <a href="{% url 'product_list' %}?query=Series">Series</a>
+            <a href="{% url 'product_list' %}?query=Service">Service</a>
+            <a href="{% url 'product_list' %}?query=Sesame">Sesame</a>
+            <a href="{% url 'product_list' %}?query=Set">Set</a>
+            <a href="{% url 'product_list' %}?query=Seven">Seven</a>
+            <a href="{% url 'product_list' %}?query=Seville">Seville</a>
+            <a href="{% url 'product_list' %}?query=Shadow">Shadow</a>
+            <a href="{% url 'product_list' %}?query=Shaker">Shaker</a>
+            <a href="{% url 'product_list' %}?query=Shasta">Shasta</a>
+            <a href="{% url 'product_list' %}?query=Sheet">Sheet</a>
+            <a href="{% url 'product_list' %}?query=Sheets">Sheets</a>
+            <a href="{% url 'product_list' %}?query=Shelby">Shelby</a>
+            <a href="{% url 'product_list' %}?query=Shop">Shop</a>
+            <a href="{% url 'product_list' %}?query=Short">Short</a>
+            <a href="{% url 'product_list' %}?query=Show">Show</a>
+            <a href="{% url 'product_list' %}?query=Showroom">Showroom</a>
+            <a href="{% url 'product_list' %}?query=Sidekick">Sidekick</a>
+            <a href="{% url 'product_list' %}?query=Sienna">Sienna</a>
+            <a href="{% url 'product_list' %}?query=Sierra">Sierra</a>
+            <a href="{% url 'product_list' %}?query=Signature">Signature</a>
+            <a href="{% url 'product_list' %}?query=Silhouette">Silhouette</a>
+            <a href="{% url 'product_list' %}?query=Silver">Silver</a>
+            <a href="{% url 'product_list' %}?query=Silverado">Silverado</a>
+            <a href="{% url 'product_list' %}?query=Singer">Singer</a>
+            <a href="{% url 'product_list' %}?query=Six">Six</a>
+            <a href="{% url 'product_list' %}?query=Sixty">Sixty</a>
+            <a href="{% url 'product_list' %}?query=Size">Size</a>
+            <a href="{% url 'product_list' %}?query=Skylark">Skylark</a>
+            <a href="{% url 'product_list' %}?query=Sliced">Sliced</a>
+            <a href="{% url 'product_list' %}?query=Slides">Slides</a>
+            <a href="{% url 'product_list' %}?query=Slipcover">Slipcover</a>
+            <a href="{% url 'product_list' %}?query=Small">Small</a>
+            <a href="{% url 'product_list' %}?query=Smart">Smart</a>
+            <a href="{% url 'product_list' %}?query=Smoker">Smoker</a>
+            <a href="{% url 'product_list' %}?query=Snapper">Snapper</a>
+            <a href="{% url 'product_list' %}?query=Snowblower">Snowblower</a>
+            <a href="{% url 'product_list' %}?query=Snowmobile">Snowmobile</a>
+            <a href="{% url 'product_list' %}?query=Snowplow">Snowplow</a>
+            <a href="{% url 'product_list' %}?query=Soft">Soft</a>
+            <a href="{% url 'product_list' %}?query=Sol">Sol</a>
+            <a href="{% url 'product_list' %}?query=Solara">Solara</a>
+            <a href="{% url 'product_list' %}?query=Solstice">Solstice</a>
+            <a href="{% url 'product_list' %}?query=Sonata">Sonata</a>
+            <a href="{% url 'product_list' %}?query=Song">Song</a>
+            <a href="{% url 'product_list' %}?query=Sonoma">Sonoma</a>
+            <a href="{% url 'product_list' %}?query=Soto">Soto</a>
+            <a href="{% url 'product_list' %}?query=Sound">Sound</a>
+            <a href="{% url 'product_list' %}?query=Source">Source</a>
+            <a href="{% url 'product_list' %}?query=Spare">Spare</a>
+            <a href="{% url 'product_list' %}?query=Sparrow">Sparrow</a>
+            <a href="{% url 'product_list' %}?query=Special">Special</a>
+            <a href="{% url 'product_list' %}?query=Specialist">Specialist</a>
+            <a href="{% url 'product_list' %}?query=Specification">Specification</a>
+            <a href="{% url 'product_list' %}?query=Specifications">Specifications</a>
+            <a href="{% url 'product_list' %}?query=Spectrum">Spectrum</a>
+            <a href="{% url 'product_list' %}?query=Speedway">Speedway</a>
+            <a href="{% url 'product_list' %}?query=Spider">Spider</a>
+            <a href="{% url 'product_list' %}?query=Spiral">Spiral</a>
+            <a href="{% url 'product_list' %}?query=Spirit">Spirit</a>
+            <a href="{% url 'product_list' %}?query=Spitfire">Spitfire</a>
+            <a href="{% url 'product_list' %}?query=Sport">Sport</a>
+            <a href="{% url 'product_list' %}?query=Sportabout">Sportabout</a>
+            <a href="{% url 'product_list' %}?query=Sports">Sports</a>
+            <a href="{% url 'product_list' %}?query=Sportsroof">Sportsroof</a>
+            <a href="{% url 'product_list' %}?query=Spowrtwagon">Spowrtwagon</a>
+            <a href="{% url 'product_list' %}?query=Spring">Spring</a>
+            <a href="{% url 'product_list' %}?query=Springfield">Springfield</a>
+            <a href="{% url 'product_list' %}?query=Sprint">Sprint</a>
+            <a href="{% url 'product_list' %}?query=Sprite">Sprite</a>
+            <a href="{% url 'product_list' %}?query=Spyder">Spyder</a>
+            <a href="{% url 'product_list' %}?query=Squire">Squire</a>
+            <a href="{% url 'product_list' %}?query=Staffel">Staffel</a>
+            <a href="{% url 'product_list' %}?query=Stage">Stage</a>
+            <a href="{% url 'product_list' %}?query=Stake">Stake</a>
+            <a href="{% url 'product_list' %}?query=Stampede">Stampede</a>
+            <a href="{% url 'product_list' %}?query=Standard">Standard</a>
+            <a href="{% url 'product_list' %}?query=Stanza">Stanza</a>
+            <a href="{% url 'product_list' %}?query=Star">Star</a>
+            <a href="{% url 'product_list' %}?query=Starcraft">Starcraft</a>
+            <a href="{% url 'product_list' %}?query=Starfire">Starfire</a>
+            <a href="{% url 'product_list' %}?query=Starlet">Starlet</a>
+            <a href="{% url 'product_list' %}?query=Station">Station</a>
+            <a href="{% url 'product_list' %}?query=Stealth">Stealth</a>
+            <a href="{% url 'product_list' %}?query=Steel">Steel</a>
+            <a href="{% url 'product_list' %}?query=Stepside">Stepside</a>
+            <a href="{% url 'product_list' %}?query=Stereo">Stereo</a>
+            <a href="{% url 'product_list' %}?query=Sterling">Sterling</a>
+            <a href="{% url 'product_list' %}?query=Stern">Stern</a>
+            <a href="{% url 'product_list' %}?query=Steven">Steven</a>
+            <a href="{% url 'product_list' %}?query=Sticker">Sticker</a>
+            <a href="{% url 'product_list' %}?query=Sting">Sting</a>
+            <a href="{% url 'product_list' %}?query=Stingray">Stingray</a>
+            <a href="{% url 'product_list' %}?query=Stop">Stop</a>
+            <a href="{% url 'product_list' %}?query=Storm">Storm</a>
+            <a href="{% url 'product_list' %}?query=Story">Story</a>
+            <a href="{% url 'product_list' %}?query=Strada">Strada</a>
+            <a href="{% url 'product_list' %}?query=Stratus">Stratus</a>
+            <a href="{% url 'product_list' %}?query=Streamliner">Streamliner</a>
+            <a href="{% url 'product_list' %}?query=Street">Street</a>
+            <a href="{% url 'product_list' %}?query=Structural">Structural</a>
+            <a href="{% url 'product_list' %}?query=Studebaker">Studebaker</a>
+            <a href="{% url 'product_list' %}?query=Study">Study</a>
+            <a href="{% url 'product_list' %}?query=Stuff">Stuff</a>
+            <a href="{% url 'product_list' %}?query=Style">Style</a>
+            <a href="{% url 'product_list' %}?query=Styleline">Styleline</a>
+            <a href="{% url 'product_list' %}?query=Stylemaster">Stylemaster</a>
+            <a href="{% url 'product_list' %}?query=Stylus">Stylus</a>
+            <a href="{% url 'product_list' %}?query=Subaru">Subaru</a>
+            <a href="{% url 'product_list' %}?query=Suburban">Suburban</a>
+            <a href="{% url 'product_list' %}?query=Suggested">Suggested</a>
+            <a href="{% url 'product_list' %}?query=Summary">Summary</a>
+            <a href="{% url 'product_list' %}?query=Summer">Summer</a>
+            <a href="{% url 'product_list' %}?query=Summit">Summit</a>
+            <a href="{% url 'product_list' %}?query=Sun">Sun</a>
+            <a href="{% url 'product_list' %}?query=Sundance">Sundance</a>
+            <a href="{% url 'product_list' %}?query=Sunfire">Sunfire</a>
+            <a href="{% url 'product_list' %}?query=Sunliner">Sunliner</a>
+            <a href="{% url 'product_list' %}?query=Super">Super</a>
+            <a href="{% url 'product_list' %}?query=Supercharged">Supercharged</a>
+            <a href="{% url 'product_list' %}?query=Supercharger">Supercharger</a>
+            <a href="{% url 'product_list' %}?query=Supplement">Supplement</a>
+            <a href="{% url 'product_list' %}?query=Supplementary">Supplementary</a>
+            <a href="{% url 'product_list' %}?query=Supra">Supra</a>
+            <a href="{% url 'product_list' %}?query=Supreme">Supreme</a>
+            <a href="{% url 'product_list' %}?query=Suzuki">Suzuki</a>
+            <a href="{% url 'product_list' %}?query=Swan">Swan</a>
+            <a href="{% url 'product_list' %}?query=Swift">Swift</a>
+            <a href="{% url 'product_list' %}?query=System">System</a>
+            <a href="{% url 'product_list' %}?query=TLB">TLB</a>
+            <a href="{% url 'product_list' %}?query=TLC">TLC</a>
+            <a href="{% url 'product_list' %}?query=TLM">TLM</a>
+            <a href="{% url 'product_list' %}?query=TLR">TLR</a>
+            <a href="{% url 'product_list' %}?query=TRD">TRD</a>
+            <a href="{% url 'product_list' %}?query=Table">Table</a>
+            <a href="{% url 'product_list' %}?query=Tackle">Tackle</a>
+            <a href="{% url 'product_list' %}?query=Tacoma">Tacoma</a>
+            <a href="{% url 'product_list' %}?query=Tahoe">Tahoe</a>
+            <a href="{% url 'product_list' %}?query=Takarazuka">Takarazuka</a>
+            <a href="{% url 'product_list' %}?query=Talladega">Talladega</a>
+            <a href="{% url 'product_list' %}?query=Talon">Talon</a>
+            <a href="{% url 'product_list' %}?query=Tampa">Tampa</a>
+            <a href="{% url 'product_list' %}?query=Tandem">Tandem</a>
+            <a href="{% url 'product_list' %}?query=Tape">Tape</a>
+            <a href="{% url 'product_list' %}?query=Task">Task</a>
+            <a href="{% url 'product_list' %}?query=Taurus">Taurus</a>
+            <a href="{% url 'product_list' %}?query=Taxi">Taxi</a>
+            <a href="{% url 'product_list' %}?query=Taxicab">Taxicab</a>
+            <a href="{% url 'product_list' %}?query=Tears">Tears</a>
+            <a href="{% url 'product_list' %}?query=Technical">Technical</a>
+            <a href="{% url 'product_list' %}?query=Teepee">Teepee</a>
+            <a href="{% url 'product_list' %}?query=Telephone">Telephone</a>
+            <a href="{% url 'product_list' %}?query=Tempest">Tempest</a>
+            <a href="{% url 'product_list' %}?query=Temple">Temple</a>
+            <a href="{% url 'product_list' %}?query=Ten">Ten</a>
+            <a href="{% url 'product_list' %}?query=Tercel">Tercel</a>
+            <a href="{% url 'product_list' %}?query=Terra">Terra</a>
+            <a href="{% url 'product_list' %}?query=Terrain">Terrain</a>
+            <a href="{% url 'product_list' %}?query=Terrapro">Terrapro</a>
+            <a href="{% url 'product_list' %}?query=Terry">Terry</a>
+            <a href="{% url 'product_list' %}?query=Test">Test</a>
+            <a href="{% url 'product_list' %}?query=Tests">Tests</a>
+            <a href="{% url 'product_list' %}?query=Text">Text</a>
+            <a href="{% url 'product_list' %}?query=Theatre">Theatre</a>
+            <a href="{% url 'product_list' %}?query=Theory">Theory</a>
+            <a href="{% url 'product_list' %}?query=Thing">Thing</a>
+            <a href="{% url 'product_list' %}?query=Thomas">Thomas</a>
+            <a href="{% url 'product_list' %}?query=Three">Three</a>
+            <a href="{% url 'product_list' %}?query=Thunderbird">Thunderbird</a>
+            <a href="{% url 'product_list' %}?query=Thunderbolt">Thunderbolt</a>
+            <a href="{% url 'product_list' %}?query=Tiburon">Tiburon</a>
+            <a href="{% url 'product_list' %}?query=Tilt">Tilt</a>
+            <a href="{% url 'product_list' %}?query=Time">Time</a>
+            <a href="{% url 'product_list' %}?query=Tip">Tip</a>
+            <a href="{% url 'product_list' %}?query=Tips">Tips</a>
+            <a href="{% url 'product_list' %}?query=Titan">Titan</a>
+            <a href="{% url 'product_list' %}?query=Tohatsu">Tohatsu</a>
+            <a href="{% url 'product_list' %}?query=Tomorrow">Tomorrow</a>
+            <a href="{% url 'product_list' %}?query=Ton">Ton</a>
+            <a href="{% url 'product_list' %}?query=Tonnage">Tonnage</a>
+            <a href="{% url 'product_list' %}?query=Tools">Tools</a>
+            <a href="{% url 'product_list' %}?query=Top">Top</a>
+            <a href="{% url 'product_list' %}?query=Topaz">Topaz</a>
+            <a href="{% url 'product_list' %}?query=Torino">Torino</a>
+            <a href="{% url 'product_list' %}?query=Toronado">Toronado</a>
+            <a href="{% url 'product_list' %}?query=Torpedo">Torpedo</a>
+            <a href="{% url 'product_list' %}?query=Torrent">Torrent</a>
+            <a href="{% url 'product_list' %}?query=Total">Total</a>
+            <a href="{% url 'product_list' %}?query=Touareg">Touareg</a>
+            <a href="{% url 'product_list' %}?query=Touring">Touring</a>
+            <a href="{% url 'product_list' %}?query=Towing">Towing</a>
+            <a href="{% url 'product_list' %}?query=Town">Town</a>
+            <a href="{% url 'product_list' %}?query=Toyota">Toyota</a>
+            <a href="{% url 'product_list' %}?query=Trac">Trac</a>
+            <a href="{% url 'product_list' %}?query=Tracer">Tracer</a>
+            <a href="{% url 'product_list' %}?query=Track">Track</a>
+            <a href="{% url 'product_list' %}?query=Tracker">Tracker</a>
+            <a href="{% url 'product_list' %}?query=Tractor">Tractor</a>
+            <a href="{% url 'product_list' %}?query=Tradin">Tradin</a>
+            <a href="{% url 'product_list' %}?query=Trail">Trail</a>
+            <a href="{% url 'product_list' %}?query=Trailblazer">Trailblazer</a>
+            <a href="{% url 'product_list' %}?query=Trailer">Trailer</a>
+            <a href="{% url 'product_list' %}?query=Trailering">Trailering</a>
+            <a href="{% url 'product_list' %}?query=Trans">Trans</a>
+            <a href="{% url 'product_list' %}?query=Transicoach">Transicoach</a>
+            <a href="{% url 'product_list' %}?query=Transiramic">Transiramic</a>
+            <a href="{% url 'product_list' %}?query=Travel">Travel</a>
+            <a href="{% url 'product_list' %}?query=Traveler">Traveler</a>
+            <a href="{% url 'product_list' %}?query=Travelette">Travelette</a>
+            <a href="{% url 'product_list' %}?query=Traverse">Traverse</a>
+            <a href="{% url 'product_list' %}?query=Trek">Trek</a>
+            <a href="{% url 'product_list' %}?query=Trend">Trend</a>
+            <a href="{% url 'product_list' %}?query=Trim">Trim</a>
+            <a href="{% url 'product_list' %}?query=Triumph">Triumph</a>
+            <a href="{% url 'product_list' %}?query=Trooper">Trooper</a>
+            <a href="{% url 'product_list' %}?query=Truck">Truck</a>
+            <a href="{% url 'product_list' %}?query=Trucks">Trucks</a>
+            <a href="{% url 'product_list' %}?query=Tucson">Tucson</a>
+            <a href="{% url 'product_list' %}?query=Tudor">Tudor</a>
+            <a href="{% url 'product_list' %}?query=Tundra">Tundra</a>
+            <a href="{% url 'product_list' %}?query=Turbine">Turbine</a>
+            <a href="{% url 'product_list' %}?query=Turbo">Turbo</a>
+            <a href="{% url 'product_list' %}?query=Turbocharged">Turbocharged</a>
+            <a href="{% url 'product_list' %}?query=Turismo">Turismo</a>
+            <a href="{% url 'product_list' %}?query=Twelve">Twelve</a>
+            <a href="{% url 'product_list' %}?query=Type">Type</a>
+            <a href="{% url 'product_list' %}?query=Unique">Unique</a>
+            <a href="{% url 'product_list' %}?query=Unit">Unit</a>
+            <a href="{% url 'product_list' %}?query=Universal">Universal</a>
+            <a href="{% url 'product_list' %}?query=Upfit">Upfit</a>
+            <a href="{% url 'product_list' %}?query=Upholstery">Upholstery</a>
+            <a href="{% url 'product_list' %}?query=Uplander">Uplander</a>
+            <a href="{% url 'product_list' %}?query=Useful">Useful</a>
+            <a href="{% url 'product_list' %}?query=Utilities">Utilities</a>
+            <a href="{% url 'product_list' %}?query=Utility">Utility</a>
+            <a href="{% url 'product_list' %}?query=VHS">VHS</a>
+            <a href="{% url 'product_list' %}?query=VII">VII</a>
+            <a href="{% url 'product_list' %}?query=VIII">VIII</a>
+            <a href="{% url 'product_list' %}?query=VTEC">VTEC</a>
+            <a href="{% url 'product_list' %}?query=Vacuum">Vacuum</a>
+            <a href="{% url 'product_list' %}?query=Valiant">Valiant</a>
+            <a href="{% url 'product_list' %}?query=Value">Value</a>
+            <a href="{% url 'product_list' %}?query=Van">Van</a>
+            <a href="{% url 'product_list' %}?query=Vanagon">Vanagon</a>
+            <a href="{% url 'product_list' %}?query=Vanden">Vanden</a>
+            <a href="{% url 'product_list' %}?query=Vanity">Vanity</a>
+            <a href="{% url 'product_list' %}?query=Vase">Vase</a>
+            <a href="{% url 'product_list' %}?query=Vega">Vega</a>
+            <a href="{% url 'product_list' %}?query=Vehicle">Vehicle</a>
+            <a href="{% url 'product_list' %}?query=Vehicles">Vehicles</a>
+            <a href="{% url 'product_list' %}?query=Veloce">Veloce</a>
+            <a href="{% url 'product_list' %}?query=Ventura">Ventura</a>
+            <a href="{% url 'product_list' %}?query=Versailles">Versailles</a>
+            <a href="{% url 'product_list' %}?query=Versatile">Versatile</a>
+            <a href="{% url 'product_list' %}?query=Vette">Vette</a>
+            <a href="{% url 'product_list' %}?query=Vibe">Vibe</a>
+            <a href="{% url 'product_list' %}?query=Victoria">Victoria</a>
+            <a href="{% url 'product_list' %}?query=Video">Video</a>
+            <a href="{% url 'product_list' %}?query=View">View</a>
+            <a href="{% url 'product_list' %}?query=Viggen">Viggen</a>
+            <a href="{% url 'product_list' %}?query=Villager">Villager</a>
+            <a href="{% url 'product_list' %}?query=Ville">Ville</a>
+            <a href="{% url 'product_list' %}?query=Vintage">Vintage</a>
+            <a href="{% url 'product_list' %}?query=Vinyl">Vinyl</a>
+            <a href="{% url 'product_list' %}?query=Viper">Viper</a>
+            <a href="{% url 'product_list' %}?query=Vision">Vision</a>
+            <a href="{% url 'product_list' %}?query=Vista">Vista</a>
+            <a href="{% url 'product_list' %}?query=Vistaramic">Vistaramic</a>
+            <a href="{% url 'product_list' %}?query=Vol">Vol</a>
+            <a href="{% url 'product_list' %}?query=Volkswagen">Volkswagen</a>
+            <a href="{% url 'product_list' %}?query=Volt">Volt</a>
+            <a href="{% url 'product_list' %}?query=Volume">Volume</a>
+            <a href="{% url 'product_list' %}?query=Volvo">Volvo</a>
+            <a href="{% url 'product_list' %}?query=Voyager">Voyager</a>
+            <a href="{% url 'product_list' %}?query=WRX">WRX</a>
+            <a href="{% url 'product_list' %}?query=Wagon">Wagon</a>
+            <a href="{% url 'product_list' %}?query=Wagoneer">Wagoneer</a>
+            <a href="{% url 'product_list' %}?query=Wagons">Wagons</a>
+            <a href="{% url 'product_list' %}?query=Waldoch">Waldoch</a>
+            <a href="{% url 'product_list' %}?query=Waldorf">Waldorf</a>
+            <a href="{% url 'product_list' %}?query=War">War</a>
+            <a href="{% url 'product_list' %}?query=Warlock">Warlock</a>
+            <a href="{% url 'product_list' %}?query=Warner">Warner</a>
+            <a href="{% url 'product_list' %}?query=Warth">Warth</a>
+            <a href="{% url 'product_list' %}?query=Waukesha">Waukesha</a>
+            <a href="{% url 'product_list' %}?query=Wayfarer">Wayfarer</a>
+            <a href="{% url 'product_list' %}?query=Wayne">Wayne</a>
+            <a href="{% url 'product_list' %}?query=Ways">Ways</a>
+            <a href="{% url 'product_list' %}?query=Wearables">Wearables</a>
+            <a href="{% url 'product_list' %}?query=Westminster">Westminster</a>
+            <a href="{% url 'product_list' %}?query=Whats">Whats</a>
+            <a href="{% url 'product_list' %}?query=Wheel">Wheel</a>
+            <a href="{% url 'product_list' %}?query=Wheelbase">Wheelbase</a>
+            <a href="{% url 'product_list' %}?query=Wheeling">Wheeling</a>
+            <a href="{% url 'product_list' %}?query=Wheels">Wheels</a>
+            <a href="{% url 'product_list' %}?query=White">White</a>
+            <a href="{% url 'product_list' %}?query=Whitehawk">Whitehawk</a>
+            <a href="{% url 'product_list' %}?query=Wildcat">Wildcat</a>
+            <a href="{% url 'product_list' %}?query=Williams">Williams</a>
+            <a href="{% url 'product_list' %}?query=Willys">Willys</a>
+            <a href="{% url 'product_list' %}?query=Window">Window</a>
+            <a href="{% url 'product_list' %}?query=Windsor">Windsor</a>
+            <a href="{% url 'product_list' %}?query=Wings">Wings</a>
+            <a href="{% url 'product_list' %}?query=Winkle">Winkle</a>
+            <a href="{% url 'product_list' %}?query=Winner">Winner</a>
+            <a href="{% url 'product_list' %}?query=Winter">Winter</a>
+            <a href="{% url 'product_list' %}?query=Wiring">Wiring</a>
+            <a href="{% url 'product_list' %}?query=Wolfsburg">Wolfsburg</a>
+            <a href="{% url 'product_list' %}?query=Workforce">Workforce</a>
+            <a href="{% url 'product_list' %}?query=World">World</a>
+            <a href="{% url 'product_list' %}?query=Wrangler">Wrangler</a>
+            <a href="{% url 'product_list' %}?query=XJR">XJR</a>
+            <a href="{% url 'product_list' %}?query=XJS">XJS</a>
+            <a href="{% url 'product_list' %}?query=XKR">XKR</a>
+            <a href="{% url 'product_list' %}?query=XLE">XLE</a>
+            <a href="{% url 'product_list' %}?query=XLR">XLR</a>
+            <a href="{% url 'product_list' %}?query=XLS">XLS</a>
+            <a href="{% url 'product_list' %}?query=XLT">XLT</a>
+            <a href="{% url 'product_list' %}?query=XRS">XRS</a>
+            <a href="{% url 'product_list' %}?query=XTS">XTS</a>
+            <a href="{% url 'product_list' %}?query=Xterra">Xterra</a>
+            <a href="{% url 'product_list' %}?query=Yamaha">Yamaha</a>
+            <a href="{% url 'product_list' %}?query=Year">Year</a>
+            <a href="{% url 'product_list' %}?query=Yeoman">Yeoman</a>
+            <a href="{% url 'product_list' %}?query=Yorker">Yorker</a>
+            <a href="{% url 'product_list' %}?query=Yukon">Yukon</a>
+            <a href="{% url 'product_list' %}?query=ZDX">ZDX</a>
+            <a href="{% url 'product_list' %}?query=Zephyr">Zephyr</a>
+            <a href="{% url 'product_list' %}?query=Zeppelin">Zeppelin</a>
+
+
+
         </div>
     </div>
+</section>
+<footer>
+    <div class="container">
+        <p>&copy; 2024 PJ's Auto Literature. All rights reserved.</p>
+    </div>
+</footer>
 
-    <footer class="footer">
-        <div class="container text-center">
-            <span class="text-muted">&copy; 2024 PJ's Auto Literature. All rights reserved.</span>
-        </div>
-    </footer>
-
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/owl.carousel.min.js"></script>
-    <script>
-        // $(window).scroll(function() {
-        //     if ($(this).scrollTop() > 100) {
-        //         $('.navbar-nav').hide();
-        //         $('.search-container').show();
-        //     } else {
-        //         $('.navbar-nav').show();
-        //         $('.search-container').hide();
-        //     }
-        // });
-
-        $('.owl-carousel').owlCarousel({
-            loop: true,
-            margin: 10,
-            nav: true,
-            responsive: {
-                0: {
-                    items: 1
-                },
-                600: {
-                    items: 3
-                },
-                1000: {
-                    items: 4
-                }
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script>
+    // Handle search input and navigate to the product list page
+    $('#search-input').on('keydown', function (e) {
+        if (e.key === 'Enter') {
+            const query = $(this).val();
+            if (query) {
+                window.location.href = `{% url 'product_list' %}?query=${query}`;
             }
-        });
-    </script>
+        }
+    });
+
+    
+</script>
 </body>
 </html>

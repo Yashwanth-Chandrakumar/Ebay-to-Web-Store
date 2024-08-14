@@ -63,3 +63,16 @@ class Product(models.Model):
 
     def __str__(self):
         return self.title
+    
+class FetchStatus(models.Model):
+    FETCH_TYPES = (
+        ('initial', 'Initial Fetch'),
+        ('daily', 'Daily Update'),
+    )
+    fetch_type = models.CharField(max_length=10, choices=FETCH_TYPES, unique=True)
+    last_processed_page = models.IntegerField(default=0)
+    last_processed_id = models.CharField(max_length=50, blank=True)
+    last_run = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.get_fetch_type_display()} - Last run: {self.last_run}"
