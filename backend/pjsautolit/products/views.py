@@ -59,10 +59,12 @@ def fetch_all_items(request):
             
             for item in items:
                 item_id = item['item_id']
-                browse_data = fetch_browse_api_data(item_id)
-                combined_data = {**item, **browse_data}
-                q.put(combined_data)
-                total_items += 1
+                # Check if the item already exists in the database
+                if not Product.objects.filter(item_id=item_id).exists():
+                    browse_data = fetch_browse_api_data(item_id)
+                    combined_data = {**item, **browse_data}
+                    q.put(combined_data)
+                    total_items += 1
 
             current_page += 1
 
@@ -78,7 +80,7 @@ def fetch_all_items(request):
 
         return JsonResponse({
             "status": "success",
-            "message": f"Fetched and stored information for {total_items} items",
+            "message": f"Fetched and stored information for {total_items} new items",
             "total_items": total_items
         }, status=200)
 
@@ -172,10 +174,11 @@ def fetch_finding_api_data(item_id=None, page_number=1):
         except (RequestException, HTTPError) as e:
             print(f"Error fetching FindingService API data (attempt {attempt + 1}): {e}")
             attempt += 1
-            time.sleep(RETRY_DELAY * (2 ** attempt))  # Exponential backoff
+            time.sleep(RETRY_DELAY * (2 ** attempt))
     
     print(f"Failed to fetch FindingService API data after {MAX_RETRIES} attempts")
     return [], 0
+
 def fetch_new_access_token():
     url = "https://api.ebay.com/identity/v1/oauth2/token"
     headers = {

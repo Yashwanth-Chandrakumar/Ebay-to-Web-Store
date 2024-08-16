@@ -11,33 +11,97 @@
     <meta property="og:description" content="{{ product.short_description }}. Buy {{ product.title }} at the best price.">
     <meta property="og:image" content="{{ product.primary_image_url }}">
     <meta property="og:url" content="{% url 'product_detail' product_slug=product.html_link %}">
-        <meta property="og:type" content="product">
+    <meta property="og:type" content="product">
+
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2c3e50;
+            --accent-color: #e74c3c;
+            --light-color: #ecf0f1;
+            --dark-color: #34495e;
+        }
+
+        * {
             margin: 0;
             padding: 0;
-            background-color: #ffffff;
-            color: #333;
+            box-sizing: border-box;
         }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            line-height: 1.6;
+            color: var(--dark-color);
+            background-color: var(--light-color);
+        }
+
+        .navbar {
+            background-color: var(--secondary-color);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;margin-bottom: 2rem;
+        }
+
+        .navbar > .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin:0;
+        }
+
+        .navbar-brand {
+            color: var(--light-color);
+            font-size: 1.5rem;
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        .navbar-nav {
+            display: flex;
+            list-style: none;
+        }
+
+        .nav-link {
+            color: var(--light-color);
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            transition: color 0.3s ease;
+        }
+
+        .nav-link:hover {
+            color: var(--primary-color);
+        }
+
         .container {
+            width: 90%;
             max-width: 1200px;
-            margin: 0 auto;
             padding: 20px;
+            margin: 80px auto 20px;
         }
+
         .product-container {
             display: flex;
             flex-wrap: wrap;
             gap: 40px;
         }
+
+        .left-column, .right-column {
+            flex: 1;
+        }
+
         .left-column {
-            flex: 0 1 500px;
+            max-width: 500px;
         }
+
         .right-column {
-            flex: 1 1 300px;
+            max-width: 300px;
         }
+
         .large-image-container {
-            width: 500px;
+            width: 100%;
             height: 500px;
             display: flex;
             align-items: center;
@@ -45,17 +109,19 @@
             overflow: hidden;
             background-color: #f8f8f8;
         }
+
         .large-image {
             max-width: 100%;
             max-height: 100%;
             object-fit: contain;
         }
+
         .small-images {
             display: flex;
             flex-wrap: wrap;
-            justify-content: flex-start;
             margin-top: 10px;
         }
+
         .small-images img {
             width: 60px;
             height: 60px;
@@ -63,144 +129,153 @@
             margin-bottom: 10px;
             cursor: pointer;
             border: 1px solid #e5e5e5;
+            border-radius: 5px;
         }
+
         .product-title {
-            font-size: 24px;
+            font-size: 1.8rem;
             font-weight: 700;
             margin-bottom: 10px;
+            color: var(--secondary-color);
         }
+
         .product-subtitle {
-            font-size: 14px;
-            color: #767676;
+            font-size: 1rem;
+            color: var(--dark-color);
             margin-bottom: 20px;
         }
+
         .price {
-            font-size: 24px;
+            font-size: 1.5rem;
             font-weight: 700;
             margin-bottom: 20px;
+            color: var(--primary-color);
         }
+
         .add-to-cart-button {
-            background-color: #3665f3;
-            color: white;
+            background-color: var(--primary-color);
+            color: #fff;
             padding: 10px 20px;
             border: none;
             cursor: pointer;
             font-size: 16px;
-            border-radius: 3px;
+            border-radius: 5px;
+            transition: background-color 0.3s;
         }
+
         .add-to-cart-button:hover {
-            background-color: #2b53cc;
+            background-color: var(--accent-color);
         }
+
         .product-details {
             margin-top: 20px;
             border-top: 1px solid #e5e5e5;
             padding-top: 20px;
         }
+
         .product-details h2 {
-            font-size: 18px;
+            font-size: 1.5rem;
             margin-bottom: 10px;
+            color: var(--secondary-color);
         }
+
         .product-details table {
             width: 100%;
             border-collapse: collapse;
         }
+
         .product-details td {
             padding: 8px;
             border-bottom: 1px solid #e5e5e5;
         }
+
         .product-details td:first-child {
             width: 40%;
-            color: #767676;
+            color: var(--dark-color);
         }
-        .more-info{
-            width: 100%;
+
+        .more-info {
             display: flex;
             justify-content: space-between;
-            gap: 5rem;
+            gap: 2rem;
+            margin-top: 20px;
         }
     </style>
 </head>
 <body>
+    <nav class="navbar">
         <div class="container">
-            <div class="product-container">
-                <div class="left-column">
+            <a href="#" class="navbar-brand">Your Store</a>
+            <ul class="navbar-nav">
+                <li><a href="#" class="nav-link">Home</a></li>
+                <li><a href="#" class="nav-link">Products</a></li>
+                <li><a href="#" class="nav-link">About Us</a></li>
+                <li><a href="#" class="nav-link">Contact</a></li>
+                <li><a href="#" class="nav-link">Cart</a></li>
+            </ul>
+        </div>
+    </nav>
+    <div class="container">
+        <div class="product-container">
+            <div class="left-column">
                 <div class="large-image-container">
-        <img id="largeImage" class="large-image" src="{{ product.primary_image_url }}" alt="Product Image">
-    </div>
-    <div class="small-images">
-        <img src="{{ product.primary_image_url }}" alt="Product Image" onclick="changeImage(this.src)">
-        {% if additional_images %}
-            {% for image in additional_images %}
-                <img src="{{ image }}" alt="Product Image" onclick="changeImage(this.src)">
-            {% endfor %}
-        {% endif %}
-    </div>
+                    <img id="largeImage" class="large-image" src="{{ product.primary_image_url }}" alt="Product Image">
+                </div>
+                <div class="small-images">
+                    <img src="{{ product.primary_image_url }}" alt="Product Image" onclick="changeImage(this.src)">
+                    {% if additional_images %}
+                        {% for image in additional_images %}
+                            <img src="{{ image }}" alt="Product Image" onclick="changeImage(this.src)">
+                        {% endfor %}
+                    {% endif %}
+                </div>
             </div>
-                <div class="right-column">
-                    <h1 class="product-title">{{ product.title }}</h1>
-                    <p class="product-subtitle">{{ product.short_description }}</p>
-                    <p class="price">{{ product.currency }} {{ product.price }}</p>
-                    <button class="add-to-cart-button">Add to cart</button>
-                    <div class="product-details">
-                        <h2>Item specifics</h2>
-                        <table>
-                            <tr><td>Condition:</td><td>{{ product.condition }}</td></tr>
-                            <tr><td>Category:</td><td>{{ product.category_name }}</td></tr>
-                            <tr><td>Location:</td><td>{{ product.location }}</td></tr>
-                            <tr><td>Country:</td><td>{{ product.country }}</td></tr>
-                            <tr><td>Seller:</td><td>{{ product.seller_username }} (Feedback: {{ product.feedback_score }})</td></tr>
-                            <tr><td>Listing Type:</td><td>{{ product.listing_type }}</td></tr>
-                            <tr><td>Best Offer Enabled:</td><td>{{ product.best_offer_enabled|yesno:"Yes,No" }}</td></tr>
-                            <tr><td>Buy It Now Available:</td><td>{{ product.buy_it_now_available|yesno:"Yes,No" }}</td></tr>
-                            <tr><td>Returns Accepted:</td><td>{{ product.returns_accepted|yesno:"Yes,No" }}</td></tr>
-                            <tr><td>Top Rated Listing:</td><td>{{ product.top_rated_listing|yesno:"Yes,No" }}</td></tr>
-                        </table>
-                    </div>
-                </div>
-                <div class="more-info">
-                    <div class="product-details">
-                        <h2>Availability</h2>
-                        <table>
-                            <tr><td>Status:</td><td>{{ product.estimated_availability_status }}</td></tr>
-                            <tr><td>Available Quantity:</td><td>{{ product.estimated_available_quantity }}</td></tr>
-                            <tr><td>Sold Quantity:</td><td>{{ product.estimated_sold_quantity }}</td></tr>
-                            <tr><td>Lot Size:</td><td>{{ product.lot_size }}</td></tr>
-                        </table>
-                    </div>
-                    <div class="product-details">
-                        <h2>Shipping</h2>
-                        <table>
-                            <tr><td>Shipping Type:</td><td>{{ product.shipping_type }}</td></tr>
-                            <tr><td>Ship To Locations:</td><td>{{ product.ship_to_locations }}</td></tr>
-                            <tr><td>Expedited Shipping:</td><td>{{ product.expedited_shipping|yesno:"Yes,No" }}</td></tr>
-                            <tr><td>One Day Shipping:</td><td>{{ product.one_day_shipping_available|yesno:"Yes,No" }}</td></tr>
-                            <tr><td>Handling Time:</td><td>{{ product.handling_time }} day(s)</td></tr>
-                            <tr><td>Shipping Service:</td><td>{{ product.shipping_service_code }}</td></tr>
-                            <tr><td>Shipping Carrier:</td><td>{{ product.shipping_carrier_code }}</td></tr>
-                            <tr><td>Estimated Delivery:</td><td>{{ product.min_estimated_delivery_date|date:"Y-m-d" }} - {{ product.max_estimated_delivery_date|date:"Y-m-d" }}</td></tr>
-                            <tr><td>Shipping Cost:</td><td>{{ product.currency }} {{ product.shipping_cost }}</td></tr>
-                        </table>
-                    </div>
-                </div>
+            <div class="right-column">
+                <h1 class="product-title">{{ product.title }}</h1>
+                <p class="product-subtitle">{{ product.short_description }}</p>
+                <p class="price">{{ product.currency }} {{ product.price }}</p>
+                <button class="add-to-cart-button">Add to cart</button>
                 <div class="product-details">
-                    <h2>Additional Information</h2>
+                    <h2>Item specifics</h2>
                     <table>
-                        <tr><td>Item ID:</td><td>{{ product.item_id }}</td></tr>
-                        <tr><td>Global ID:</td><td>{{ product.global_id }}</td></tr>
-                        <tr><td>Start Time:</td><td>{{ product.start_time|date:"Y-m-d H:i:s" }}</td></tr>
-                        <tr><td>End Time:</td><td>{{ product.end_time|date:"Y-m-d H:i:s" }}</td></tr>
-                        <tr><td>Time Left:</td><td>{{ product.time_left }}</td></tr>
-                        <tr><td>Watch Count:</td><td>{{ product.watch_count }}</td></tr>
-                        <tr><td>Adult Only:</td><td>{{ product.adult_only|yesno:"Yes,No" }}</td></tr>
-                        <tr><td>Top Rated Seller:</td><td>{{ product.top_rated_seller|yesno:"Yes,No" }}</td></tr>
+                        <tr><td>Condition:</td><td>{{ product.condition }}</td></tr>
+                        <tr><td>Category:</td><td>{{ product.category_name }}</td></tr>
+                        <tr><td>Location:</td><td>{{ product.location }}</td></tr>
+                        <tr><td>Country:</td><td>{{ product.country }}</td></tr>
+                        <tr><td>Seller:</td><td>{{ product.seller_username }} (Feedback: {{ product.feedback_score }})</td></tr>
+                        <tr><td>Listing Type:</td><td>{{ product.listing_type }}</td></tr>
+                        <tr><td>Best Offer Enabled:</td><td>{{ product.best_offer_enabled|yesno:"Yes,No" }}</td></tr>
+                        <tr><td>Buy It Now Available:</td><td>{{ product.buy_it_now_available|yesno:"Yes,No" }}</td></tr>
+                        <tr><td>Returns Accepted:</td><td>{{ product.returns_accepted|yesno:"Yes,No" }}</td></tr>
+                        <tr><td>Top Rated Listing:</td><td>{{ product.top_rated_listing|yesno:"Yes,No" }}</td></tr>
                     </table>
                 </div>
             </div>
         </div>
-        <script>
-function changeImage(src) {
-    document.getElementById('largeImage').src = src;
-}
-</script>
-    </body>
+        <div class="more-info">
+            <div class="product-details">
+                <h2>Availability</h2>
+                <table>
+                    <tr><td>Status:</td><td>{{ product.estimated_availability_status }}</td></tr>
+                    <tr><td>Available Quantity:</td><td>{{ product.estimated_available_quantity }}</td></tr>
+                    <tr><td>Sold Quantity:</td><td>{{ product.estimated_sold_quantity }}</td></tr>
+                    <tr><td>End Date:</td><td>{{ product.estimated_end_date }}</td></tr>
+                </table>
+            </div>
+            <div class="product-details">
+                <h2>Shipping</h2>
+                <table>
+                    <tr><td>Shipping Service:</td><td>{{ product.shipping_service }}</td></tr>
+                    <tr><td>Shipping Cost:</td><td>{{ product.shipping_cost }}</td></tr>
+                    <tr><td>Shipping Time:</td><td>{{ product.shipping_time }}</td></tr>
+                </table>
+            </div>
+        </div>
+    </div>
+    <script>
+        function changeImage(src) {
+            document.getElementById('largeImage').src = src;
+        }
+    </script>
+</body>
 </html>
