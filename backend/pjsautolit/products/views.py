@@ -41,46 +41,69 @@ def process_queue(q):
 
 @require_GET
 def fetch_all_items(request):
+    total_items = 0
+    min_price = 10.00
+    max_price = 20.00
+    price_increment = 10.00
+
+    q = queue.Queue()
+    num_worker_threads = 5
+    threads = []
+
+    # Start worker threads
+    for _ in range(num_worker_threads):
+        t = threading.Thread(target=process_queue, args=(q,))
+        t.start()
+        threads.append(t)
+
     try:
-        total_items = 0
-        total_pages = 1
-        current_page = 1
+        while min_price <= 4000.00:  # Assuming 600 is the maximum price as per your example
+            current_page = 3
+            total_pages = 3
 
-        q = queue.Queue()
-        num_worker_threads = 5
-        threads = []
-        for _ in range(num_worker_threads):
-            t = threading.Thread(target=process_queue, args=(q,))
-            t.start()
-            threads.append(t)
+            while current_page <= total_pages:
+                try:
+                    items, total_pages = fetch_finding_api_data(page_number=current_page, min_price=min_price, max_price=max_price)
 
-        while current_page <= total_pages:
-            items, total_pages = fetch_finding_api_data(page_number=current_page)
-            
-            for item in items:
-                item_id = item['item_id']
-                # Check if the item already exists in the database
-                if not Product.objects.filter(item_id=item_id).exists():
-                    browse_data = fetch_browse_api_data(item_id)
-                    combined_data = {**item, **browse_data}
-                    q.put(combined_data)
-                    total_items += 1
+                    for item in items:
+                        item_id = item['item_id']
+                        try:
+                            if not Product.objects.filter(item_id=item_id).exists():
+                                browse_data = fetch_browse_api_data(item_id)
+                                combined_data = {**item, **browse_data}
+                                q.put(combined_data)
+                                total_items += 1
+                            else:
+                                print(f"product skipped {item_id} in page {current_page}, price range ${min_price}-${max_price}")
+                        except Exception as e:
+                            print(f"Error processing item {item_id}: {e}")
+                    
+                except Exception as e:
+                    print(f"Error fetching data for page {current_page}, price range ${min_price}-${max_price}: {e}")
+                
+                current_page += 1
 
-            current_page += 1
+            min_price = max_price + 0.01
+            max_price += price_increment
 
+        # Wait for the queue to be processed
         q.join()
 
+        # Stop worker threads
         for _ in range(num_worker_threads):
             q.put(None)
         for t in threads:
             t.join()
 
         # Generate HTML pages after fetching all items
-        generate_html_pages()
+        try:
+            generate_html_pages()
+        except Exception as e:
+            print(f"Error generating HTML pages: {e}")
 
         return JsonResponse({
             "status": "success",
-            "message": f"Fetched and stored information for {total_items} new items",
+            "message": f"Fetched and stored information for {total_items} items",
             "total_items": total_items
         }, status=200)
 
@@ -90,42 +113,64 @@ def fetch_all_items(request):
             "status": "error",
             "message": str(e)
         }, status=500)
-    
+
 # def fetch_product_data(item_id):
 #     finding_data = fetch_finding_api_data(item_id)
 #     browse_data = fetch_browse_api_data(item_id)
 #     return {**finding_data, **browse_data}
 
-def fetch_finding_api_data(item_id=None, page_number=1):
+import xml.etree.ElementTree as ET
+
+from requests.exceptions import HTTPError, RequestException
+
+
+def fetch_finding_api_data(page_number=1, min_price=1.00, max_price=10.00):
     headers = {
-        "X-EBAY-SOA-SECURITY-APPNAME": EBAY_APP_ID,
-        "X-EBAY-SOA-OPERATION-NAME": "findItemsAdvanced",
-        "Content-Type": "application/xml"
+        "X-EBAY-SOA-SECURITY-APPNAME": "YASHWANT-pjauto-PRD-7c6937daa-890b1640",
+        "X-EBAY-SOA-OPERATION-NAME": "findItemsIneBayStores",
+        "Content-Type": "text/xml"
     }
     
-    xml_payload = f"""
-    <findItemsAdvancedRequest xmlns="http://www.ebay.com/marketplace/search/v1/services">
-      <itemFilter>
-        <name>Seller</name>
-        <value>pjsautolit</value>
-      </itemFilter>
-      <paginationInput>
-        <pageNumber>{page_number}</pageNumber>
-        <entriesPerPage>100</entriesPerPage>
-      </paginationInput>
-      <outputSelector>SellerInfo</outputSelector>
-    </findItemsAdvancedRequest>
-    """
-    if item_id:
-        xml_payload = xml_payload.replace('</findItemsAdvancedRequest>', f'<keywords>{item_id}</keywords></findItemsAdvancedRequest>')
+    xml_payload = f"""<?xml version="1.0" encoding="UTF-8"?>
+    <findItemsIneBayStoresRequest xmlns="http://www.ebay.com/marketplace/search/v1/services">
+        <storeName>PJ's Auto Literature</storeName>
+        <outputSelector>StoreInfo</outputSelector>
+        <itemFilter>
+            <name>MinPrice</name>
+            <value>{min_price:.2f}</value>
+            <paramName>Currency</paramName>
+            <paramValue>USD</paramValue>
+        </itemFilter>
+        <itemFilter>
+            <name>MaxPrice</name>
+            <value>{max_price:.2f}</value>
+            <paramName>Currency</paramName>
+            <paramValue>USD</paramValue>
+        </itemFilter>
+        <paginationInput>
+            <pageNumber>{page_number}</pageNumber>
+            <entriesPerPage>100</entriesPerPage>
+        </paginationInput>
+    </findItemsIneBayStoresRequest>"""
     
     attempt = 0
     while attempt < MAX_RETRIES:
         try:
             response = requests.post(FINDING_API_URL, headers=headers, data=xml_payload)
             response.raise_for_status()
+            
             root = ET.fromstring(response.content)
             namespace = {'ns': 'http://www.ebay.com/marketplace/search/v1/services'}
+            
+            # Check for eBay API errors
+            ack = root.find('.//ns:ack', namespace)
+            if ack is not None and ack.text != 'Success':
+                error_message = root.find('.//ns:errorMessage/ns:error/ns:message', namespace)
+                error_code = root.find('.//ns:errorMessage/ns:error/ns:errorId', namespace)
+                if error_message is not None and error_code is not None:
+                    raise Exception(f"eBay API Error {error_code.text}: {error_message.text}")
+                else:
+                    raise Exception(f"Unknown eBay API Error: {ack.text}")
             
             items = root.findall('.//ns:item', namespace)
             total_pages = int(root.find('.//ns:totalPages', namespace).text)
@@ -133,48 +178,53 @@ def fetch_finding_api_data(item_id=None, page_number=1):
             results = []
             for item in items:
                 data = {
-                    'item_id': item.find('ns:itemId', namespace).text,
-                    'title': item.find('ns:title', namespace).text,
-                    'global_id': item.find('ns:globalId', namespace).text,
-                    'category_id': item.find('ns:primaryCategory/ns:categoryId', namespace).text,
-                    'category_name': item.find('ns:primaryCategory/ns:categoryName', namespace).text,
-                    'gallery_url': item.find('ns:galleryURL', namespace).text,
-                    'view_item_url': item.find('ns:viewItemURL', namespace).text,
-                    'auto_pay': item.find('ns:autoPay', namespace).text == 'true',
-                    'postal_code': item.find('ns:postalCode', namespace).text,
-                    'location': item.find('ns:location', namespace).text,
-                    'country': item.find('ns:country', namespace).text,
-                    'selling_state': item.find('ns:sellingStatus/ns:sellingState', namespace).text,
-                    'time_left': item.find('ns:sellingStatus/ns:timeLeft', namespace).text,
-                    'start_time': item.find('ns:listingInfo/ns:startTime', namespace).text,
-                    'end_time': item.find('ns:listingInfo/ns:endTime', namespace).text,
-                    'listing_type': item.find('ns:listingInfo/ns:listingType', namespace).text,
-                    'best_offer_enabled': item.find('ns:listingInfo/ns:bestOfferEnabled', namespace).text == 'true',
-                    'buy_it_now_available': item.find('ns:listingInfo/ns:buyItNowAvailable', namespace).text == 'true',
-                    'gift': item.find('ns:listingInfo/ns:gift', namespace).text == 'true',
-                    'watch_count': int(item.find('ns:listingInfo/ns:watchCount', namespace).text) if item.find('ns:listingInfo/ns:watchCount', namespace) is not None else None,
-                    'returns_accepted': item.find('ns:returnsAccepted', namespace).text == 'true',
-                    'is_multi_variation_listing': item.find('ns:isMultiVariationListing', namespace).text == 'true',
-                    'top_rated_listing': item.find('ns:topRatedListing', namespace).text == 'true',
-                    'seller_username': item.find('ns:sellerInfo/ns:sellerUserName', namespace).text,
-                    'feedback_score': int(item.find('ns:sellerInfo/ns:feedbackScore', namespace).text),
-                    'positive_feedback_percent': float(item.find('ns:sellerInfo/ns:positiveFeedbackPercent', namespace).text),
-                    'feedback_rating_star': item.find('ns:sellerInfo/ns:feedbackRatingStar', namespace).text,
-                    'top_rated_seller': item.find('ns:sellerInfo/ns:topRatedSeller', namespace).text == 'true',
-                    'shipping_type': item.find('ns:shippingInfo/ns:shippingType', namespace).text,
-                    'ship_to_locations': item.find('ns:shippingInfo/ns:shipToLocations', namespace).text,
-                    'expedited_shipping': item.find('ns:shippingInfo/ns:expeditedShipping', namespace).text == 'true',
-                    'one_day_shipping_available': item.find('ns:shippingInfo/ns:oneDayShippingAvailable', namespace).text == 'true',
-                    'handling_time': int(item.find('ns:shippingInfo/ns:handlingTime', namespace).text) if item.find('ns:shippingInfo/ns:handlingTime', namespace) is not None else None,
-                }
+                        'item_id': item.find('ns:itemId', namespace).text,
+                        'title': item.find('ns:title', namespace).text,
+                        'global_id': item.find('ns:globalId', namespace).text,
+                        'category_id': item.find('ns:primaryCategory/ns:categoryId', namespace).text,
+                        'category_name': item.find('ns:primaryCategory/ns:categoryName', namespace).text,
+                        'gallery_url': item.find('ns:galleryURL', namespace).text,
+                        'view_item_url': item.find('ns:viewItemURL', namespace).text,
+                        'auto_pay': item.find('ns:autoPay', namespace).text == 'true',
+                        'postal_code': item.find('ns:postalCode', namespace).text,
+                        'location': item.find('ns:location', namespace).text,
+                        'country': item.find('ns:country', namespace).text,
+                        'shipping_type': item.find('ns:shippingInfo/ns:shippingType', namespace).text,
+                        'ship_to_locations': item.find('ns:shippingInfo/ns:shipToLocations', namespace).text,
+                        'expedited_shipping': item.find('ns:shippingInfo/ns:expeditedShipping', namespace).text == 'true',
+                        'one_day_shipping_available': item.find('ns:shippingInfo/ns:oneDayShippingAvailable', namespace).text == 'true',
+                        'handling_time': int(item.find('ns:shippingInfo/ns:handlingTime', namespace).text) if item.find('ns:shippingInfo/ns:handlingTime', namespace) is not None else None,
+                        'price': float(item.find('ns:sellingStatus/ns:currentPrice', namespace).text),
+                        'selling_state': item.find('ns:sellingStatus/ns:sellingState', namespace).text,
+                        'time_left': item.find('ns:sellingStatus/ns:timeLeft', namespace).text,
+                        'best_offer_enabled': item.find('ns:listingInfo/ns:bestOfferEnabled', namespace).text == 'true',
+                        'buy_it_now_available': item.find('ns:listingInfo/ns:buyItNowAvailable', namespace).text == 'true',
+                        'start_time': item.find('ns:listingInfo/ns:startTime', namespace).text,
+                        'end_time': item.find('ns:listingInfo/ns:endTime', namespace).text,
+                        'listing_type': item.find('ns:listingInfo/ns:listingType', namespace).text,
+                        'gift': item.find('ns:listingInfo/ns:gift', namespace).text == 'true',
+                        'watch_count': int(item.find('ns:listingInfo/ns:watchCount', namespace).text) if item.find('ns:listingInfo/ns:watchCount', namespace) is not None else None,
+                        'returns_accepted': item.find('ns:returnsAccepted', namespace).text == 'true',
+                        'is_multi_variation_listing': item.find('ns:isMultiVariationListing', namespace).text == 'true',
+                        'top_rated_listing': item.find('ns:topRatedListing', namespace).text == 'true',
+                    }
                 results.append(data)
             
             return results, total_pages
         
         except (RequestException, HTTPError) as e:
-            print(f"Error fetching FindingService API data (attempt {attempt + 1}): {e}")
-            attempt += 1
-            time.sleep(RETRY_DELAY * (2 ** attempt))
+            print(f"HTTP Error (attempt {attempt + 1}): {e}")
+            print(f"Response status code: {response.status_code}")
+            print(f"Response headers: {response.headers}")
+            print(f"Response content: {response.content.decode('utf-8')}")
+        except ET.ParseError as e:
+            print(f"XML Parsing Error (attempt {attempt + 1}): {e}")
+            print(f"Response content: {response.content.decode('utf-8')}")
+        except Exception as e:
+            print(f"General Error (attempt {attempt + 1}): {e}")
+        
+        attempt += 1
+        time.sleep(RETRY_DELAY * (2 ** attempt))  # Exponential backoff
     
     print(f"Failed to fetch FindingService API data after {MAX_RETRIES} attempts")
     return [], 0
@@ -206,8 +256,19 @@ def fetch_new_access_token():
         print(f"Error fetching new access token: {e}")
         return None
     
+import time
+from threading import Lock
+
+# Global variables for rate limiting
+RATE_LIMIT_PER_SECOND = 5  # Adjust this based on eBay's guidelines
+RATE_LIMIT_PERIOD = 1.0  # 1 second
+token_bucket = RATE_LIMIT_PER_SECOND
+last_request_time = time.time()
+bucket_lock = Lock()
 
 def fetch_browse_api_data(item_id):
+    global token_bucket, last_request_time
+
     url = BROWSE_API_URL.format(item_id=item_id)
     
     headers = {
@@ -219,6 +280,21 @@ def fetch_browse_api_data(item_id):
     attempt = 0
     while attempt < MAX_RETRIES:
         try:
+            with bucket_lock:
+                current_time = time.time()
+                time_passed = current_time - last_request_time
+                token_bucket += time_passed * (RATE_LIMIT_PER_SECOND / RATE_LIMIT_PERIOD)
+                if token_bucket > RATE_LIMIT_PER_SECOND:
+                    token_bucket = RATE_LIMIT_PER_SECOND
+                
+                if token_bucket < 1:
+                    sleep_time = (1 - token_bucket) * (RATE_LIMIT_PERIOD / RATE_LIMIT_PER_SECOND)
+                    time.sleep(sleep_time)
+                    token_bucket = 1
+                
+                token_bucket -= 1
+                last_request_time = time.time()
+
             response = requests.get(url, headers=headers)
             response.raise_for_status()
             data = response.json()
