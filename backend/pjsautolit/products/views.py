@@ -42,8 +42,8 @@ def process_queue(q):
 @require_GET
 def fetch_all_items(request):
     total_items = 0
-    min_price = 10.00
-    max_price = 20.00
+    min_price = 01.00
+    max_price = 10.00
     price_increment = 10.00
 
     q = queue.Queue()
