@@ -13,14 +13,15 @@
     <meta property="og:url" content="{% url 'product_detail' product_slug=product.html_link %}">
     <meta property="og:type" content="product">
 
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <style>
-        :root {
+         :root {
             --primary-color: #3498db;
             --secondary-color: #2c3e50;
             --accent-color: #e74c3c;
             --light-color: #ecf0f1;
             --dark-color: #34495e;
+            --gray-color: #95a5a6;
         }
 
         * {
@@ -42,14 +43,13 @@
             top: 0;
             left: 0;
             right: 0;
-            z-index: 1000;margin-bottom: 2rem;
+            z-index: 1000;
         }
 
         .navbar > .container {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin:0;
         }
 
         .navbar-brand {
@@ -78,75 +78,90 @@
         .container {
             width: 90%;
             max-width: 1200px;
+            margin: 0 auto;
             padding: 20px;
-            margin: 80px auto 20px;
         }
 
         .product-container {
             display: flex;
             flex-wrap: wrap;
             gap: 40px;
-        }
-
-        .left-column, .right-column {
-            flex: 1;
+            margin-top: 5rem;
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            padding: 40px;
         }
 
         .left-column {
-            max-width: 500px;
+            flex: 1;
+            min-width: 300px;
         }
 
         .right-column {
-            max-width: 300px;
+            flex: 1;
+            min-width: 300px;
         }
 
         .large-image-container {
             width: 100%;
-            height: 500px;
+            height: 400px;
             display: flex;
             align-items: center;
             justify-content: center;
             overflow: hidden;
             background-color: #f8f8f8;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
         }
 
         .large-image {
             max-width: 100%;
             max-height: 100%;
             object-fit: contain;
+            transition: transform 0.3s ease;
+        }
+
+        .large-image:hover {
+            transform: scale(1.05);
         }
 
         .small-images {
             display: flex;
-            flex-wrap: wrap;
-            margin-top: 10px;
+            justify-content: center;
+            margin-top: 20px;
+            gap: 10px;
         }
 
         .small-images img {
             width: 60px;
             height: 60px;
-            margin-right: 10px;
-            margin-bottom: 10px;
             cursor: pointer;
-            border: 1px solid #e5e5e5;
+            border: 2px solid transparent;
             border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .small-images img:hover {
+            border-color: var(--primary-color);
+            transform: scale(1.1);
         }
 
         .product-title {
-            font-size: 1.8rem;
+            font-size: 2rem;
             font-weight: 700;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
             color: var(--secondary-color);
         }
 
         .product-subtitle {
-            font-size: 1rem;
-            color: var(--dark-color);
+            font-size: 1.1rem;
+            color: var(--gray-color);
             margin-bottom: 20px;
         }
 
         .price {
-            font-size: 1.5rem;
+            font-size: 2rem;
             font-weight: 700;
             margin-bottom: 20px;
             color: var(--primary-color);
@@ -155,27 +170,33 @@
         .add-to-cart-button {
             background-color: var(--primary-color);
             color: #fff;
-            padding: 10px 20px;
+            padding: 12px 24px;
             border: none;
             cursor: pointer;
-            font-size: 16px;
+            font-size: 1.1rem;
+            font-weight: 500;
             border-radius: 5px;
-            transition: background-color 0.3s;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            width: 100%;
         }
 
         .add-to-cart-button:hover {
             background-color: var(--accent-color);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
 
         .product-details {
-            margin-top: 20px;
+            margin-top: 30px;
             border-top: 1px solid #e5e5e5;
             padding-top: 20px;
         }
 
         .product-details h2 {
             font-size: 1.5rem;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
             color: var(--secondary-color);
         }
 
@@ -185,20 +206,40 @@
         }
 
         .product-details td {
-            padding: 8px;
+            padding: 10px 8px;
             border-bottom: 1px solid #e5e5e5;
         }
 
         .product-details td:first-child {
             width: 40%;
-            color: var(--dark-color);
+            color: var(--gray-color);
+            font-weight: 500;
         }
 
-        .more-info {
-            display: flex;
-            justify-content: space-between;
-            gap: 2rem;
-            margin-top: 20px;
+        .product-details td:last-child {
+            font-weight: 400;
+        }
+
+        @media (max-width: 768px) {
+            .product-container {
+                flex-direction: column;
+            }
+
+            .left-column, .right-column {
+                flex: 1 100%;
+            }
+
+            .large-image-container {
+                height: 300px;
+            }
+
+            .product-title {
+                font-size: 1.8rem;
+            }
+
+            .price {
+                font-size: 1.8rem;
+            }
         }
     </style>
 </head>
@@ -238,37 +279,14 @@
                 <div class="product-details">
                     <h2>Item specifics</h2>
                     <table>
-                        <tr><td>Condition:</td><td>{{ product.condition }}</td></tr>
+                        <tr><td>Item ID:</td><td>{{ product.item_id }}</td></tr>
                         <tr><td>Category:</td><td>{{ product.category_name }}</td></tr>
-                        <tr><td>Location:</td><td>{{ product.location }}</td></tr>
-                        <tr><td>Country:</td><td>{{ product.country }}</td></tr>
-                        <tr><td>Seller:</td><td>{{ product.seller_username }} (Feedback: {{ product.feedback_score }})</td></tr>
-                        <tr><td>Listing Type:</td><td>{{ product.listing_type }}</td></tr>
-                        <tr><td>Best Offer Enabled:</td><td>{{ product.best_offer_enabled|yesno:"Yes,No" }}</td></tr>
-                        <tr><td>Buy It Now Available:</td><td>{{ product.buy_it_now_available|yesno:"Yes,No" }}</td></tr>
-                        <tr><td>Returns Accepted:</td><td>{{ product.returns_accepted|yesno:"Yes,No" }}</td></tr>
-                        <tr><td>Top Rated Listing:</td><td>{{ product.top_rated_listing|yesno:"Yes,No" }}</td></tr>
+                        <tr><td>Shipping Cost:</td><td>$ {{ product.shipping_cost }}</td></tr>
+                        <!-- <tr><td>Shipping Time:</td><td>{{ product.shipping_time }}</td></tr> -->
+                        <tr><td>Estimated Delivery:</td><td>{{ product.min_estimated_delivery_date|date:"Y-m-d" }} - {{ product.max_estimated_delivery_date|date:"Y-m-d" }}</td></tr>
+                        <tr><td>Ship To Locations:</td><td>{{ product.ship_to_locations }}</td></tr>
                     </table>
                 </div>
-            </div>
-        </div>
-        <div class="more-info">
-            <div class="product-details">
-                <h2>Availability</h2>
-                <table>
-                    <tr><td>Status:</td><td>{{ product.estimated_availability_status }}</td></tr>
-                    <tr><td>Available Quantity:</td><td>{{ product.estimated_available_quantity }}</td></tr>
-                    <tr><td>Sold Quantity:</td><td>{{ product.estimated_sold_quantity }}</td></tr>
-                    <tr><td>End Date:</td><td>{{ product.estimated_end_date }}</td></tr>
-                </table>
-            </div>
-            <div class="product-details">
-                <h2>Shipping</h2>
-                <table>
-                    <tr><td>Shipping Service:</td><td>{{ product.shipping_service }}</td></tr>
-                    <tr><td>Shipping Cost:</td><td>{{ product.shipping_cost }}</td></tr>
-                    <tr><td>Shipping Time:</td><td>{{ product.shipping_time }}</td></tr>
-                </table>
             </div>
         </div>
     </div>
