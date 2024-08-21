@@ -12,8 +12,8 @@
     <meta property="og:image" content="{{ product.primary_image_url }}">
     <meta property="og:url" content="{% url 'product_detail' product_slug=product.html_link %}">
     <meta property="og:type" content="product">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
 
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <style>
          :root {
             --primary-color: #3498db;
@@ -29,7 +29,12 @@
             padding: 0;
             box-sizing: border-box;
         }
-
+        body {
+            font-family: 'Roboto', sans-serif;
+            line-height: 1.6;
+            color: var(--dark-color);
+            background-color: var(--light-color);
+        }
         
         .container {
             width: 90%;
@@ -81,7 +86,7 @@
             width: 90%;
             max-width: 1200px;
             margin: 0 auto;
-            padding: 20px;
+            /* padding: 20px; */
         }
 
         .product-container {
