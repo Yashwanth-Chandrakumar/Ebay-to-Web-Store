@@ -246,13 +246,12 @@
 <body>
     <nav class="navbar">
         <div class="container">
-            <a href="#" class="navbar-brand">Your Store</a>
+            <a href="{% url 'landing_page' %}" class="navbar-brand"><img src="http://www.pjsautolit.com/images/header_1.gif"></a>
             <ul class="navbar-nav">
-                <li><a href="#" class="nav-link">Home</a></li>
-                <li><a href="#" class="nav-link">Products</a></li>
-                <li><a href="#" class="nav-link">About Us</a></li>
-                <li><a href="#" class="nav-link">Contact</a></li>
+                <li><a href="{% url 'landing_page' %}" class="nav-link">Home</a></li>
+                <li><a href="{% url 'product_list' %}" class="nav-link">Products</a></li>
                 <li><a href="#" class="nav-link">Cart</a></li>
+                <li><a href="#" class="nav-link">Contact</a></li>
             </ul>
         </div>
     </nav>
@@ -280,7 +279,7 @@
                     <h2>Item specifics</h2>
                     <table>
                         <tr><td>Item ID:</td><td>{{ product.item_id }}</td></tr>
-                        <tr><td>Category:</td><td>{{ product.category_name }}</td></tr>
+                        <!-- <tr><td>Category:</td><td>{{ product.category_name }}</td></tr> -->
                         <tr><td>Shipping Cost:</td><td>$ {{ product.shipping_cost }}</td></tr>
                         <!-- <tr><td>Shipping Time:</td><td>{{ product.shipping_time }}</td></tr> -->
                         <tr><td>Estimated Delivery:</td><td>{{ product.min_estimated_delivery_date|date:"Y-m-d" }} - {{ product.max_estimated_delivery_date|date:"Y-m-d" }}</td></tr>

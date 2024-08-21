@@ -25,4 +25,4 @@ COPY . /app/
 EXPOSE 8000
 
 # Run the application with a timeout of 600 seconds
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--timeout", "600", "pjsautolit.wsgi:application"]
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--timeout", "0", "pjsautolit.wsgi:application"]

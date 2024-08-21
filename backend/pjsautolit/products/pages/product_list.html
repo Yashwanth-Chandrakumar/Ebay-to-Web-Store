@@ -188,12 +188,12 @@
 <body>
     <nav class="navbar">
         <div class="container">
-            <a href="#" class="navbar-brand">PJ's Auto Literature</a>
+            <a href="{% url 'landing_page' %}" class="navbar-brand"><img src="http://www.pjsautolit.com/images/header_1.gif"></a>
             <ul class="navbar-nav">
-                <li><a href="#" class="nav-link">Home</a></li>
-                <li><a href="#" class="nav-link">About Us</a></li>
-                <li><a href="#" class="nav-link">Contact</a></li>
+                <li><a href="{% url 'landing_page' %}" class="nav-link">Home</a></li>
+                <li><a href="{% url 'product_list' %}" class="nav-link">Products</a></li>
                 <li><a href="#" class="nav-link">Cart</a></li>
+                <li><a href="#" class="nav-link">Contact</a></li>
             </ul>
         </div>
     </nav>

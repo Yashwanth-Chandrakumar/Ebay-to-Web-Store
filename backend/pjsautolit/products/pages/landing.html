@@ -76,20 +76,41 @@
         }
 
         .hero {
-            background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https://source.unsplash.com/1600x900/?car,literature');
-            background-size: cover;
-            background-position: center;
-            height: 100vh;
-            display: flex;
-            align-items: center;
-            text-align: center;
-            color: var(--light-color);
-        }
+    position: relative;
+    height: 100vh; /* Adjust this value to control the height */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    overflow: hidden;
+    color: var(--light-color);
+}
 
-        .hero-content {
-            max-width: 800px;
-            margin: 0 auto;
-        }
+.video-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    z-index: -1; /* Ensures the video stays behind the content */
+}
+
+.hero-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    /* opacity: 0.5; Reduce opacity if the video is too overpowering */
+}
+
+.hero-content {
+    position: relative;
+    z-index: 1; /* Keeps content on top of the video */
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
 
         .hero h1 {
             font-size: 3rem;
@@ -206,23 +227,31 @@
 <body>
     <nav class="navbar">
         <div class="container">
-            <a href="#" class="navbar-brand">PJ's Auto Literature</a>
+            <a href="{% url 'landing_page' %}" class="navbar-brand"><img src="http://www.pjsautolit.com/images/header_1.gif"></a>
             <ul class="navbar-nav">
-                <li><a href="#" class="nav-link">Home</a></li>
-                <li><a href="#" class="nav-link">About Us</a></li>
-                <li><a href="#" class="nav-link">Contact</a></li>
+                <li><a href="{% url 'landing_page' %}" class="nav-link">Home</a></li>
+                <li><a href="{% url 'product_list' %}" class="nav-link">Products</a></li>
                 <li><a href="#" class="nav-link">Cart</a></li>
+                <li><a href="#" class="nav-link">Contact</a></li>
             </ul>
         </div>
     </nav>
 
     <header class="hero">
+        <div class="video-container">
+            <video autoplay muted loop playsinline class="hero-video">
+                <source src="https://videos.pexels.com/video-files/20156193/20156193-uhd_2730_1440_24fps.mp4" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+        </div>
         <div class="hero-content">
             <h1>Welcome to PJ's Auto Literature</h1>
             <p>Discover the best auto literature for your collection</p>
-            <a href="/product" class="btn">Shop Now</a>
+            <a href="/product" class="btn">Products</a>
         </div>
     </header>
+    
+    
 
     <div class="container">
         <div class="search-container">
