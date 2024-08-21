@@ -30,15 +30,16 @@
             background-color: var(--light-color);
         }
 
+        
         .container {
             width: 90%;
             max-width: 1200px;
             margin: 0 auto;
-            padding: 20px;
         }
 
         .navbar {
             background-color: var(--secondary-color);
+            /* padding: 1rem 0; */
             position: fixed;
             top: 0;
             left: 0;
@@ -188,7 +189,8 @@
 <body>
     <nav class="navbar">
         <div class="container">
-            <a href="{% url 'landing_page' %}" class="navbar-brand"><img src="http://www.pjsautolit.com/images/header_1.gif"></a>
+            <a href="{% url 'landing_page' %}" class="navbar-brand"><img src="http://www.pjsautolit.com/images/header_1.gif" style="height: 80px;">
+            </a>
             <ul class="navbar-nav">
                 <li><a href="{% url 'landing_page' %}" class="nav-link">Home</a></li>
                 <li><a href="{% url 'product_list' %}" class="nav-link">Products</a></li>
