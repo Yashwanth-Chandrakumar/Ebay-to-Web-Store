@@ -64,19 +64,29 @@ def fetch_all_items(request):
             while current_page <= total_pages:
                 try:
                     items, total_pages = fetch_finding_api_data(page_number=current_page, min_price=min_price, max_price=max_price)
-
+                    
                     for item in items:
                         item_id = item['item_id']
                         try:
-                            if not Product.objects.filter(item_id=item_id).exists():
-                                browse_data = fetch_browse_api_data(item_id)
-                                combined_data = {**item, **browse_data}
-                                q.put(combined_data)
-                                total_items += 1
-                            else:
-                                print(f"product skipped {item_id} in page {current_page}, price range ${min_price}-${max_price}")
+                            browse_data = fetch_browse_api_data(item_id)
+                            print(f"product covered {item_id} in page {current_page}, price range ${min_price}-${max_price}")
+                            combined_data = {**item, **browse_data}
+                            q.put(combined_data)
+                            total_items += 1
                         except Exception as e:
                             print(f"Error processing item {item_id}: {e}")
+                    # for item in items:
+                    #     item_id = item['item_id']
+                    #     try:
+                    #         if not Product.objects.filter(item_id=item_id).exists():
+                    #             browse_data = fetch_browse_api_data(item_id)
+                    #             combined_data = {**item, **browse_data}
+                    #             q.put(combined_data)
+                    #             total_items += 1
+                    #         else:
+                    #             print(f"product skipped {item_id} in page {current_page}, price range ${min_price}-${max_price}")
+                    #     except Exception as e:
+                    #         print(f"Error processing item {item_id}: {e}")
                     
                 except Exception as e:
                     print(f"Error fetching data for page {current_page}, price range ${min_price}-${max_price}: {e}")
@@ -346,6 +356,9 @@ def fetch_browse_api_data(item_id):
 
     print(f"Failed to fetch Browse API data after {MAX_RETRIES} attempts")
     return {}
+import re
+
+from bs4 import BeautifulSoup
 from django.utils.text import slugify
 
 
@@ -357,72 +370,96 @@ def save_product_data(product_data):
         while Product.objects.filter(html_link=sanitized_name).exists():
             sanitized_name = f"{base_name}-{counter}"
             counter += 1
+
+        # Fetch description or short_description
+
+        description = product_data.get('description', product_data.get('short_description', ''))
+
+# Parse HTML and extract the first meaningful content
+        if description:
+            soup = BeautifulSoup(description, 'html.parser')
+            first_relevant_content = None
+
+            # Look for the first div, p, font, or strong tag that contains text
+            for tag in soup.find_all(['div', 'p', 'font', 'strong'], recursive=True):
+                if tag.get_text(strip=True):  # Ensure the tag has meaningful content
+                    first_relevant_content = tag
+                    break
+
+            if first_relevant_content:
+                # Extract plain text from the first relevant tag
+                description = first_relevant_content.get_text(strip=True)
+
+        # The description now contains the first relevant section as plain text
+        print(description)
+
+
         product, created = Product.objects.update_or_create(
             item_id=product_data['item_id'],
             defaults={
-            'title': product_data['title'],
-            'global_id': product_data.get('global_id'),
-            'category_id': product_data.get('category_id'),
-            'category_name': product_data.get('category_name'),
-            'gallery_url': product_data.get('gallery_url'),
-            'view_item_url': product_data.get('view_item_url'),
-            'auto_pay': product_data.get('auto_pay', False),
-            'postal_code': product_data.get('postal_code'),
-            'location': product_data.get('location'),
-            'country': product_data.get('country'),
-            'selling_state': product_data.get('selling_state'),
-            'time_left': product_data.get('time_left'),
-            'best_offer_enabled': product_data.get('best_offer_enabled', False),
-            'buy_it_now_available': product_data.get('buy_it_now_available', False),
-            'start_time': product_data.get('start_time'),
-            'end_time': product_data.get('end_time'),
-            'listing_type': product_data.get('listing_type'),
-            'gift': product_data.get('gift', False),
-            'watch_count': product_data.get('watch_count'),
-            'returns_accepted': product_data.get('returns_accepted', False),
-            'is_multi_variation_listing': product_data.get('is_multi_variation_listing', False),
-            'top_rated_listing': product_data.get('top_rated_listing', False),
-            'short_description': product_data.get('short_description', ''),
-            'price': product_data.get('price'),
-            'currency': product_data.get('currency'),
-            'category_path': product_data.get('category_path', ''),
-            'category_id_path': product_data.get('category_id_path', ''),
-            'item_creation_date': product_data.get('item_creation_date'),
-            'estimated_availability_status': product_data.get('estimated_availability_status', ''),
-            'estimated_available_quantity': product_data.get('estimated_available_quantity'),
-            'estimated_sold_quantity': product_data.get('estimated_sold_quantity'),
-            'enabled_for_guest_checkout': product_data.get('enabled_for_guest_checkout', False),
-            'eligible_for_inline_checkout': product_data.get('eligible_for_inline_checkout', False),
-            'lot_size': product_data.get('lot_size', 0),
-            'legacy_item_id': product_data.get('legacy_item_id', ''),
-            'priority_listing': product_data.get('priority_listing', False),
-            'adult_only': product_data.get('adult_only', False),
-            'listing_marketplace_id': product_data.get('listing_marketplace_id', ''),
-            'seller_username': product_data.get('seller_username'),
-            'feedback_score': product_data.get('feedback_score'),
-            'positive_feedback_percent': product_data.get('positive_feedback_percent'),
-            'feedback_rating_star': product_data.get('feedback_rating_star'),
-            'top_rated_seller': product_data.get('top_rated_seller', False),
-            'shipping_type': product_data.get('shipping_type'),
-            'ship_to_locations': product_data.get('ship_to_locations'),
-            'expedited_shipping': product_data.get('expedited_shipping', False),
-            'one_day_shipping_available': product_data.get('one_day_shipping_available', False),
-            'handling_time': product_data.get('handling_time'),
-            'shipping_service_code': product_data.get('shipping_service_code'),
-            'shipping_carrier_code': product_data.get('shipping_carrier_code'),
-            'min_estimated_delivery_date': product_data.get('min_estimated_delivery_date'),
-            'max_estimated_delivery_date': product_data.get('max_estimated_delivery_date'),
-            'shipping_cost': product_data.get('shipping_cost'),
-            'shipping_cost_type': product_data.get('shipping_cost_type'),
-            'primary_image_url': product_data.get('primary_image_url'),
-            'additional_image_urls': product_data.get('additional_image_urls'),
-             'html_link': sanitized_name,
+                'title': product_data['title'],
+                'global_id': product_data.get('global_id'),
+                'category_id': product_data.get('category_id'),
+                'category_name': product_data.get('category_name'),
+                'gallery_url': product_data.get('gallery_url'),
+                'view_item_url': product_data.get('view_item_url'),
+                'auto_pay': product_data.get('auto_pay', False),
+                'postal_code': product_data.get('postal_code'),
+                'location': product_data.get('location'),
+                'country': product_data.get('country'),
+                'selling_state': product_data.get('selling_state'),
+                'time_left': product_data.get('time_left'),
+                'best_offer_enabled': product_data.get('best_offer_enabled', False),
+                'buy_it_now_available': product_data.get('buy_it_now_available', False),
+                'start_time': product_data.get('start_time'),
+                'end_time': product_data.get('end_time'),
+                'listing_type': product_data.get('listing_type'),
+                'gift': product_data.get('gift', False),
+                'watch_count': product_data.get('watch_count'),
+                'returns_accepted': product_data.get('returns_accepted', False),
+                'is_multi_variation_listing': product_data.get('is_multi_variation_listing', False),
+                'top_rated_listing': product_data.get('top_rated_listing', False),
+                'short_description': description,  # Use the parsed description here
+                'price': product_data.get('price'),
+                'currency': product_data.get('currency'),
+                'category_path': product_data.get('category_path', ''),
+                'category_id_path': product_data.get('category_id_path', ''),
+                'item_creation_date': product_data.get('item_creation_date'),
+                'estimated_availability_status': product_data.get('estimated_availability_status', ''),
+                'estimated_available_quantity': product_data.get('estimated_available_quantity'),
+                'estimated_sold_quantity': product_data.get('estimated_sold_quantity'),
+                'enabled_for_guest_checkout': product_data.get('enabled_for_guest_checkout', False),
+                'eligible_for_inline_checkout': product_data.get('eligible_for_inline_checkout', False),
+                'lot_size': product_data.get('lot_size', 0),
+                'legacy_item_id': product_data.get('legacy_item_id', ''),
+                'priority_listing': product_data.get('priority_listing', False),
+                'adult_only': product_data.get('adult_only', False),
+                'listing_marketplace_id': product_data.get('listing_marketplace_id', ''),
+                'seller_username': product_data.get('seller_username'),
+                'feedback_score': product_data.get('feedback_score'),
+                'positive_feedback_percent': product_data.get('positive_feedback_percent'),
+                'feedback_rating_star': product_data.get('feedback_rating_star'),
+                'top_rated_seller': product_data.get('top_rated_seller', False),
+                'shipping_type': product_data.get('shipping_type'),
+                'ship_to_locations': product_data.get('ship_to_locations'),
+                'expedited_shipping': product_data.get('expedited_shipping', False),
+                'one_day_shipping_available': product_data.get('one_day_shipping_available', False),
+                'handling_time': product_data.get('handling_time'),
+                'shipping_service_code': product_data.get('shipping_service_code'),
+                'shipping_carrier_code': product_data.get('shipping_carrier_code'),
+                'min_estimated_delivery_date': product_data.get('min_estimated_delivery_date'),
+                'max_estimated_delivery_date': product_data.get('max_estimated_delivery_date'),
+                'shipping_cost': product_data.get('shipping_cost'),
+                'shipping_cost_type': product_data.get('shipping_cost_type'),
+                'primary_image_url': product_data.get('primary_image_url'),
+                'additional_image_urls': product_data.get('additional_image_urls'),
+                'html_link': sanitized_name,
             }
         )
         if created:
-            print(f"Created new product: {product_data['title']}")
+            print(f"Created new product: {product_data['title']} - {product_data['item_id']}")
         else:
-            print(f"Updated existing product: {product_data['title']}")
+            print(f"Updated existing product: {product_data['title']} - {product_data['item_id']}")
         
         # Generate and save HTML
 
