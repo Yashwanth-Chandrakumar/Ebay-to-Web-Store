@@ -58,8 +58,8 @@ def fetch_all_items(request):
 
     try:
         while min_price <= 4000.00:  # Assuming 600 is the maximum price as per your example
-            current_page = 3
-            total_pages = 3
+            current_page = 1
+            total_pages = 1
 
             while current_page <= total_pages:
                 try:
@@ -312,7 +312,7 @@ def fetch_browse_api_data(item_id):
             additional_images = data.get('additionalImages', [])
             additional_image_urls = [img['imageUrl'] for img in additional_images]
             return {
-                'short_description': data.get('shortDescription', ''),
+                'description': data.get('description', ''),
                 'price': float(data['price']['value']),
                 'currency': data['price']['currency'],
                 'category_path': data.get('categoryPath', ''),
@@ -373,25 +373,21 @@ def save_product_data(product_data):
 
         # Fetch description or short_description
 
-        description = product_data.get('description', product_data.get('short_description', ''))
+        description = product_data.get('description', '')
 
-# Parse HTML and extract the first meaningful content
+        # Parse HTML and remove all image tags
         if description:
             soup = BeautifulSoup(description, 'html.parser')
-            first_relevant_content = None
+            
+            # Remove all <img> tags
+            for img_tag in soup.find_all('img'):
+                img_tag.decompose()
 
-            # Look for the first div, p, font, or strong tag that contains text
-            for tag in soup.find_all(['div', 'p', 'font', 'strong'], recursive=True):
-                if tag.get_text(strip=True):  # Ensure the tag has meaningful content
-                    first_relevant_content = tag
-                    break
+            # Convert back to string without <img> tags
+            description = str(soup)
 
-            if first_relevant_content:
-                # Extract plain text from the first relevant tag
-                description = first_relevant_content.get_text(strip=True)
-
-        # The description now contains the first relevant section as plain text
-        print(description)
+        # The description now contains the HTML without <img> tags
+        # print(description)
 
 
         product, created = Product.objects.update_or_create(
