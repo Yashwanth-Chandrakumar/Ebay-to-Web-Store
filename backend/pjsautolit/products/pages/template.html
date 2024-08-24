@@ -280,7 +280,7 @@
             </div>
             <div class="right-column">
                 <h1 class="product-title">{{ product.title }}</h1>
-                <p class="product-subtitle">{{ product.short_description }}</p>
+                <p class="product-subtitle">{{ product.short_description|safe }}</p>
                 <p class="price">{{ product.currency }} {{ product.price }}</p>
                 <button class="add-to-cart-button">Add to cart</button>
                 <div class="product-details">
