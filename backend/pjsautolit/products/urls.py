@@ -10,5 +10,6 @@ urlpatterns = [
     path('product/', views.product_list, name='product_list'),
     path('product/<slug:product_slug>/', views.product_detail, name='product_detail'),
     path('cron/', views.cron, name='cron'), 
-    path('cleandesc/', views.clean_short_description, name='clean'), 
+    path('cleandesc/', views.clean_description, name='clean'), 
+    path('sync/', views.run_daily_update, name='sync'), 
 ]

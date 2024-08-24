@@ -42,8 +42,8 @@ def process_queue(q):
 @require_GET
 def fetch_all_items(request):
     total_items = 0
-    min_price = 10.01
-    max_price = 20.00
+    min_price = 1.00
+    max_price = 10.00
     price_increment = 10.00
 
     q = queue.Queue()
@@ -60,7 +60,7 @@ def fetch_all_items(request):
         is_first_range = True
         while min_price <= 4000.00:  # Assuming 600 is the maximum price as per your example
             if is_first_range:
-                current_page = 16  # Start from page 90 for the first range
+                current_page = 1  # Start from page 90 for the first range
                 is_first_range = False
             else:
                 current_page = 1
@@ -376,24 +376,9 @@ def save_product_data(product_data):
             sanitized_name = f"{base_name}-{counter}"
             counter += 1
 
-        # Fetch description or short_description
-
         description = product_data.get('description', '')
-
-        # Parse HTML and remove all image tags
-        if description:
-            soup = BeautifulSoup(description, 'html.parser')
-            
-            # Remove all <img> tags
-            for img_tag in soup.find_all('img'):
-                img_tag.decompose()
-
-            # Convert back to string without <img> tags
-            description = str(soup)
-
-        # The description now contains the HTML without <img> tags
-        # print(description)
-
+        cleaned_description = clean_description(description)
+        print(cleaned_description)
 
         product, created = Product.objects.update_or_create(
             item_id=product_data['item_id'],
@@ -420,7 +405,7 @@ def save_product_data(product_data):
                 'returns_accepted': product_data.get('returns_accepted', False),
                 'is_multi_variation_listing': product_data.get('is_multi_variation_listing', False),
                 'top_rated_listing': product_data.get('top_rated_listing', False),
-                'short_description': description,  # Use the parsed description here
+                'short_description': cleaned_description,  # Use the parsed description here
                 'price': product_data.get('price'),
                 'currency': product_data.get('currency'),
                 'category_path': product_data.get('category_path', ''),
@@ -466,6 +451,7 @@ def save_product_data(product_data):
 
     except Exception as e:
         print(f"Error saving product data: {e}")
+        print(f"Product data: {product_data['item_id']}")
 
 def generate_html_view(request):
     try:
@@ -576,50 +562,124 @@ def cron(request):
 import re
 
 from bs4 import BeautifulSoup
-from django.http import JsonResponse
-from django.views.decorators.http import require_POST
-
-from .models import Product
 
 
-@require_GET
-def clean_short_description(request):
-    try:
-        # Fetch all products one by one
-        products = Product.objects.all()
-        
-        for product in products:
-            # Extract the short_description
-            html_content = product.short_description
-            
-            # Parse the HTML and extract the text content
-            soup = BeautifulSoup(html_content, 'html.parser')
-            text_content = soup.get_text()
-            
-            # Remove unwanted characters
-            cleaned_text = text_content.replace("Â", "")
-            
-            # Remove everything after the first occurrence of the word "please"
-            cleaned_text = re.split(r'\b[Pp]lease\b', cleaned_text)[0]
-            
-            # Remove extra whitespace
-            cleaned_text = re.sub(r'\s+', ' ', cleaned_text).strip()
-            
-            # Save the cleaned description back to the database
-            product.short_description = cleaned_text
-            product.save()
-            
-            # Print the cleaned description for debugging purposes
-            print(f"Product ID: {product.id}")
-            print(f"Cleaned Description: {cleaned_text}\n")
-
-        return JsonResponse({
-            "status": "success",
-            "message": "Descriptions processed and saved to the database."
-        })
+def clean_description(description):
+    # Check if the description is HTML
+    if '<' in description and '>' in description:
+        # Parse the HTML and extract the text content
+        soup = BeautifulSoup(description, 'html.parser')
+        text_content = soup.get_text()
+    else:
+        # If it's not HTML, use the description as is
+        text_content = description
     
+    # Remove unwanted characters
+    cleaned_text = text_content.replace("Â", "")
+    
+    # Remove everything after "**Please check out**"
+    cleaned_text = re.split(r'Please check out', cleaned_text, flags=re.IGNORECASE)[0]
+    
+    # Remove extra whitespace
+    cleaned_text = re.sub(r'\s+', ' ', cleaned_text).strip()
+    
+    return cleaned_text
+
+from django.db.models import Q
+from django.utils import timezone
+
+from .models import FetchStatus, Product, ProductChangeLog
+
+
+def daily_update():
+    try:
+        # Get or create the FetchStatus for daily updates
+        fetch_status, created = FetchStatus.objects.get_or_create(fetch_type='daily')
+        
+        # Set the starting page number
+        current_page = 1
+        total_pages = 1
+        
+        # Get all existing item IDs in the database
+        existing_item_ids = set(Product.objects.values_list('item_id', flat=True))
+        updated_item_ids = set()
+
+        while current_page <= total_pages:
+            try:
+                # Fetch data from the Finding API
+                items, total_pages = fetch_finding_api_data(page_number=current_page)
+                
+                for item in items:
+                    item_id = item['item_id']
+                    updated_item_ids.add(item_id)
+                    
+                    # Check if the item exists in the database
+                    try:
+                        product = Product.objects.get(item_id=item_id)
+                        
+                        # Check for changes
+                        changes = {}
+                        for key, value in item.items():
+                            if getattr(product, key) != value:
+                                changes[key] = value
+                        
+                        if changes:
+                            # Update the product
+                            for key, value in changes.items():
+                                setattr(product, key, value)
+                            product.save()
+                            
+                            # Log the update
+                            ProductChangeLog.objects.create(
+                                item_id=item_id,
+                                product_name=product.title,
+                                operation='updated'
+                            )
+                    except Product.DoesNotExist:
+                        # Create new product
+                        new_product = Product.objects.create(**item)
+                        
+                        # Log the creation
+                        ProductChangeLog.objects.create(
+                            item_id=item_id,
+                            product_name=new_product.title,
+                            operation='created'
+                        )
+                
+                current_page += 1
+                
+                # Update FetchStatus
+                fetch_status.last_processed_page = current_page
+                fetch_status.last_processed_id = items[-1]['item_id'] if items else ''
+                fetch_status.save()
+                
+            except Exception as e:
+                print(f"Error fetching data for page {current_page}: {e}")
+        
+        # Check for deleted items
+        deleted_item_ids = existing_item_ids - updated_item_ids
+        for item_id in deleted_item_ids:
+            product = Product.objects.get(item_id=item_id)
+            product_name = product.title
+            product.delete()
+            
+            # Log the deletion
+            ProductChangeLog.objects.create(
+                item_id=item_id,
+                product_name=product_name,
+                operation='deleted'
+            )
+        
+        # Update FetchStatus
+        fetch_status.last_run = timezone.now()
+        fetch_status.save()
+        
+        print("Daily update completed successfully.")
+        
     except Exception as e:
-        return JsonResponse({
-            "status": "error",
-            "message": str(e)
-        }, status=500)
+        print(f"Error in daily update: {e}")
+
+# You might want to add this function to be called by a scheduled task or cron job
+def run_daily_update(request):
+    daily_update()
+    return JsonResponse({"status": "success", "message": "Daily update completed"})

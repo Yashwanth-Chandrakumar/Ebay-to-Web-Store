@@ -76,3 +76,19 @@ class FetchStatus(models.Model):
 
     def __str__(self):
         return f"{self.get_fetch_type_display()} - Last run: {self.last_run}"
+
+# In models.py, add this new model:
+
+class ProductChangeLog(models.Model):
+    OPERATIONS = (
+        ('created', 'Created'),
+        ('updated', 'Updated'),
+        ('deleted', 'Deleted'),
+    )
+    item_id = models.CharField(max_length=100)
+    product_name = models.CharField(max_length=255)
+    operation = models.CharField(max_length=10, choices=OPERATIONS)
+    date = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.get_operation_display()} - {self.product_name}"
