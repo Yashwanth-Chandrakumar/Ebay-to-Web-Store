@@ -490,6 +490,7 @@ def generate_html_pages():
         return
 
     for product in products:
+        # product.short_description = clean_description(product.short_description)
        
         if product.additional_image_urls:
             try:
@@ -571,3 +572,54 @@ def product_detail(request, product_slug):
 
 def cron(request):
     return HttpResponse("Happy")
+
+import re
+
+from bs4 import BeautifulSoup
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+
+from .models import Product
+
+
+@require_GET
+def clean_short_description(request):
+    try:
+        # Fetch all products one by one
+        products = Product.objects.all()
+        
+        for product in products:
+            # Extract the short_description
+            html_content = product.short_description
+            
+            # Parse the HTML and extract the text content
+            soup = BeautifulSoup(html_content, 'html.parser')
+            text_content = soup.get_text()
+            
+            # Remove unwanted characters
+            cleaned_text = text_content.replace("Â", "")
+            
+            # Remove everything after the first occurrence of the word "please"
+            cleaned_text = re.split(r'\b[Pp]lease\b', cleaned_text)[0]
+            
+            # Remove extra whitespace
+            cleaned_text = re.sub(r'\s+', ' ', cleaned_text).strip()
+            
+            # Save the cleaned description back to the database
+            product.short_description = cleaned_text
+            product.save()
+            
+            # Print the cleaned description for debugging purposes
+            print(f"Product ID: {product.id}")
+            print(f"Cleaned Description: {cleaned_text}\n")
+
+        return JsonResponse({
+            "status": "success",
+            "message": "Descriptions processed and saved to the database."
+        })
+    
+    except Exception as e:
+        return JsonResponse({
+            "status": "error",
+            "message": str(e)
+        }, status=500)
