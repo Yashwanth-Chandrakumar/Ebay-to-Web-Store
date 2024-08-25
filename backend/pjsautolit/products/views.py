@@ -42,8 +42,8 @@ def process_queue(q):
 @require_GET
 def fetch_all_items(request):
     total_items = 0
-    min_price = 1.00
-    max_price = 10.00
+    min_price = 10.01
+    max_price = 20.00
     price_increment = 10.00
 
     q = queue.Queue()
@@ -60,7 +60,7 @@ def fetch_all_items(request):
         is_first_range = True
         while min_price <= 4000.00:  # Assuming 600 is the maximum price as per your example
             if is_first_range:
-                current_page = 1  # Start from page 90 for the first range
+                current_page = 50  # Start from page 90 for the first range
                 is_first_range = False
             else:
                 current_page = 1

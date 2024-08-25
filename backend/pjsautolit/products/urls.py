@@ -13,3 +13,4 @@ urlpatterns = [
     path('cleandesc/', views.clean_description, name='clean'), 
     path('sync/', views.run_daily_update, name='sync'), 
 ]
+
