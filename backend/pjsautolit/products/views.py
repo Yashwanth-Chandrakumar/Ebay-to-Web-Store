@@ -60,7 +60,7 @@ def fetch_all_items(request):
         is_first_range = True
         while min_price <= 4000.00:  # Assuming 600 is the maximum price as per your example
             if is_first_range:
-                current_page = 50  # Start from page 90 for the first range
+                current_page = 50  
                 is_first_range = False
             else:
                 current_page = 1
