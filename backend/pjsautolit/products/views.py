@@ -8,6 +8,7 @@ import threading
 import time
 import xml.etree.ElementTree as ET
 from datetime import datetime
+from signal import signal
 
 import requests
 from django.conf import settings
@@ -585,7 +586,6 @@ def clean_description(description):
     
     return cleaned_text
 
-
 import queue
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -595,13 +595,16 @@ from django.utils import timezone
 
 from .models import FetchStatus, Product, ProductChangeLog
 
-MAX_WORKERS = 10  # Adjust this based on your system's capabilities
+MAX_WORKERS = 30 
 
 def process_price_range(min_price, max_price, existing_item_ids, updated_item_ids_queue):
     print(f"Processing price range: ${min_price:.2f} - ${max_price:.2f}")
     current_page = 1
     total_pages = 1
     local_updated_item_ids = set()
+    
+    # Fields to ignore for updates
+    ignore_fields = {'time_left', 'start_time', 'end_time'}
 
     while current_page <= total_pages:
         try:
@@ -616,21 +619,28 @@ def process_price_range(min_price, max_price, existing_item_ids, updated_item_id
                     product = Product.objects.get(item_id=item_id)
                     changes = {}
                     for key, value in item.items():
-                        if getattr(product, key) != value:
-                            changes[key] = value
+                        if key not in ignore_fields and hasattr(product, key):
+                            current_value = getattr(product, key)
+                            if current_value != value:
+                                changes[key] = value
                     
                     if changes:
                         for key, value in changes.items():
                             setattr(product, key, value)
                         product.save()
                         print(f"Updated product: {item_id} - {product.title}")
+                        print(f"Changes: {changes}")
                         ProductChangeLog.objects.create(
                             item_id=item_id,
                             product_name=product.title,
                             operation='updated'
                         )
+                    else:
+                        print(f"No significant changes for product: {item_id} - {product.title}")
                 except Product.DoesNotExist:
-                    new_product = Product.objects.create(**item)
+                    browse_data = fetch_browse_api_data(item_id)
+                    combined_data = {**item, **browse_data}
+                    new_product = Product.objects.create(**combined_data)
                     print(f"Created new product: {item_id} - {new_product.title}")
                     ProductChangeLog.objects.create(
                         item_id=item_id,
@@ -646,54 +656,64 @@ def process_price_range(min_price, max_price, existing_item_ids, updated_item_id
     updated_item_ids_queue.put(local_updated_item_ids)
 
 def daily_update():
+    print("Starting daily update...")
+    fetch_status, created = FetchStatus.objects.get_or_create(fetch_type='daily')
+    
+    existing_item_ids = set(Product.objects.values_list('item_id', flat=True))
+    updated_item_ids_queue = queue.Queue()
+
+    price_ranges = []
+    min_price = 01.00
+    max_price = 10.00
+    price_increment = 10.00
+
+    while min_price <= 4000.00:
+        price_ranges.append((min_price, max_price))
+        min_price = max_price + 0.01
+        max_price += price_increment
+
+    executor = ThreadPoolExecutor(max_workers=MAX_WORKERS)
+    futures = []
+
     try:
-        print("Starting daily update...")
-        fetch_status, created = FetchStatus.objects.get_or_create(fetch_type='daily')
-        
-        existing_item_ids = set(Product.objects.values_list('item_id', flat=True))
-        updated_item_ids_queue = queue.Queue()
+        for min_price, max_price in price_ranges:
+            future = executor.submit(process_price_range, min_price, max_price, existing_item_ids, updated_item_ids_queue)
+            futures.append(future)
 
-        price_ranges = []
-        min_price = 01.00
-        max_price = 10.00
-        price_increment = 10.00
+        for future in as_completed(futures):
+            future.result()  # This will raise any exceptions that occurred in the thread
 
-        while min_price <= 4000.00:
-            price_ranges.append((min_price, max_price))
-            min_price = max_price + 0.01
-            max_price += price_increment
+    except KeyboardInterrupt:
+        print("Interrupted by user, shutting down...")
+    finally:
+        executor.shutdown(wait=True)
 
-        with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
-            futures = [executor.submit(process_price_range, min_price, max_price, existing_item_ids, updated_item_ids_queue) 
-                       for min_price, max_price in price_ranges]
-            
-            for future in as_completed(futures):
-                future.result()  # This will raise any exceptions that occurred in the thread
+    updated_item_ids = set()
+    while not updated_item_ids_queue.empty():
+        updated_item_ids.update(updated_item_ids_queue.get())
 
-        updated_item_ids = set()
-        while not updated_item_ids_queue.empty():
-            updated_item_ids.update(updated_item_ids_queue.get())
-
-        deleted_item_ids = existing_item_ids - updated_item_ids
-        for item_id in deleted_item_ids:
-            product = Product.objects.get(item_id=item_id)
-            product_name = product.title
-            product.delete()
-            print(f"Deleted product: {item_id} - {product_name}")
-            ProductChangeLog.objects.create(
-                item_id=item_id,
-                product_name=product_name,
-                operation='deleted'
-            )
-        
-        fetch_status.last_run = timezone.now()
-        fetch_status.save()
-        
-        print("Daily update completed successfully.")
-        
-    except Exception as e:
-        print(f"Error in daily update: {e}")
+    deleted_item_ids = existing_item_ids - updated_item_ids
+    for item_id in deleted_item_ids:
+        product = Product.objects.get(item_id=item_id)
+        product_name = product.title
+        product.delete()
+        print(f"Deleted product: {item_id} - {product_name}")
+        ProductChangeLog.objects.create(
+            item_id=item_id,
+            product_name=product_name,
+            operation='deleted'
+        )
+    
+    fetch_status.last_run = timezone.now()
+    fetch_status.save()
+    
+    print("Daily update completed.")
 
 def run_daily_update(request):
-    daily_update()
-    return JsonResponse({"status": "success", "message": "Daily update completed"})
+    try:
+        daily_update()
+        return JsonResponse({"status": "success", "message": "Daily update completed"})
+    except KeyboardInterrupt:
+        return JsonResponse({"status": "interrupted", "message": "Daily update was interrupted"})
+    except Exception as e:
+        return JsonResponse({"status": "error", "message": str(e)})
