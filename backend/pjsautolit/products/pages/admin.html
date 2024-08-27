@@ -12,6 +12,7 @@
         body { padding: 20px; }
         .btn-action { margin-right: 10px; }
         #changelogTable { margin-top: 20px; }
+        #alert { margin-top: 20px; }
     </style>
 </head>
 <body>
@@ -66,7 +67,7 @@
         alert.className = `alert alert-${type}`;
         alert.innerText = message;
         alert.style.display = 'block';
-        setTimeout(() => alert.style.display = 'none', 3000);
+        setTimeout(() => alert.style.display = 'none', 5000); // Display for 5 seconds
     }
 
     function fetchChangelog(date = null) {
@@ -100,46 +101,42 @@
     }
 
     document.getElementById('fetch-items').addEventListener('click', function() {
-    if (confirm('Are you sure you want to fetch items?')) {
-        fetch('/fetch-items/', {
-            method: 'GET',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-            },
-        })
-        .then(response => response.text())
-        .then(data => {
-            document.getElementById('response-message').innerText = data;
-            showAlert('Items fetched successfully', 'success');
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            document.getElementById('response-message').innerText = 'An error occurred.';
-            showAlert('An error occurred while fetching items', 'danger');
-        });
-    }
-});
+        if (confirm('Are you sure you want to fetch items?')) {
+            fetch('/fetch-items/', {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+            })
+            .then(response => response.text())
+            .then(data => {
+                showAlert('Items fetched successfully', 'success');
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('An error occurred while fetching items', 'danger');
+            });
+        }
+    });
 
-document.getElementById('generate-html').addEventListener('click', function() {
-    if (confirm('Are you sure you want to generate HTML?')) {
-        fetch('/generate-html/', {
-            method: 'GET',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-            },
-        })
-        .then(response => response.text())
-        .then(data => {
-            document.getElementById('response-message').innerText = data;
-            showAlert('HTML generated successfully', 'success');
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            document.getElementById('response-message').innerText = 'An error occurred.';
-            showAlert('An error occurred while generating HTML', 'danger');
-        });
-    }
-});
+    document.getElementById('generate-html').addEventListener('click', function() {
+        if (confirm('Are you sure you want to generate HTML?')) {
+            fetch('/generate-html/', {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+            })
+            .then(response => response.text())
+            .then(data => {
+                showAlert('HTML generated successfully', 'success');
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('An error occurred while generating HTML', 'danger');
+            });
+        }
+    });
 
     document.getElementById('filterButton').addEventListener('click', function() {
         const date = document.getElementById('datePicker').value;
