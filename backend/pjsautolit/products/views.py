@@ -717,3 +717,96 @@ def run_daily_update(request):
         return JsonResponse({"status": "interrupted", "message": "Daily update was interrupted"})
     except Exception as e:
         return JsonResponse({"status": "error", "message": str(e)})
+
+import datetime
+
+from django.http import JsonResponse
+from django.utils import timezone
+from django.views.decorators.http import require_GET
+
+from .models import ProductChangeLog
+
+
+@require_GET
+def fetch_changelog(request):
+    date_str = request.GET.get('date')
+    
+    if date_str:
+        try:
+            date = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
+            start_datetime = timezone.make_aware(datetime.datetime.combine(date, datetime.time.min))
+            end_datetime = timezone.make_aware(datetime.datetime.combine(date, datetime.time.max))
+            logs = ProductChangeLog.objects.filter(date__range=(start_datetime, end_datetime))
+        except ValueError:
+            return JsonResponse({'error': 'Invalid date format'}, status=400)
+    else:
+        # If no date is provided, return logs for the last 7 days
+        end_date = timezone.now()
+        start_date = end_date - datetime.timedelta(days=7)
+        logs = ProductChangeLog.objects.filter(date__range=(start_date, end_date))
+
+    data = [
+        {
+            'item_id': log.item_id,
+            'product_name': log.product_name,
+            'operation': log.get_operation_display(),
+            'date': log.date.isoformat()
+        }
+        for log in logs
+    ]
+
+    return JsonResponse(data, safe=False)
+
+import datetime
+import io
+
+from django.http import HttpResponse
+from django.utils import timezone
+from django.views.decorators.http import require_GET
+from openpyxl import Workbook
+
+from .models import ProductChangeLog
+
+
+@require_GET
+def download_excel(request):
+    date_str = request.GET.get('date')
+    
+    if not date_str:
+        return HttpResponse("Date parameter is required", status=400)
+    
+    try:
+        date = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
+        start_datetime = timezone.make_aware(datetime.datetime.combine(date, datetime.time.min))
+        end_datetime = timezone.make_aware(datetime.datetime.combine(date, datetime.time.max))
+        logs = ProductChangeLog.objects.filter(date__range=(start_datetime, end_datetime))
+    except ValueError:
+        return HttpResponse("Invalid date format", status=400)
+
+    # Create a new workbook and select the active sheet
+    wb = Workbook()
+    ws = wb.active
+    ws.title = f"Changelog {date_str}"
+
+    # Write headers
+    headers = ['Item ID', 'Product Name', 'Operation', 'Date']
+    for col, header in enumerate(headers, start=1):
+        ws.cell(row=1, column=col, value=header)
+
+    # Write data
+    for row, log in enumerate(logs, start=2):
+        ws.cell(row=row, column=1, value=log.item_id)
+        ws.cell(row=row, column=2, value=log.product_name)
+        ws.cell(row=row, column=3, value=log.get_operation_display())
+        ws.cell(row=row, column=4, value=log.date.strftime('%Y-%m-%d %H:%M:%S'))
+
+    # Save the workbook to a BytesIO object
+    excel_file = io.BytesIO()
+    wb.save(excel_file)
+    excel_file.seek(0)
+
+    # Prepare the response
+    response = HttpResponse(excel_file.read(), content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = f'attachment; filename=changelog_{date_str}.xlsx'
+
+    return response

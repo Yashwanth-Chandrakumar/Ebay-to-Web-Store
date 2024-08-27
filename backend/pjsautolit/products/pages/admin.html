@@ -1,42 +1,106 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title>Admin Page</title>
     <meta name="description" content="PJ's Auto Literature. Buy Auto literature at the best price. Explore more details including condition, seller information, and shipping options.">
-
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <style>
-        .button {
-            padding: 10px 20px;
-            margin: 10px;
-            border: none;
-            color: white;
-            background-color: #007BFF;
-            cursor: pointer;
-        }
-        .button:hover {
-            background-color: #0056b3;
-        }
-        .response {
-            margin-top: 20px;
-        }
+        body { padding: 20px; }
+        .btn-action { margin-right: 10px; }
+        #changelogTable { margin-top: 20px; }
     </style>
 </head>
 <body>
 
-<h1>Admin Page</h1>
+<div class="container">
+    <h1 class="mb-4">Admin Page</h1>
 
-<div class="object-tools">
-    <button class="button" id="fetch-items">Fetch Items</button>
-    <button class="button" id="generate-html">Generate HTML</button>
+    <div class="row mb-3">
+        <div class="col">
+            <button class="btn btn-primary btn-action" id="fetch-items">Fetch Items</button>
+            <button class="btn btn-success btn-action" id="generate-html">Generate HTML</button>
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-md-4">
+            <input type="text" id="datePicker" class="form-control" placeholder="Select Date">
+        </div>
+        <div class="col-md-4">
+            <button class="btn btn-info" id="filterButton">Filter</button>
+        </div>
+        <div class="col-md-4">
+            <button class="btn btn-warning" id="downloadExcel">Download Excel</button>
+        </div>
+    </div>
+
+    <div id="alert" class="alert" style="display: none;" role="alert"></div>
+
+    <table id="changelogTable" class="table table-striped">
+        <thead>
+            <tr>
+                <th>Item ID</th>
+                <th>Product Name</th>
+                <th>Operation</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody id="changelogBody">
+        </tbody>
+    </table>
 </div>
 
-<div class="response" id="response-message"></div>
-
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script>
+    flatpickr("#datePicker", {
+        dateFormat: "Y-m-d",
+    });
+
+    function showAlert(message, type) {
+        const alert = document.getElementById('alert');
+        alert.className = `alert alert-${type}`;
+        alert.innerText = message;
+        alert.style.display = 'block';
+        setTimeout(() => alert.style.display = 'none', 3000);
+    }
+
+    function fetchChangelog(date = null) {
+        let url = '/fetch-changelog/';
+        if (date) {
+            url += `?date=${date}`;
+        }
+        fetch(url, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            const tbody = document.getElementById('changelogBody');
+            tbody.innerHTML = '';
+            data.forEach(log => {
+                const row = tbody.insertRow();
+                row.insertCell(0).textContent = log.item_id;
+                row.insertCell(1).textContent = log.product_name;
+                row.insertCell(2).textContent = log.operation;
+                row.insertCell(3).textContent = new Date(log.date).toLocaleString();
+            });
+            showAlert('Changelog fetched successfully', 'success');
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('An error occurred while fetching the changelog', 'danger');
+        });
+    }
+
     document.getElementById('fetch-items').addEventListener('click', function() {
+    if (confirm('Are you sure you want to fetch items?')) {
         fetch('/fetch-items/', {
             method: 'GET',
             headers: {
@@ -46,14 +110,18 @@
         .then(response => response.text())
         .then(data => {
             document.getElementById('response-message').innerText = data;
+            showAlert('Items fetched successfully', 'success');
         })
         .catch(error => {
             console.error('Error:', error);
             document.getElementById('response-message').innerText = 'An error occurred.';
+            showAlert('An error occurred while fetching items', 'danger');
         });
-    });
+    }
+});
 
-    document.getElementById('generate-html').addEventListener('click', function() {
+document.getElementById('generate-html').addEventListener('click', function() {
+    if (confirm('Are you sure you want to generate HTML?')) {
         fetch('/generate-html/', {
             method: 'GET',
             headers: {
@@ -63,12 +131,36 @@
         .then(response => response.text())
         .then(data => {
             document.getElementById('response-message').innerText = data;
+            showAlert('HTML generated successfully', 'success');
         })
         .catch(error => {
             console.error('Error:', error);
             document.getElementById('response-message').innerText = 'An error occurred.';
+            showAlert('An error occurred while generating HTML', 'danger');
         });
+    }
+});
+
+    document.getElementById('filterButton').addEventListener('click', function() {
+        const date = document.getElementById('datePicker').value;
+        if (date) {
+            fetchChangelog(date);
+        } else {
+            showAlert('Please select a date', 'warning');
+        }
     });
+
+    document.getElementById('downloadExcel').addEventListener('click', function() {
+        const date = document.getElementById('datePicker').value;
+        if (date) {
+            window.location.href = `/download-excel/?date=${date}`;
+        } else {
+            showAlert('Please select a date for Excel download', 'warning');
+        }
+    });
+
+    // Initial fetch of changelog
+    fetchChangelog();
 </script>
 
 </body>

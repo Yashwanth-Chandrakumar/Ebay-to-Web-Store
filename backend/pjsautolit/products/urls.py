@@ -12,5 +12,7 @@ urlpatterns = [
     path('cron/', views.cron, name='cron'), 
     path('cleandesc/', views.clean_description, name='clean'), 
     path('sync/', views.run_daily_update, name='sync'), 
+    path('fetch-changelog/', views.fetch_changelog, name='fetch_changelog'),
+    path('download-excel/', views.download_excel, name='download_excel'),
 ]
 
