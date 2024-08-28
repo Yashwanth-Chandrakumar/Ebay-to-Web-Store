@@ -796,16 +796,22 @@ def daily_update():
     fetch_status.save()
     
     print("Daily update completed.")
+import asyncio
 
-def run_daily_update(request):
+from django.http import JsonResponse
+
+from .tasks import run_daily_update_async
+
+
+async def run_daily_update(request):
     try:
-        daily_update()
-        return JsonResponse({"status": "success", "message": "Daily update completed"})
-    except KeyboardInterrupt:
-        return JsonResponse({"status": "interrupted", "message": "Daily update was interrupted"})
+        # Start the daily update process in the background
+        asyncio.create_task(run_daily_update_async())
+        return JsonResponse({"status": "success", "message": "Daily update started in the background"})
     except Exception as e:
         return JsonResponse({"status": "error", "message": str(e)})
-
+    
+    
 import datetime
 
 from django.http import JsonResponse

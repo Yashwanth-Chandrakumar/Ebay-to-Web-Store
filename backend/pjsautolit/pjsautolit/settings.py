@@ -78,6 +78,9 @@ MIDDLEWARE = [
 ROOT_URLCONF = 'pjsautolit.urls'
 
 
+# settings.py
+
+ASGI_APPLICATION = 'pjsautolit.asgi.application'
 WSGI_APPLICATION = 'pjsautolit.wsgi.application'
 
 
