@@ -77,7 +77,11 @@ class FetchStatus(models.Model):
     def __str__(self):
         return f"{self.get_fetch_type_display()} - Last run: {self.last_run}"
 
+import json
+
 # In models.py, add this new model:
+from django.db import models
+
 
 class ProductChangeLog(models.Model):
     OPERATIONS = (
@@ -89,6 +93,20 @@ class ProductChangeLog(models.Model):
     product_name = models.CharField(max_length=255)
     operation = models.CharField(max_length=10, choices=OPERATIONS)
     date = models.DateTimeField(auto_now_add=True)
+    changes = models.JSONField(default=dict)
 
     def __str__(self):
         return f"{self.get_operation_display()} - {self.product_name}"
+
+    def set_changes(self, before_dict, after_dict):
+        changes = {}
+        for key in before_dict.keys() | after_dict.keys():
+            if key in before_dict and key in after_dict and before_dict[key] != after_dict[key]:
+                changes[key] = {
+                    'before': before_dict[key],
+                    'after': after_dict[key]
+                }
+        self.changes = changes
+
+    def get_changes(self):
+        return self.changes

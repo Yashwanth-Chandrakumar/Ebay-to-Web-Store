@@ -580,11 +580,88 @@ def clean_description(description):
     
     # Remove everything after "**Please check out**"
     cleaned_text = re.split(r'Please check out', cleaned_text, flags=re.IGNORECASE)[0]
+    cleaned_text = re.split(r'International orders', cleaned_text, flags=re.IGNORECASE)[0]
     
     # Remove extra whitespace
     cleaned_text = re.sub(r'\s+', ' ', cleaned_text).strip()
     
     return cleaned_text
+import queue
+import re
+import threading
+
+from django.http import JsonResponse
+
+from .models import Product
+
+
+def clean_short_description(description):
+    if not description:
+        return description
+    cleaned_text = re.sub(r"International orders.*?(\.|\n|$)", "", description)
+    cleaned_text = re.sub(r"Please check out.*?(\.|\n|$)", "", cleaned_text)
+    return cleaned_text.strip()
+
+def process_product(q, updated_count, updated_count_lock):
+    while True:
+        product = q.get()
+        if product is None:
+            break
+        
+        original_description = product.short_description
+        cleaned_description = clean_short_description(original_description)
+
+        if original_description != cleaned_description:
+            product.short_description = cleaned_description
+            product.save()
+
+            with updated_count_lock:
+                updated_count[0] += 1
+
+        q.task_done()
+
+
+@require_GET
+def fetch_and_print_descriptions(request):
+    try:
+        products = Product.objects.exclude(short_description__isnull=True)
+        updated_count = [0]  # Use a list to allow modification within threads
+        updated_count_lock = threading.Lock()
+
+        q = queue.Queue()
+
+        # Start worker threads
+        threads = []
+        for _ in range(30):
+            t = threading.Thread(target=process_product, args=(q, updated_count, updated_count_lock))
+            t.start()
+            threads.append(t)
+
+        # Queue the products for processing
+        for product in products:
+            q.put(product)
+
+        # Wait for the queue to be processed
+        q.join()
+
+        # Stop worker threads
+        for _ in range(30):
+            q.put(None)
+        for t in threads:
+            t.join()
+
+        return JsonResponse({
+            "status": "success",
+            "message": f"Cleaned and updated {updated_count[0]} descriptions."
+        }, status=200)
+
+    except Exception as e:
+        return JsonResponse({
+            "status": "error",
+            "message": str(e)
+        }, status=500)
+
+
 
 import queue
 import threading
@@ -606,6 +683,12 @@ def process_price_range(min_price, max_price, existing_item_ids, updated_item_id
     # Fields to ignore for updates
     ignore_fields = {'time_left', 'start_time', 'end_time'}
 
+    # Field mapping for mismatched names
+    field_mapping = {
+        'description': 'short_description',
+        # Add any other mismatched field names here
+    }
+
     while current_page <= total_pages:
         try:
             items, total_pages = fetch_finding_api_data(page_number=current_page, min_price=min_price, max_price=max_price)
@@ -615,14 +698,15 @@ def process_price_range(min_price, max_price, existing_item_ids, updated_item_id
                 item_id = item['item_id']
                 local_updated_item_ids.add(item_id)
                 
+                # Apply field mapping
+                mapped_item = {field_mapping.get(k, k): v for k, v in item.items()}
+                
                 try:
                     product = Product.objects.get(item_id=item_id)
-                    changes = {}
-                    for key, value in item.items():
-                        if key not in ignore_fields and hasattr(product, key):
-                            current_value = getattr(product, key)
-                            if current_value != value:
-                                changes[key] = value
+                    before_dict = {key: getattr(product, key) for key in mapped_item.keys() if key not in ignore_fields and hasattr(product, key)}
+                    after_dict = {key: value for key, value in mapped_item.items() if key not in ignore_fields and hasattr(product, key)}
+                    
+                    changes = {key: value for key, value in after_dict.items() if before_dict.get(key) != value}
                     
                     if changes:
                         for key, value in changes.items():
@@ -630,16 +714,20 @@ def process_price_range(min_price, max_price, existing_item_ids, updated_item_id
                         product.save()
                         print(f"Updated product: {item_id} - {product.title}")
                         print(f"Changes: {changes}")
-                        ProductChangeLog.objects.create(
+                        
+                        change_log = ProductChangeLog.objects.create(
                             item_id=item_id,
                             product_name=product.title,
                             operation='updated'
                         )
+                        change_log.set_changes(before_dict, after_dict)
+                        change_log.save()
                     else:
                         print(f"No significant changes for product: {item_id} - {product.title}")
                 except Product.DoesNotExist:
                     browse_data = fetch_browse_api_data(item_id)
-                    combined_data = {**item, **browse_data}
+                    mapped_browse_data = {field_mapping.get(k, k): v for k, v in browse_data.items()}
+                    combined_data = {**mapped_item, **mapped_browse_data}
                     new_product = Product.objects.create(**combined_data)
                     print(f"Created new product: {item_id} - {new_product.title}")
                     ProductChangeLog.objects.create(

@@ -14,5 +14,6 @@ urlpatterns = [
     path('sync/', views.run_daily_update, name='sync'), 
     path('fetch-changelog/', views.fetch_changelog, name='fetch_changelog'),
     path('download-excel/', views.download_excel, name='download_excel'),
+    path('fetch-and-clean-descriptions/', views.fetch_and_print_descriptions, name='international'),
 ]
 
