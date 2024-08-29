@@ -674,14 +674,11 @@ from .models import FetchStatus, Product, ProductChangeLog
 
 MAX_WORKERS = 30 
 
-def process_price_range(min_price, max_price, existing_item_ids, updated_item_ids_queue):
+def process_price_range(min_price, max_price, existing_item_ids, updated_item_ids_queue, fields_to_check):
     print(f"Processing price range: ${min_price:.2f} - ${max_price:.2f}")
     current_page = 1
     total_pages = 1
     local_updated_item_ids = set()
-    
-    # Fields to ignore for updates
-    ignore_fields = {'time_left', 'start_time', 'end_time'}
 
     # Field mapping for mismatched names
     field_mapping = {
@@ -699,12 +696,12 @@ def process_price_range(min_price, max_price, existing_item_ids, updated_item_id
                 local_updated_item_ids.add(item_id)
                 
                 # Apply field mapping
-                mapped_item = {field_mapping.get(k, k): v for k, v in item.items()}
+                mapped_item = {field_mapping.get(k, k): v for k, v in item.items() if k in fields_to_check}
                 
                 try:
                     product = Product.objects.get(item_id=item_id)
-                    before_dict = {key: getattr(product, key) for key in mapped_item.keys() if key not in ignore_fields and hasattr(product, key)}
-                    after_dict = {key: value for key, value in mapped_item.items() if key not in ignore_fields and hasattr(product, key)}
+                    before_dict = {key: getattr(product, key) for key in fields_to_check if hasattr(product, key)}
+                    after_dict = {key: value for key, value in mapped_item.items() if key in fields_to_check and hasattr(product, key)}
                     
                     changes = {key: value for key, value in after_dict.items() if before_dict.get(key) != value}
                     
@@ -723,10 +720,10 @@ def process_price_range(min_price, max_price, existing_item_ids, updated_item_id
                         change_log.set_changes(before_dict, after_dict)
                         change_log.save()
                     else:
-                        print(f"No significant changes for product: {item_id} - {product.title}")
+                        print(f"No changes for checked fields in product: {item_id} - {product.title}")
                 except Product.DoesNotExist:
                     browse_data = fetch_browse_api_data(item_id)
-                    mapped_browse_data = {field_mapping.get(k, k): v for k, v in browse_data.items()}
+                    mapped_browse_data = {field_mapping.get(k, k): v for k, v in browse_data.items() if k in fields_to_check}
                     combined_data = {**mapped_item, **mapped_browse_data}
                     new_product = Product.objects.create(**combined_data)
                     print(f"Created new product: {item_id} - {new_product.title}")
@@ -765,6 +762,9 @@ def daily_update():
 
     try:
         for min_price, max_price in price_ranges:
+            fields_to_check = ['item_id', 'title', 'global_id', 'category_id', 'category_name', 'gallery_url',
+        'view_item_url', 'auto_pay', 'postal_code', 'location', 'country', 'shipping_type',
+        'ship_to_locations']
             future = executor.submit(process_price_range, min_price, max_price, existing_item_ids, updated_item_ids_queue)
             futures.append(future)
 
