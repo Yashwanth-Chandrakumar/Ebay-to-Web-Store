@@ -805,12 +805,12 @@ from .tasks import run_daily_update_async
 
 async def run_daily_update(request):
     try:
-        # Start the daily update process in the background
-        asyncio.create_task(run_daily_update_async())
-        return JsonResponse({"status": "success", "message": "Daily update started in the background"})
+        daily_update()
+        return JsonResponse({"status": "success", "message": "Daily update completed"})
+    except KeyboardInterrupt:
+        return JsonResponse({"status": "interrupted", "message": "Daily update was interrupted"})
     except Exception as e:
         return JsonResponse({"status": "error", "message": str(e)})
-    
     
 import datetime
 
