@@ -745,7 +745,7 @@ def daily_update():
     fetch_status, created = FetchStatus.objects.get_or_create(fetch_type='daily')
     
     existing_item_ids = set(Product.objects.values_list('item_id', flat=True))
-    updated_item_ids_queue = queue.Queue()
+    updated_item_ids = set()
 
     price_ranges = []
     min_price = 01.00
@@ -757,28 +757,76 @@ def daily_update():
         min_price = max_price + 0.01
         max_price += price_increment
 
-    executor = ThreadPoolExecutor(max_workers=MAX_WORKERS)
-    futures = []
+    fields_to_check = ['item_id', 'title', 'global_id', 'category_id', 'category_name', 'gallery_url',
+                       'view_item_url', 'auto_pay', 'postal_code', 'location', 'country', 'shipping_type',
+                       'ship_to_locations']
+
+    # Field mapping for mismatched names
+    field_mapping = {
+        'description': 'short_description',
+        # Add any other mismatched field names here
+    }
 
     try:
         for min_price, max_price in price_ranges:
-            fields_to_check = ['item_id', 'title', 'global_id', 'category_id', 'category_name', 'gallery_url',
-        'view_item_url', 'auto_pay', 'postal_code', 'location', 'country', 'shipping_type',
-        'ship_to_locations']
-            future = executor.submit(process_price_range, min_price, max_price, existing_item_ids, updated_item_ids_queue)
-            futures.append(future)
+            print(f"Processing price range: ${min_price:.2f} - ${max_price:.2f}")
+            current_page = 1
+            total_pages = 1
 
-        for future in as_completed(futures):
-            future.result()  # This will raise any exceptions that occurred in the thread
+            while current_page <= total_pages:
+                try:
+                    items, total_pages = fetch_finding_api_data(page_number=current_page, min_price=min_price, max_price=max_price)
+                    print(f"Fetched page {current_page} of {total_pages} for price range ${min_price:.2f} - ${max_price:.2f}")
+
+                    for item in items:
+                        item_id = item['item_id']
+                        updated_item_ids.add(item_id)
+                        
+                        # Apply field mapping
+                        mapped_item = {field_mapping.get(k, k): v for k, v in item.items() if k in fields_to_check}
+                        
+                        try:
+                            product = Product.objects.get(item_id=item_id)
+                            before_dict = {key: getattr(product, key) for key in fields_to_check if hasattr(product, key)}
+                            after_dict = {key: value for key, value in mapped_item.items() if key in fields_to_check and hasattr(product, key)}
+                            
+                            changes = {key: value for key, value in after_dict.items() if before_dict.get(key) != value}
+                            
+                            if changes:
+                                for key, value in changes.items():
+                                    setattr(product, key, value)
+                                product.save()
+                                print(f"Updated product: {item_id} - {product.title}")
+                                print(f"Changes: {changes}")
+                                
+                                change_log = ProductChangeLog.objects.create(
+                                    item_id=item_id,
+                                    product_name=product.title,
+                                    operation='updated'
+                                )
+                                change_log.set_changes(before_dict, after_dict)
+                                change_log.save()
+                            else:
+                                print(f"No changes for checked fields in product: {item_id} - {product.title}")
+                        except Product.DoesNotExist:
+                            browse_data = fetch_browse_api_data(item_id)
+                            mapped_browse_data = {field_mapping.get(k, k): v for k, v in browse_data.items() if k in fields_to_check}
+                            combined_data = {**mapped_item, **mapped_browse_data}
+                            new_product = Product.objects.create(**combined_data)
+                            print(f"Created new product: {item_id} - {new_product.title}")
+                            ProductChangeLog.objects.create(
+                                item_id=item_id,
+                                product_name=new_product.title,
+                                operation='created'
+                            )
+                    
+                    current_page += 1
+                    
+                except Exception as e:
+                    print(f"Error fetching data for page {current_page}, price range ${min_price:.2f} - ${max_price:.2f}: {e}")
 
     except KeyboardInterrupt:
         print("Interrupted by user, shutting down...")
-    finally:
-        executor.shutdown(wait=True)
-
-    updated_item_ids = set()
-    while not updated_item_ids_queue.empty():
-        updated_item_ids.update(updated_item_ids_queue.get())
 
     deleted_item_ids = existing_item_ids - updated_item_ids
     for item_id in deleted_item_ids:
@@ -796,22 +844,19 @@ def daily_update():
     fetch_status.save()
     
     print("Daily update completed.")
-import asyncio
 
 from django.http import JsonResponse
 
 from .tasks import run_daily_update_async
 
 
+@require_GET
 def run_daily_update(request):
     try:
         daily_update()
-        return JsonResponse({"status": "success", "message": "Daily update completed"})
-    except KeyboardInterrupt:
-        return JsonResponse({"status": "interrupted", "message": "Daily update was interrupted"})
+        return JsonResponse({"status": "success", "message": "Daily update completed successfully"})
     except Exception as e:
         return JsonResponse({"status": "error", "message": str(e)})
-    
 import datetime
 
 from django.http import JsonResponse
