@@ -803,7 +803,7 @@ from django.http import JsonResponse
 from .tasks import run_daily_update_async
 
 
-async def run_daily_update(request):
+def run_daily_update(request):
     try:
         daily_update()
         return JsonResponse({"status": "success", "message": "Daily update completed"})
