@@ -883,17 +883,18 @@ def fetch_changelog(request):
         end_date = timezone.now()
         start_date = end_date - datetime.timedelta(days=7)
         logs = ProductChangeLog.objects.filter(date__range=(start_date, end_date))
-
+    
     data = [
         {
             'item_id': log.item_id,
             'product_name': log.product_name,
             'operation': log.get_operation_display(),
-            'date': log.date.isoformat()
+            'date': log.date.isoformat(),
+            'changes': log.changes  # Assuming 'changes' is stored as a JSON field or similar
         }
         for log in logs
     ]
-
+    
     return JsonResponse(data, safe=False)
 
 import datetime

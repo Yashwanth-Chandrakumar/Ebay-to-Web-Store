@@ -13,6 +13,7 @@
         .btn-action { margin-right: 10px; }
         #changelogTable { margin-top: 20px; }
         #alert { margin-top: 20px; }
+        .changes-cell { max-width: 300px; overflow-wrap: break-word; }
     </style>
 </head>
 <body>
@@ -24,6 +25,7 @@
         <div class="col">
             <button class="btn btn-primary btn-action" id="fetch-items">Fetch Items</button>
             <button class="btn btn-success btn-action" id="generate-html">Generate HTML</button>
+            <button class="btn btn-warning btn-action" id="generate-report">Generate Report</button>
         </div>
     </div>
 
@@ -48,6 +50,7 @@
                 <th>Product Name</th>
                 <th>Operation</th>
                 <th>Date</th>
+                <th>Changes</th>
             </tr>
         </thead>
         <tbody id="changelogBody">
@@ -70,35 +73,60 @@
         setTimeout(() => alert.style.display = 'none', 5000); // Display for 5 seconds
     }
 
+    
+
     function fetchChangelog(date = null) {
-        let url = '/fetch-changelog/';
-        if (date) {
-            url += `?date=${date}`;
-        }
-        fetch(url, {
-            method: 'GET',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-            },
-        })
-        .then(response => response.json())
-        .then(data => {
-            const tbody = document.getElementById('changelogBody');
-            tbody.innerHTML = '';
-            data.forEach(log => {
-                const row = tbody.insertRow();
-                row.insertCell(0).textContent = log.item_id;
-                row.insertCell(1).textContent = log.product_name;
-                row.insertCell(2).textContent = log.operation;
-                row.insertCell(3).textContent = new Date(log.date).toLocaleString();
-            });
-            showAlert('Changelog fetched successfully', 'success');
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showAlert('An error occurred while fetching the changelog', 'danger');
-        });
+    let url = '/fetch-changelog/';
+    if (date) {
+        url += `?date=${date}`;
     }
+    fetch(url, {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Received data:', data);  // Debugging line
+        const tbody = document.getElementById('changelogBody');
+        tbody.innerHTML = '';
+        data.forEach(log => {
+            console.log('Processing log:', log);  // Debugging line
+            const row = tbody.insertRow();
+            row.insertCell(0).textContent = log.item_id;
+            row.insertCell(1).textContent = log.product_name;
+            row.insertCell(2).textContent = log.operation;
+            row.insertCell(3).textContent = new Date(log.date).toLocaleString();
+            
+            const changesCell = row.insertCell(4);
+            changesCell.className = 'changes-cell';
+            console.log('Changes for this log:', log.changes);  // Debugging line
+            changesCell.innerHTML = formatChanges(log.changes);
+        });
+        showAlert('Changelog fetched successfully', 'success');
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('An error occurred while fetching the changelog', 'danger');
+    });
+}
+
+function formatChanges(changes) {
+    console.log('Formatting changes:', changes);  // Debugging line
+    if (!changes || Object.keys(changes).length === 0) {
+        return 'No changes';
+    }
+    let formattedChanges = '<ul>';
+    for (const [key, value] of Object.entries(changes)) {
+        formattedChanges += `<li><strong>${key}:</strong> ${value.before} → ${value.after}</li>`;
+    }
+    formattedChanges += '</ul>';
+    return formattedChanges;
+}
+
+// Make sure to call fetchChangelog() when the page loads
+
 
     document.getElementById('fetch-items').addEventListener('click', function() {
         if (confirm('Are you sure you want to fetch items?')) {
@@ -138,6 +166,25 @@
         }
     });
 
+    document.getElementById('generate-report').addEventListener('click', function() {
+        if (confirm('Are you sure you want to generate a report?')) {
+            fetch('/sync/', {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+            })
+            .then(response => response.text())
+            .then(data => {
+                showAlert('Report generated successfully', 'success');
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('An error occurred while generating the report', 'danger');
+            });
+        }
+    });
+
     document.getElementById('filterButton').addEventListener('click', function() {
         const date = document.getElementById('datePicker').value;
         if (date) {
@@ -156,8 +203,9 @@
         }
     });
 
-    // Initial fetch of changelog
+    document.addEventListener('DOMContentLoaded', function() {
     fetchChangelog();
+});
 </script>
 
 </body>
