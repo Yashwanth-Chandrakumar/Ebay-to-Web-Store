@@ -359,6 +359,7 @@ Please add all items you want to purchase to the shopping cart before checking o
     </div>
     <script>
         // Function to show the Shipping Info modal
+// Function to show the Shipping Info modal
 function showShippingInfo() {
     document.getElementById('shippingModal').style.display = 'block';
 }
@@ -378,38 +379,28 @@ function closePriceInfo() {
     document.getElementById('priceModal').style.display = 'none';
 }
 
-// Close the modal when clicking outside of it
-window.onclick = function(event) {
-    var shippingModal = document.getElementById('shippingModal');
-    var priceModal = document.getElementById('priceModal');
-    
-    if (event.target == shippingModal) {
-        shippingModal.style.display = 'none';
-    }
-    
-    if (event.target == priceModal) {
-        priceModal.style.display = 'none';
-    }
+// Function to show the More Info modal
+function showMore() {
+    document.getElementById('moreModal').style.display = 'block';
 }
 
-         function showMore() {
-        document.getElementById('moreModal').style.display = 'block';
-    }
+// Function to close the More Info modal
+function closeMore() {
+    document.getElementById('moreModal').style.display = 'none';
+}
 
-    function closeMore() {
-        document.getElementById('moreModal').style.display = 'none';
-    }
-
-    // Close the modal when clicking outside of it
-    window.onclick = function(event) {
-        var modal = document.getElementById('moreModal');
+// Close the modal when clicking outside of it
+window.onclick = function(event) {
+    var modals = ['shippingModal', 'priceModal', 'moreModal'];
+    
+    modals.forEach(function(modalId) {
+        var modal = document.getElementById(modalId);
         if (event.target == modal) {
             modal.style.display = 'none';
         }
-    }
-        function changeImage(src) {
-            document.getElementById('largeImage').src = src;
-        }
+    });
+}
+
     </script>
 </body>
 </html>
