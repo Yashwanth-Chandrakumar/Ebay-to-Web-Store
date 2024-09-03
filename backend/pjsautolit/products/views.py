@@ -545,6 +545,134 @@ def product_list(request):
     }
     return render(request, 'pages/product_list.html', context)
 
+from django.conf import settings
+from django.contrib import messages
+from django.core.paginator import Paginator
+from django.shortcuts import get_object_or_404, redirect, render
+from square.client import Client
+
+from .models import Cart, CartItem, Order, Product
+
+
+def product_list(request):
+    query = request.GET.get('query', '')
+    products = Product.objects.all()
+
+    if query:
+        products = products.filter(title__icontains=query)
+
+    paginator = Paginator(products, 10)  # Show 10 products per page.
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        'page_obj': page_obj,
+        'query': query
+    }
+    return render(request, 'pages/product_list.html', context)
+
+def add_to_cart(request, product_id):
+    product = get_object_or_404(Product, item_id=product_id)
+    cart, created = Cart.objects.get_or_create(id=request.session.get('cart_id'))
+    
+    if not created:
+        cart_item, item_created = CartItem.objects.get_or_create(cart=cart, product=product)
+        if not item_created:
+            cart_item.quantity += 1
+            cart_item.save()
+    else:
+        request.session['cart_id'] = cart.id
+        CartItem.objects.create(cart=cart, product=product, quantity=1)
+    
+    messages.success(request, f"{product.title} has been added to your cart.")
+    return redirect('product_list')
+
+def view_cart(request):
+    cart_id = request.session.get('cart_id')
+    if cart_id:
+        cart = get_object_or_404(Cart, id=cart_id)
+        cart_items = cart.cartitem_set.all()
+        cart_total = cart.total_amount()
+    else:
+        cart_items = []
+        cart_total = 0
+
+    return render(request, 'pages/cart.html', {
+        'cart_items': cart_items,
+        'cart_total': cart_total
+    })
+
+def update_cart(request, item_id):
+    cart_item = get_object_or_404(CartItem, id=item_id)
+    quantity = int(request.POST.get('quantity', 1))
+    if quantity > 0:
+        cart_item.quantity = quantity
+        cart_item.save()
+    else:
+        cart_item.delete()
+    return redirect('view_cart')
+
+def remove_from_cart(request, item_id):
+    cart_item = get_object_or_404(CartItem, id=item_id)
+    cart_item.delete()
+    return redirect('view_cart')
+
+def checkout(request):
+    cart_id = request.session.get('cart_id')
+    if not cart_id:
+        return redirect('view_cart')
+    
+    cart = get_object_or_404(Cart, id=cart_id)
+    cart_items = cart.cartitem_set.all()
+    cart_total = cart.total_amount()
+
+    if request.method == 'POST':
+        client = Client(
+            access_token=settings.SQUARE_ACCESS_TOKEN,
+            environment='sandbox'  # Use 'production' for live transactions
+        )
+        
+        payment_api = client.payments
+        result = payment_api.create_payment(
+            source_id=request.POST['nonce'],
+            amount_money={
+                'amount': int(cart_total * 100),  # Amount in cents
+                'currency': 'USD'
+            },
+            idempotency_key=str(cart.id),
+            location_id=settings.SQUARE_LOCATION_ID
+        )
+        
+        if result.is_success():
+            order = Order.objects.create(
+                cart=cart,
+                status='completed',
+                total_amount=cart_total,
+                square_payment_id=result.body['payment']['id']
+            )
+            del request.session['cart_id']
+            return redirect('order_confirmation', order_id=order.id)
+        else:
+            return render(request, 'pages/error.html', {'error': result.errors})
+    
+    return render(request, 'pages/checkout.html', {
+        'cart_items': cart_items,
+        'cart_total': cart_total,
+        'square_application_id': settings.SQUARE_APPLICATION_ID,
+        'square_location_id': settings.SQUARE_LOCATION_ID,
+    })
+
+def order_confirmation(request, order_id):
+    order = get_object_or_404(Order, id=order_id)
+    order_items = order.cart.cartitem_set.all()
+    order_total = order.total_amount
+
+    return render(request, 'pages/order_confirmation.html', {
+        'order': order,
+        'order_items': order_items,
+        'order_total': order_total
+    })
+
 def product_detail(request, product_slug):
     product = get_object_or_404(Product, html_link=product_slug)
     html_file_path = os.path.join('products', 'viewproduct', f'{product.html_link}.html')
@@ -579,8 +707,7 @@ def clean_description(description):
     cleaned_text = text_content.replace("Â", "")
     
     # Remove everything after "**Please check out**"
-    cleaned_text = re.split(r'Please check out', cleaned_text, flags=re.IGNORECASE)[0]
-    cleaned_text = re.split(r'International orders', cleaned_text, flags=re.IGNORECASE)[0]
+    cleaned_text = re.split(r"(condition)\b.*", cleaned_text, flags=re.IGNORECASE)[0] + ' condition'
     
     # Remove extra whitespace
     cleaned_text = re.sub(r'\s+', ' ', cleaned_text).strip()
@@ -598,8 +725,7 @@ from .models import Product
 def clean_short_description(description):
     if not description:
         return description
-    cleaned_text = re.sub(r"International orders.*?(\.|\n|$)", "", description)
-    cleaned_text = re.sub(r"Please check out.*?(\.|\n|$)", "", cleaned_text)
+    cleaned_text = re.split(r"(condition)\b.*", description, flags=re.IGNORECASE)[0] + ' condition'
     return cleaned_text.strip()
 
 def process_product(q, updated_count, updated_count_lock):

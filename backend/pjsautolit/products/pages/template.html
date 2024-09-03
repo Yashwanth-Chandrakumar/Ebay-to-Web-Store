@@ -307,14 +307,48 @@ Please add all items you want to purchase to the shopping cart before checking o
                             </p>
                         </div>
                     </div>
-                <p class="price">{{ product.currency }} {{ product.price }}</p>
-                <button class="add-to-cart-button">Add to cart</button>
+                    <!-- Modal for Shipping Info -->
+<div id="shippingModal" class="modal" style="display: none; position: fixed; z-index: 1001; padding-top: 100px; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4);">
+    <div class="modal-content" style="background-color: #fff; margin: auto; padding: 20px; border: 1px solid #888; width: 80%; max-width: 600px; border-radius: 10px;">
+        <span class="close" onclick="closeShippingInfo()" style="color: #aaa; float: right; font-size: 28px; font-weight: bold;cursor: pointer;">&times;</span>
+        <p>
+            International orders with multiple purchases Please Wait for Your Invoice!!. You will pay actual postage + $3 for handling and packaging. Your invoice will include this $3.
+        </p>
+    </div>
+</div>
+
+<!-- Modal for Price Info -->
+<div id="priceModal" class="modal" style="display: none; position: fixed; z-index: 1001; padding-top: 100px; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4);">
+    <div class="modal-content" style="background-color: #fff; margin: auto; padding: 20px; border: 1px solid #888; width: 80%; max-width: 600px; border-radius: 10px;">
+        <span class="close" onclick="closePriceInfo()" style="color: #aaa; float: right; font-size: 28px; font-weight: bold;cursor: pointer;">&times;</span>
+        <p>
+            Payment must be received within 10 days. We accept PayPal and we offer a 30-day satisfaction guarantee.
+        </p>
+    </div>
+</div>
+
+                    <p class="price">
+                        <a href="javascript:void(0);" onclick="showPriceInfo()" style="color: var(--primary-color); text-decoration: underline;">
+                            {{ product.currency }} {{ product.price }}
+                        </a>
+                    </p>
+                <form method="post" action="{% url 'add_to_cart' product.item_id %}">
+    {% csrf_token %}
+    <button type="submit" class="add-to-cart-button">Add to Cart</button>
+</form>
                 <div class="product-details">
                     <h2>Item specifics</h2>
                     <table>
                         <tr><td>Item ID:</td><td>{{ product.item_id }}</td></tr>
                         <!-- <tr><td>Category:</td><td>{{ product.category_name }}</td></tr> -->
-                        <tr><td>Shipping Cost:</td><td>$ {{ product.shipping_cost }}</td></tr>
+                        <tr>
+                            <td>Shipping Cost:</td>
+                            <td>
+                                <a href="javascript:void(0);" onclick="showShippingInfo()" style="color: var(--primary-color); text-decoration: underline;">
+                                    $ {{ product.shipping_cost }}
+                                </a>
+                            </td>
+                        </tr>
                         <!-- <tr><td>Shipping Time:</td><td>{{ product.shipping_time }}</td></tr> -->
                         <tr><td>Estimated Delivery:</td><td>{{ product.min_estimated_delivery_date|date:"Y-m-d" }} - {{ product.max_estimated_delivery_date|date:"Y-m-d" }}</td></tr>
                         <tr><td>Ship To Locations:</td><td>{{ product.ship_to_locations }}</td></tr>
@@ -324,6 +358,40 @@ Please add all items you want to purchase to the shopping cart before checking o
         </div>
     </div>
     <script>
+        // Function to show the Shipping Info modal
+function showShippingInfo() {
+    document.getElementById('shippingModal').style.display = 'block';
+}
+
+// Function to close the Shipping Info modal
+function closeShippingInfo() {
+    document.getElementById('shippingModal').style.display = 'none';
+}
+
+// Function to show the Price Info modal
+function showPriceInfo() {
+    document.getElementById('priceModal').style.display = 'block';
+}
+
+// Function to close the Price Info modal
+function closePriceInfo() {
+    document.getElementById('priceModal').style.display = 'none';
+}
+
+// Close the modal when clicking outside of it
+window.onclick = function(event) {
+    var shippingModal = document.getElementById('shippingModal');
+    var priceModal = document.getElementById('priceModal');
+    
+    if (event.target == shippingModal) {
+        shippingModal.style.display = 'none';
+    }
+    
+    if (event.target == priceModal) {
+        priceModal.style.display = 'none';
+    }
+}
+
          function showMore() {
         document.getElementById('moreModal').style.display = 'block';
     }

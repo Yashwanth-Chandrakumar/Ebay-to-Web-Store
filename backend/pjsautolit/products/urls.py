@@ -16,5 +16,12 @@ urlpatterns = [
     path('fetch-changelog/', views.fetch_changelog, name='fetch_changelog'),
     path('download-excel/', views.download_excel, name='download_excel'),
     path('fetch-and-clean-descriptions/', views.fetch_and_print_descriptions, name='international'),
+    path('add-to-cart/<int:product_id>/', views.add_to_cart, name='add_to_cart'),
+    path('cart/', views.view_cart, name='view_cart'),
+    path('cart/update/<int:item_id>/', views.update_cart, name='update_cart'),
+    path('cart/remove/<int:item_id>/', views.remove_from_cart, name='remove_from_cart'),
+    path('checkout/', views.checkout, name='checkout'),
+    path('order-confirmation/<int:order_id>/', views.order_confirmation, name='order_confirmation'),
+
 ]
 
