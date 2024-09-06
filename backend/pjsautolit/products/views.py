@@ -570,6 +570,48 @@ def product_list(request):
         'query': query
     }
     return render(request, 'pages/product_list.html', context)
+from django.conf import settings
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from square.client import Client
+
+
+@csrf_exempt
+def process_payment(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        token = data.get('sourceId')
+        location_id = data.get('locationId')
+
+        client = Client(
+            access_token=settings.SQUARE_ACCESS_TOKEN,
+            environment='sandbox'  # or 'production' for live transactions
+        )
+
+        payments_api = client.payments
+        result = payments_api.create_payment(
+            source_id=token,
+            amount_money={
+                'amount': 100,  # Example amount, update with the actual amount
+                'currency': 'USD'
+            },
+            idempotency_key='unique_key',  # Use a unique key for idempotency
+            location_id=location_id
+        )
+
+        if result.is_success():
+            order = Order.objects.create(
+                cart=cart,
+                status='completed',
+                total_amount=cart_total,
+                square_payment_id=result.body['payment']['id']
+            )
+            return JsonResponse({'status': 'Payment Successful', 'order_id': order.id})
+        else:
+            return JsonResponse({'error': result.errors}, status=400)
+
+
+    return JsonResponse({'error': 'Invalid request'}, status=400)
 
 def add_to_cart(request, product_id):
     product = get_object_or_404(Product, item_id=product_id)
@@ -617,50 +659,80 @@ def remove_from_cart(request, item_id):
     cart_item.delete()
     return redirect('view_cart')
 
-def checkout(request):
-    cart_id = request.session.get('cart_id')
-    if not cart_id:
-        return redirect('view_cart')
-    
-    cart = get_object_or_404(Cart, id=cart_id)
-    cart_items = cart.cartitem_set.all()
-    cart_total = cart.total_amount()
+import logging
 
-    if request.method == 'POST':
-        client = Client(
-            access_token=settings.SQUARE_ACCESS_TOKEN,
-            environment='sandbox'  # Use 'production' for live transactions
-        )
+from django.conf import settings
+from django.shortcuts import get_object_or_404, redirect, render
+from square.client import Client
+
+from .models import Cart, Order
+
+logger = logging.getLogger(__name__)
+
+def checkout(request):
+    try:
+        # Step 1: Check if cart_id is in session
+        cart_id = request.session.get('cart_id')
+        print("Cart ID:", cart_id)  # Debugging output
+        if not cart_id:
+            print("No cart ID in session")
+            return redirect('view_cart')
         
-        payment_api = client.payments
-        result = payment_api.create_payment(
-            source_id=request.POST['nonce'],
-            amount_money={
-                'amount': int(cart_total * 100),  # Amount in cents
-                'currency': 'USD'
-            },
-            idempotency_key=str(cart.id),
-            location_id=settings.SQUARE_LOCATION_ID
-        )
-        
-        if result.is_success():
-            order = Order.objects.create(
-                cart=cart,
-                status='completed',
-                total_amount=cart_total,
-                square_payment_id=result.body['payment']['id']
+        # Step 2: Fetch the cart and its items
+        cart = get_object_or_404(Cart, id=cart_id)
+        cart_items = cart.cartitem_set.all()
+        cart_total = cart.total_amount()
+        print("Cart Total:", cart_total)  # Debugging output
+
+        if request.method == 'POST':
+            # Step 3: Initialize Square client
+            client = Client(
+                access_token=settings.SQUARE_ACCESS_TOKEN,
+                environment='sandbox'  # Ensure this is correct for your setup
             )
-            del request.session['cart_id']
-            return redirect('order_confirmation', order_id=order.id)
-        else:
-            return render(request, 'pages/error.html', {'error': result.errors})
-    
-    return render(request, 'pages/checkout.html', {
-        'cart_items': cart_items,
-        'cart_total': cart_total,
-        'square_application_id': settings.SQUARE_APPLICATION_ID,
-        'square_location_id': settings.SQUARE_LOCATION_ID,
-    })
+            print("Square client initialized")  # Debugging output
+            
+            payment_api = client.payments
+            
+            # Step 4: Make payment request
+            result = payment_api.create_payment(
+                source_id=request.POST['nonce'],
+                amount_money={
+                    'amount': int(cart_total * 100),  # Amount in cents
+                    'currency': 'USD'
+                },
+                idempotency_key=str(cart.id),
+                location_id=settings.SQUARE_LOCATION_ID
+            )
+            print("Payment result:", result)  # Debugging output
+
+            # Step 5: Handle payment result
+            if result.is_success():
+                print("Payment successful")  # Debugging output
+                order = Order.objects.create(
+                    cart=cart,
+                    status='completed',
+                    total_amount=cart_total,
+                    square_payment_id=result.body['payment']['id']
+                )
+                del request.session['cart_id']
+                return redirect('order_confirmation', order_id=order.id)
+            else:
+                print("Payment failed:", result.errors)  # Debugging output
+                logger.error(f"Payment error: {result.errors}")
+                return render(request, 'pages/error.html', {'error': result.errors})
+
+        # If GET request, render the checkout page
+        return render(request, 'pages/checkout.html', {
+            'cart_items': cart_items,
+            'cart_total': cart_total,
+            'square_application_id': settings.SQUARE_APPLICATION_ID,
+            'square_location_id': settings.SQUARE_LOCATION_ID,
+        })
+    except Exception as e:
+        print("Exception occurred:", str(e))  # Debugging output
+        logger.error(f"Checkout error: {str(e)}", exc_info=True)
+        return render(request, 'pages/error.html', {'error': str(e)})
 
 def order_confirmation(request, order_id):
     order = get_object_or_404(Order, id=order_id)

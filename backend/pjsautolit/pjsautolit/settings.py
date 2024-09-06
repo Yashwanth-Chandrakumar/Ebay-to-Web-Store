@@ -70,7 +70,7 @@ EBAY_AUTH_TOKEN = "v^1.1#i^1#I^3#p^3#r^0#f^0#t^H4sIAAAAAAAAAOVZe2wbdx2P85pKk02C0
 
 SQUARE_APPLICATION_ID = 'sandbox-sq0idb-0nC5R3GxnoTZ3M_NmpubkQ'
 SQUARE_ACCESS_TOKEN = 'EAAAl0Y5UwES7ZNYuNudO-0raDM4IvJYNG-1FB6Y2Uy57ay3deGZ3gGxPSef4a2b'
-
+SQUARE_LOCATION_ID='L3APQ9S35RZ9P'
 
 
 MIDDLEWARE = [
@@ -97,7 +97,7 @@ WSGI_APPLICATION = 'pjsautolit.wsgi.application'
 import dj_database_url
 
 DATABASES = {
-    'default': dj_database_url.config(default="postgresql://products_icpj_user:yoMTBiYQ0GfDCONDTjFbuIgj7ceWwUnD@dpg-cqp4lsij1k6c73dd27ng-a.oregon-postgres.render.com/products_icpj", conn_max_age=1800),
+    'default': dj_database_url.config(default="postgresql://pjs_user:hdvgbJ1SaZaf8B0AOq7sfcknzGK5M970@dpg-crdf4gd2ng1s73ftvg7g-a.oregon-postgres.render.com/pjs", conn_max_age=1800),
     # 'default': {
     #     'ENGINE': 'django.db.backends.sqlite3',
     #     'NAME': BASE_DIR / 'db.sqlite3',

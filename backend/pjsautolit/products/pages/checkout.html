@@ -105,7 +105,8 @@
                     const token = await tokenize(paymentMethod);
                     const paymentResults = await createPayment(token);
                     console.log('Payment Success', paymentResults);
-                    window.location.href = '{% url "order_confirmation" %}';
+                    window.location.href = `{% url "order_confirmation" 0 %}`.replace(0, paymentResults.order_id);
+
                 } catch (e) {
                     console.error(e.message);
                 }
