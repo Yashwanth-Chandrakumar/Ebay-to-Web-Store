@@ -1142,16 +1142,34 @@ def checkout(request):
         logger.error(f"Checkout error: {str(e)}", exc_info=True)
         return render(request, 'pages/error.html', {'error': str(e)})
 
-def order_confirmation(request, order_id):
-    order = get_object_or_404(Order, id=order_id)
-    order_items = order.cart.cartitem_set.all()
-    order_total = order.total_amount
+import logging
 
-    return render(request, 'pages/order_confirmation.html', {
-        'order': order,
-        'order_items': order_items,
-        'order_total': order_total
-    })
+from django.shortcuts import get_object_or_404, render
+
+from .models import Order
+
+# Set up a logger
+logger = logging.getLogger(__name__)
+
+def order_confirmation(request, order_id):
+    try:
+        # Fetch the order and associated items
+        order = get_object_or_404(Order, id=order_id)
+        order_items = order.cart.cartitem_set.all()  # Ensure `cart` relation is correct
+        order_total = order.total_amount  # Ensure this property/method is correct
+
+        # Render the confirmation page
+        return render(request, 'pages/order_confirmation.html', {
+            'order': order,
+            'order_items': order_items,
+            'order_total': order_total
+        })
+    
+    except Exception as e:
+        # Log any unexpected errors
+        logger.error(f"Error in order_confirmation view for order_id {order_id}: {e}", exc_info=True)
+        return render(request, 'pages/error.html', {'error': 'An unexpected error occurred.'})
+
 
 def product_detail(request, product_slug):
     product = get_object_or_404(Product, html_link=product_slug)
