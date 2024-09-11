@@ -1,27 +1,33 @@
-name: Django CI/CD on Amazon Linux
+name: Django CI/CD on Amazon Linux 2023
+
 on:
   push:
     branches:
       - main  # Replace with the branch that triggers the build and deployment
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
+
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
+
     - name: Login to Docker Hub
       uses: docker/login-action@v2
       with:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
+
     - name: Build and push Docker image
       uses: docker/build-push-action@v4
       with:
         context: ./backend/pjsautolit
         push: true
         tags: yashwanthsc/pjsauto:latest
+
     - name: Deploy to AWS EC2
       uses: appleboy/ssh-action@master
       with:
@@ -29,18 +35,21 @@ jobs:
         username: ${{ secrets.EC2_USER }}
         key: ${{ secrets.EC2_SSH_KEY }}
         script: |
-          # Ensure Docker is installed (only needed if Docker isn't installed yet)
-          sudo yum update -y
-          sudo amazon-linux-extras install docker -y
+          # Update system
+          sudo dnf update -y
+
+          # Install Docker
+          sudo dnf install docker -y
           sudo systemctl start docker
-          sudo usermod -a -G docker ec2-user
-          
+          sudo systemctl enable docker
+          sudo usermod -aG docker $USER
+
           # Pull the latest Docker image
-          docker pull yashwanthsc/pjsauto:latest
+          sudo docker pull yashwanthsc/pjsauto:latest
           
           # Stop and remove the old container if it exists
-          docker stop django-app || true
-          docker rm django-app || true
+          sudo docker stop django-app || true
+          sudo docker rm django-app || true
           
           # Run the new container
-          docker run -d --name django-app -p 8000:8000 yashwanthsc/pjsauto:latest
+          sudo docker run -d --name django-app -p 8000:8000 yashwanthsc/pjsauto:latest
