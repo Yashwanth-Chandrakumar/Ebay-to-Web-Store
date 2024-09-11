@@ -98,11 +98,16 @@ WSGI_APPLICATION = 'pjsautolit.wsgi.application'
 import dj_database_url
 
 DATABASES = {
-    'default': dj_database_url.config(default="postgresql://pjs_user:hdvgbJ1SaZaf8B0AOq7sfcknzGK5M970@dpg-crdf4gd2ng1s73ftvg7g-a.oregon-postgres.render.com/pjs", conn_max_age=1800),
+    # render
+    # 'default': dj_database_url.config(default="postgresql://pjs_user:hdvgbJ1SaZaf8B0AOq7sfcknzGK5M970@dpg-crdf4gd2ng1s73ftvg7g-a.oregon-postgres.render.com/pjs", conn_max_age=1800),
+    # sqlite
     # 'default': {
     #     'ENGINE': 'django.db.backends.sqlite3',
     #     'NAME': BASE_DIR / 'db.sqlite3',
     # }
+    # aiven
+    'default': dj_database_url.config(default="postgres://avnadmin:AVNS_zMc7r76SFXAIO99_PQb@pjsautolit-freshnco.e.aivencloud.com:26164/pjs", conn_max_age=1800),
+
 }
 
 
