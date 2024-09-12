@@ -142,7 +142,7 @@ from requests.exceptions import HTTPError, RequestException
 
 def fetch_finding_api_data(page_number=1, min_price=1.00, max_price=10.00):
     headers = {
-        "X-EBAY-SOA-SECURITY-APPNAME": "YASHWANT-pjauto-PRD-7c6937daa-890b1640",
+        "X-EBAY-SOA-SECURITY-APPNAME": "PJsAutoL-keyset-PRD-d2986db2a-865af761",
         "X-EBAY-SOA-OPERATION-NAME": "findItemsIneBayStores",
         "Content-Type": "text/xml"
     }
