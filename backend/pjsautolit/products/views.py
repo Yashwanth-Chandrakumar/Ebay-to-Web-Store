@@ -249,11 +249,11 @@ def fetch_new_access_token():
     url = "https://api.ebay.com/identity/v1/oauth2/token"
     headers = {
         "Content-Type": "application/x-www-form-urlencoded",
-        "Authorization": "Basic WUFTSFdBTlQtcGphdXRvLVBSRC03YzY5MzdkYWEtODkwYjE2NDA6UFJELWM2OTM3ZGFhZGRhOC0yNzgxLTQzMzYtODdlNi0zYzdk"  # Replace with your actual credentials
+        "Authorization": "Basic UEpzQXV0b0wta2V5c2V0LVBSRC1kMjk4NmRiMmEtODY1YWY3NjE6UFJELTI5ODZkYjJhMjg4NS01ZTE0LTQyNWMtOThlMS04Y2Fl"  # Replace with your actual credentials
     }
     data = {
         "grant_type": "refresh_token",
-        "refresh_token": "v^1.1#i^1#r^1#p^3#f^0#I^3#t^Ul4xMF8yOjk1RkIxOTc4NDZCODU2MjYxOUUxNjFDRjhFRkZCM0RCXzBfMSNFXjI2MA=="  # Replace with your actual refresh token
+        "refresh_token": "v^1.1#i^1#f^0#p^3#I^3#r^1#t^Ul4xMF84OjNDRDY3NkNBOURFNzk4QzRFRDA1MTgzQTY5QTEzQTA3XzBfMSNFXjI2MA=="  # Replace with your actual refresh token
     }
 
     try:
