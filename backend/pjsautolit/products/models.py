@@ -114,7 +114,12 @@ class ProductChangeLog(models.Model):
 class Cart(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    
+    def total_amount(self):
+        return sum(item.product.price * item.quantity for item in self.cartitem_set.all())
 
+    def total_weight(self):
+        return sum(item.get_total_weight() for item in self.cartitem_set.all())
     def __str__(self):
         return f"Cart {self.id}"
 
@@ -125,7 +130,10 @@ class CartItem(models.Model):
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField(default=1)
+    weight = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)  # weight in lbs
 
+    def get_total_weight(self):
+        return self.quantity * self.weight if self.weight else 0
     def __str__(self):
         return f"{self.quantity} x {self.product.title}"
 

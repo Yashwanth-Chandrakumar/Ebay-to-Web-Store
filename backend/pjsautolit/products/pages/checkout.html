@@ -231,8 +231,13 @@
                         <span>Total (USD)</span>
                         <strong>${{ cart_total }}</strong>
                     </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>Total Weight</span>
+                        <strong>{{ total_weight_major }} lb {{ total_weight_minor }} oz</strong>
+                    </li>
                 </ul>
             </div>
+            
             <div class="col-md-6">
                 <form id="payment-form">
                 <div id="card-container"></div>

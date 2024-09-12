@@ -1024,16 +1024,22 @@ def process_payment(request):
 def add_to_cart(request, product_id):
     product = get_object_or_404(Product, item_id=product_id)
     cart, created = Cart.objects.get_or_create(id=request.session.get('cart_id'))
-    
+
+    # Fetch the weight from eBay API
+    print("Proceeding for weight checking")
+    weight = get_ebay_product_weight(product.item_id)
+    print(f"Fetched weight for product {product_id}: {weight}")  # Debugging output
+
     if not created:
         cart_item, item_created = CartItem.objects.get_or_create(cart=cart, product=product)
         if not item_created:
             cart_item.quantity += 1
-            cart_item.save()
+        cart_item.weight = weight  # Update weight
+        cart_item.save()
     else:
         request.session['cart_id'] = cart.id
-        CartItem.objects.create(cart=cart, product=product, quantity=1)
-    
+        CartItem.objects.create(cart=cart, product=product, quantity=1, weight=weight)
+
     messages.success(request, f"{product.title} has been added to your cart.")
     return redirect('product_list')
 
@@ -1090,7 +1096,16 @@ def checkout(request):
         cart = get_object_or_404(Cart, id=cart_id)
         cart_items = cart.cartitem_set.all()
         cart_total = cart.total_amount()
+        cart_total_weight = cart.total_weight()  # Assuming this method returns total weight in pounds
         print("Cart Total:", cart_total)  # Debugging output
+        print("Cart Total Weight:", cart_total_weight)  # Debugging output
+
+        # Calculate weight in pounds and ounces
+        total_weight_major = int(cart_total_weight)  # Pounds
+        total_weight_minor = int((cart_total_weight - total_weight_major) * 16)  # Ounces
+
+        print("Weight Major (pounds):", total_weight_major)
+        print("Weight Minor (ounces):", total_weight_minor)
 
         if request.method == 'POST':
             # Step 3: Initialize Square client
@@ -1134,6 +1149,8 @@ def checkout(request):
         return render(request, 'pages/checkout.html', {
             'cart_items': cart_items,
             'cart_total': cart_total,
+            'total_weight_major': total_weight_major,
+            'total_weight_minor': total_weight_minor,
             'square_application_id': settings.SQUARE_APPLICATION_ID,
             'square_location_id': settings.SQUARE_LOCATION_ID,
         })
@@ -1181,3 +1198,83 @@ def product_detail(request, product_slug):
         return HttpResponse(html_content)
     else:
         return HttpResponseNotFound('Page not found')
+import xml.etree.ElementTree as ET
+
+import requests
+
+
+def get_ebay_product_weight(item_id):
+    print(f"Fetching weight for item ID: {item_id}")
+    url = 'https://api.ebay.com/ws/api.dll'
+    headers = {
+        'X-EBAY-API-SITEID': '0',
+        'X-EBAY-API-COMPATIBILITY-LEVEL': '967',
+        'X-EBAY-API-CALL-NAME': 'GetItem',
+        'X-EBAY-API-IAF-TOKEN': EBAY_AUTH_TOKEN,
+        'Content-Type': 'text/xml'
+    }
+    body = f"""
+    <?xml version="1.0" encoding="utf-8"?>
+    <GetItemRequest xmlns="urn:ebay:apis:eBLBaseComponents">    
+        <ErrorLanguage>en_US</ErrorLanguage>
+        <WarningLevel>High</WarningLevel>
+        <ItemID>{item_id}</ItemID>
+    </GetItemRequest>
+    """
+
+    while True:
+        try:
+            response = requests.post(url, headers=headers, data=body)
+            print("Response Status Code:", response.status_code)  # Debugging output
+            
+            if response.status_code == 200:
+                response_content = response.content.decode('utf-8')
+                # print("Raw Response Content:", response_content)
+
+                if '<ShortMessage>Expired IAF token.</ShortMessage>' in response_content:
+                    print("Expired IAF token error detected")
+                    print("Access token expired, fetching a new one...")
+                    new_token = fetch_new_access_token()
+                    if new_token:
+                        headers['X-EBAY-API-IAF-TOKEN'] = new_token
+                        print("New token fetched and set")
+                        continue  # Retry the request with the new token
+                    else:
+                        print("Failed to fetch a new access token")
+                        return None
+
+                # Parse the XML response to extract weight (in ounces and pounds)
+                root = ET.fromstring(response_content)
+                
+                namespace = {'ns': 'urn:ebay:apis:eBLBaseComponents'}
+                
+                weight_major_elem = root.find('.//ns:ShippingPackageDetails/ns:WeightMajor', namespace)
+                weight_minor_elem = root.find('.//ns:ShippingPackageDetails/ns:WeightMinor', namespace)
+                
+                if weight_major_elem is not None:
+                    weight_major = weight_major_elem.text
+                else:
+                    print("WeightMajor element not found")  # Debugging output
+                    weight_major = '0'
+
+                if weight_minor_elem is not None:
+                    weight_minor = weight_minor_elem.text
+                else:
+                    print("WeightMinor element not found")  # Debugging output
+                    weight_minor = '0'
+
+                weight_major = float(weight_major)
+                weight_minor = float(weight_minor)
+                print(f"{item_id} - weight - {weight_major} , {weight_minor}")
+
+                total_weight_lbs = weight_major + (weight_minor / 16)
+                return total_weight_lbs
+
+            else:
+                print("Failed to fetch data from eBay API")  # Debugging output
+                print("Response Content:", response_content)
+                return None
+
+        except Exception as e:
+            print("Exception occurred:", str(e))  # Debugging output
+            return None
