@@ -1,0 +1,102 @@
+name: Django CI/CD on Amazon Linux 2023
+
+on:
+  push:
+    branches:
+      - main  # Replace with the branch that triggers the build and deployment
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: Login to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v4
+      with:
+        context: ./backend/pjsautolit
+        push: true
+        tags: yashwanthsc/pjsauto:latest
+
+    - name: Deploy to AWS EC2
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USER }}
+        key: ${{ secrets.EC2_SSH_KEY }}
+        script: |
+          # Update system
+          sudo dnf update -y
+
+          # Install Docker
+          sudo dnf install docker -y
+          sudo systemctl start docker
+          sudo systemctl enable docker
+          sudo usermod -aG docker $USER
+
+          # Install Nginx
+          sudo dnf install nginx -y
+          sudo systemctl start nginx
+          sudo systemctl enable nginx
+
+          # Install OpenSSL for generating a self-signed certificate
+          sudo dnf install openssl -y
+
+          # Generate a self-signed certificate
+          sudo mkdir -p /etc/nginx/ssl
+          sudo openssl req -newkey rsa:2048 -nodes -keyout /etc/nginx/ssl/nginx.key -x509 -days 365 -out /etc/nginx/ssl/nginx.crt -subj "/CN=localhost"
+
+          # Pull the latest Docker image
+          sudo docker pull yashwanthsc/pjsauto:latest
+          
+          # Stop and remove the old container if it exists
+          sudo docker stop django-app || true
+          sudo docker rm django-app || true
+          
+          # Run the new container
+          sudo docker run -d --name django-app -p 8000:8000 yashwanthsc/pjsauto:latest
+
+          # Configure Nginx to proxy to the Docker container
+          sudo tee /etc/nginx/conf.d/django-app.conf <<EOF
+          server {
+              listen 80;
+              server_name 0.0.0.0;
+
+              location / {
+                  proxy_pass http://localhost:8000;
+                  proxy_set_header Host \$host;
+                  proxy_set_header X-Real-IP \$remote_addr;
+                  proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+                  proxy_set_header X-Forwarded-Proto \$scheme;
+              }
+          }
+
+          server {
+              listen 443 ssl;
+              server_name 0.0.0.0;
+
+              ssl_certificate /etc/nginx/ssl/nginx.crt;
+              ssl_certificate_key /etc/nginx/ssl/nginx.key;
+
+              location / {
+                  proxy_pass http://localhost:8000;
+                  proxy_set_header Host \$host;
+                  proxy_set_header X-Real-IP \$remote_addr;
+                  proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+                  proxy_set_header X-Forwarded-Proto \$scheme;
+              }
+          }
+          EOF
+
+          # Restart Nginx to apply changes
+          sudo systemctl restart nginx
