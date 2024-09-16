@@ -8,6 +8,7 @@ urlpatterns = [
     path('', views.landing_page, name='landing_page'),
     path('admin-view/', views.admin_page, name='admin_page'),
     path('product/', views.product_list, name='product_list'),
+    path('terms/', views.terms_view, name='terms'),
     path('product/<slug:product_slug>/', views.product_detail, name='product_detail'),
     path('cron/', views.cron, name='cron'), 
     path('cleandesc/', views.clean_description, name='clean'), 

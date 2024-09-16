@@ -517,6 +517,11 @@ from django.shortcuts import render
 
 def landing_page(request):
     return render(request, 'pages/landing.html')
+from django.shortcuts import render
+
+
+def terms_view(request):
+    return render(request, 'pages/terms.html')
 
 def admin_page(request):
     return render(request,'pages/admin.html')
