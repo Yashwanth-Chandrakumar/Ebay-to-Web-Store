@@ -25,5 +25,9 @@ COPY . /app/
 RUN python manage.py makemigrations
 RUN python manage.py migrate
 
+CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:8000 pjsautolit.wsgi:application & \
+                   sleep 10 && \
+                   curl http://localhost:8000/generate-html/"]
+
 # Run the application
 CMD ["gunicorn", "--bind", "0.0.0.0:8000", "pjsautolit.wsgi:application"]
