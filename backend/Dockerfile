@@ -12,6 +12,7 @@ WORKDIR /app
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     default-libmysqlclient-dev \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
@@ -25,5 +26,8 @@ COPY . /app/
 RUN python manage.py makemigrations
 RUN python manage.py migrate
 
-# Run the application
+# Start the server in the background
 CMD ["gunicorn", "--bind", "0.0.0.0:8000", "pjsautolit.wsgi:application"]
+
+# Add a HEALTHCHECK to wait for the app to be up and then call the API
+HEALTHCHECK --interval=10s --timeout=5s --retries=3 CMD curl -f http://localhost:8000/generate-html/ || exit 1
