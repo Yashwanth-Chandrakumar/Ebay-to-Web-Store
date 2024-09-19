@@ -19,6 +19,7 @@
             --light-color: #ecf0f1;
             --dark-color: #34495e;
             --success-color: #2ecc71;
+            --warning-color: #f39c12;
         }
 
         * {
@@ -35,8 +36,6 @@
             line-height: 1.6;
         }
 
-        
-
         /* Navbar Styles */
         .navbar {
             background-color: var(--secondary-color);
@@ -45,7 +44,6 @@
             left: 0;
             right: 0;
             z-index: 1000;
-            /* padding: 0.75rem 1.5rem; */
             box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
         }
 
@@ -82,15 +80,17 @@
         .nav-link:hover {
             color: var(--primary-color);
         }
-        .checkout{
+
+        .checkout {
             margin-top: 1rem;
         }
+
         .container {
             width: 90%;
             max-width: 1200px;
             margin: 0 auto;
-
         }
+
         /* Button Styles */
         .btn {
             display: inline-block;
@@ -162,6 +162,27 @@
             font-weight: 600;
         }
 
+        /* Summary Styles */
+        .summary {
+            border: 1px solid var(--secondary-color);
+            border-radius: 5px;
+            background-color: #fff;
+            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .summary h3 {
+            margin-bottom: 1rem;
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .summary .list-group-item {
+            font-size: 1rem;
+            padding: 1rem 1.5rem;
+        }
+
         /* Footer Styles */
         footer {
             background-color: var(--secondary-color);
@@ -174,6 +195,54 @@
 
         footer p {
             margin: 0;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1050;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 500px;
+            border-radius: 5px;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .info-button {
+            background: none;
+            border: none;
+            color: var(--primary-color);
+            cursor: pointer;
+        }
+
+        .info-button:hover {
+            color: var(--accent-color);
         }
 
         @media (max-width: 768px) {
@@ -217,34 +286,62 @@
         <h1 class="checkout">Checkout</h1>
         <div class="row">
             <div class="col-md-6">
-                <h3>Order Summary</h3>
-                <ul class="list-group mb-3">
-                    {% for item in cart_items %}
-                    <li class="list-group-item d-flex justify-content-between lh-sm">
-                        <div>
-                            <h6 class="my-0">{{ item.product.title }}</h6>
-                            <small class="text-muted">Quantity: {{ item.quantity }}</small>
+                <div class="summary">
+                    <h3>Order Summary</h3>
+                    <ul class="list-group mb-3">
+                        {% for item in cart_items %}
+                        <li class="list-group-item d-flex justify-content-between lh-sm">
+                            <div>
+                                <h6 class="my-0">{{ item.product.title }}</h6>
+                                <small class="text-muted">Quantity: {{ item.quantity }}</small>
+                            </div>
+                            <span class="text-muted">${{ item.subtotal }}</span>
+                        </li>
+                        {% endfor %}
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>Total Weight</span>
+                            <strong>{{ total_weight_major }} lb {{ total_weight_minor }} oz</strong>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>Total (USD)</span>
+                            <strong>${{ cart_total }}</strong>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <div >
+                            <span>Shipping Cost</span>
+                            <button type="button" class="info-button" onclick="showModal()" id="shippingInfoBtn">
+                                <i class="fas fa-info-circle"></i>
+                            </button>
                         </div>
-                        <span class="text-muted">${{ item.subtotal }}</span>
-                    </li>
-                    {% endfor %}
-                    <li class="list-group-item d-flex justify-content-between">
-                        <span>Total (USD)</span>
-                        <strong>${{ cart_total }}</strong>
-                    </li>
-                    <li class="list-group-item d-flex justify-content-between">
-                        <span>Total Weight</span>
-                        <strong>{{ total_weight_major }} lb {{ total_weight_minor }} oz</strong>
-                    </li>
-                </ul>
+                            <strong>+${{ shipping_cost }}</strong>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>Total Cost (Including Shipping)</span>
+                            <strong>${{ total_including_shipping }}</strong>
+                        </li>
+                    </ul>
+                </div>
             </div>
-            
             <div class="col-md-6">
                 <form id="payment-form">
-                <div id="card-container"></div>
-                    <button id="card-button" type="button" class="btn btn-primary mt-3">Pay ${{ cart_total }}</button>
+                    <div id="card-container"></div>
+                    <button id="card-button" type="button" class="btn btn-primary mt-3">Pay ${{ total_including_shipping }}</button>
                 </form>
             </div>
+        </div>
+    </div>
+
+    <!-- Shipping Info Modal -->
+    <div id="shippingInfoModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2>Shipping Cost Calculation</h2>
+            <p>Here's how your shipping cost is calculated:</p>
+            <ul>
+                <li><strong>First pound (1 lb): </strong> $3.65</li>
+                <li><strong>Each additional pound: </strong> $0.70</li>
+                <li><strong>Packaging charges: </strong> $2.00</li>
+            </ul>
         </div>
     </div>
 
@@ -256,6 +353,28 @@
     </footer>
 
     <script>
+
+const modal = document.getElementById("shippingInfoModal");
+            const btn = document.getElementById("shippingInfoBtn");
+            const span = document.getElementsByClassName("close")[0];
+
+            console.log('Modal elements:', { modal, btn, span });
+
+            function showModal(){
+                modal.style.display = "block";
+            }
+            function closeModal(){
+                modal.style.display = "none";
+            }
+            
+
+            window.addEventListener('click', function(event) {
+                if (event.target == modal) {
+                    // console.log('Clicked outside modal');
+                    modal.style.display = "none";
+                }
+            });
+
         const appId = '{{ square_application_id }}';
         const locationId = '{{ square_location_id }}';
 
@@ -332,6 +451,8 @@
             cardButton.addEventListener('click', async function (event) {
                 await handlePaymentMethodSubmission(event, card);
             });
+
+           
         });
     </script>
 </body>

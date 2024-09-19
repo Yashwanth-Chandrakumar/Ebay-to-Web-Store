@@ -329,7 +329,7 @@ Please add all items you want to purchase to the shopping cart before checking o
 </div>
 
                     <p class="price">
-                        <a href="javascript:void(0);" onclick="showPriceInfo()" style="color: var(--primary-color); text-decoration: underline;">
+                        <a href="{% url 'terms' %}" target="_blank"  style="color: var(--primary-color); text-decoration: underline;">
                             {{ product.currency }} {{ product.price }}
                         </a>
                     </p>
@@ -345,7 +345,7 @@ Please add all items you want to purchase to the shopping cart before checking o
                         <tr>
                             <td>Shipping Cost:</td>
                             <td>
-                                <a href="javascript:void(0);" onclick="showShippingInfo()" style="color: var(--primary-color); text-decoration: underline;">
+                                <a href="{% url 'terms' %}" target="_blank"  style="color: var(--primary-color); text-decoration: underline;">
                                     $ {{ product.shipping_cost }}
                                 </a>
                             </td>

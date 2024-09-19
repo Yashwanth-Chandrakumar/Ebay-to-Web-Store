@@ -8,6 +8,7 @@ import threading
 import time
 import xml.etree.ElementTree as ET
 from datetime import datetime
+from decimal import ROUND_HALF_UP, Decimal
 from signal import signal
 
 import requests
@@ -1112,6 +1113,19 @@ def checkout(request):
         print("Weight Major (pounds):", total_weight_major)
         print("Weight Minor (ounces):", total_weight_minor)
 
+        def calculate_usps_media_mail_cost(weight):
+            base_rate = 3.65
+            additional_rate = 0.70
+            # Round up to the nearest whole pound
+            rounded_weight = int(weight) if weight == int(weight) else int(weight) + 1
+            if rounded_weight <= 1:
+                return base_rate
+            else:
+                return base_rate + (rounded_weight - 1) * additional_rate
+
+        shipping_cost = calculate_usps_media_mail_cost(cart_total_weight)+2.00
+        total_including_shipping = cart_total + Decimal(shipping_cost)
+        total_including_shipping = total_including_shipping.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
         if request.method == 'POST':
             # Step 3: Initialize Square client
             client = Client(
@@ -1126,7 +1140,7 @@ def checkout(request):
             result = payment_api.create_payment(
                 source_id=request.POST['nonce'],
                 amount_money={
-                    'amount': int(cart_total * 100),  # Amount in cents
+                    'amount': int((cart_total + shipping_cost) * 100),  # Amount in cents, including shipping cost
                     'currency': 'USD'
                 },
                 idempotency_key=str(cart.id),
@@ -1140,7 +1154,8 @@ def checkout(request):
                 order = Order.objects.create(
                     cart=cart,
                     status='completed',
-                    total_amount=cart_total,
+                    total_amount=cart_total + shipping_cost,  # Include shipping cost in total amount
+                    shipping_cost=shipping_cost,
                     square_payment_id=result.body['payment']['id']
                 )
                 del request.session['cart_id']
@@ -1156,8 +1171,10 @@ def checkout(request):
             'cart_total': cart_total,
             'total_weight_major': total_weight_major,
             'total_weight_minor': total_weight_minor,
+            'shipping_cost': shipping_cost,
             'square_application_id': settings.SQUARE_APPLICATION_ID,
             'square_location_id': settings.SQUARE_LOCATION_ID,
+            'total_including_shipping': total_including_shipping,
         })
     except Exception as e:
         print("Exception occurred:", str(e))  # Debugging output
