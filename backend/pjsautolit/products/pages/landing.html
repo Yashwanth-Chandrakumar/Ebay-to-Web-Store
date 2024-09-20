@@ -1,391 +1,438 @@
-<!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PJ's Auto Literature</title>
-    <meta name="description" content="PJ's Auto Literature. Buy Auto literature at the best price. Explore more details including condition, seller information, and shipping options.">
-<meta name="google-site-verification" content="y91eOp-jsN4mY8IQlUl-QhHdb4U9H1NdJbMEdyhShz8" />
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
-    <style>
-        :root {
-            --primary-color: #3498db;
-            --secondary-color: #2c3e50;
-            --accent-color: #e74c3c;
-            --light-color: #ecf0f1;
-            --dark-color: #34495e;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Roboto', sans-serif;
-            line-height: 1.6;
-            color: var(--dark-color);
-            background-color: var(--light-color);
-        }
-
-        .container {
-            width: 90%;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .navbar {
-            background-color: var(--secondary-color);
-            /* padding: 1rem 0; */
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 1000;
-        }
-
-        .navbar .container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .navbar-brand {
-            color: var(--light-color);
-            font-size: 1.5rem;
-            font-weight: 700;
-            text-decoration: none;
-        }
-
-        .navbar-nav {
-            display: flex;
-            list-style: none;
-        }
-
-        .nav-link {
-            color: var(--light-color);
-            text-decoration: none;
-            padding: 0.5rem 1rem;
-            transition: color 0.3s ease;
-        }
-
-        .nav-link:hover {
-            color: var(--primary-color);
-        }
-
-        .hero {
-    position: relative;
-    height: 100vh; /* Adjust this value to control the height */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    overflow: hidden;
-    color: var(--light-color);
-}
-
-.video-container {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    z-index: -1; /* Ensures the video stays behind the content */
-}
-
-.hero-video {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    /* opacity: 0.5; Reduce opacity if the video is too overpowering */
-}
-
-.hero-content {
-    position: relative;
-    z-index: 1; /* Keeps content on top of the video */
-    max-width: 800px;
-    margin: 0 auto;
-    padding: 0 20px;
-}
-
-
-        .hero h1 {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-        }
-
-        .hero p {
-            font-size: 1.2rem;
-            margin-bottom: 2rem;
-        }
-
-        .btn {
-            display: inline-block;
-            background-color: var(--primary-color);
-            color: var(--light-color);
-            padding: 0.8rem 2rem;
-            text-decoration: none;
-            border-radius: 5px;
-            transition: background-color 0.3s ease;
-        }
-
-        .btn:hover {
-            background-color: var(--accent-color);
-        }
-
-        .search-container {
-            margin: 2rem 0;
-        }
-
-        .search-container input {
-            width: 100%;
-            padding: 0.8rem;
-            border: none;
-            border-radius: 5px;
-            font-size: 1rem;
-        }
-
-        .features {
-            padding: 4rem 0;
-            background-color: #fff;
-        }
-
-        .features h2 {
-            text-align: center;
-            margin-bottom: 3rem;
-        }
-
-        .feature-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 2rem;
-        }
-
-        .feature-item {
-            text-align: center;
-            padding: 2rem;
-            background-color: var(--light-color);
-            border-radius: 5px;
-            transition: transform 0.3s ease;
-        }
-
-        .feature-item:hover {
-            transform: translateY(-5px);
-        }
-
-        .feature-icon {
-            font-size: 3rem;
-            color: var(--primary-color);
-            margin-bottom: 1rem;
-        }
-
-        .brands {
-            padding: 4rem 0;
-        }
-
-        .brands h2 {
-            text-align: center;
-            margin-bottom: 3rem;
-        }
-
-        .brand-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 1rem;
-        }
-
-        .brand-item {
-            text-align: center;
-        }
-
-        .brand-grid a {
-            display: block;
-            padding: 1rem;
-            background-color: #fff;
-            color: var(--dark-color);
-            text-decoration: none;
-            border-radius: 5px;
-            transition: background-color 0.3s ease;
-        }
-
-        .brand-grid a:hover {
-            background-color: var(--primary-color);
-            color: var(--light-color);
-        }
-
-        footer {
-            background-color: var(--secondary-color);
-            color: var(--light-color);
-            text-align: center;
-            padding: 2rem 0;
-        }
-        .section {
-            padding: 4rem 0;
-            background-color: #fff;
-        }
-
-        .section h2 {
-            text-align: center;
-            margin-bottom: 2rem;
-        }
-
-        /* Add alternating background colors for sections */
-        .section:nth-child(even) {
-            background-color: var(--light-color);
-        }
-    </style>
-</head>
-<body>
-    <nav class="navbar">
-        <div class="container">
-            <a href="{% url 'landing_page' %}" class="navbar-brand"><img src="https://i.postimg.cc/h47H7Tcf/header-1.gif" style="height: 80px;">
+   <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>PJ's Auto Literature</title>
+      <meta name="description" content="PJ's Auto Literature. Buy Auto literature at the best price. Explore more details including condition, seller information, and shipping options.">
+      <meta name="google-site-verification" content="y91eOp-jsN4mY8IQlUl-QhHdb4U9H1NdJbMEdyhShz8" />
+      <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+      <style>
+         :root {
+         --primary-color: #3498db;
+         --secondary-color: #2c3e50;
+         --accent-color: #e74c3c;
+         --light-color: #ecf0f1;
+         --dark-color: #34495e;
+         }
+         * {
+         margin: 0;
+         padding: 0;
+         box-sizing: border-box;
+         }
+         body {
+         font-family: 'Roboto', sans-serif;
+         line-height: 1.6;
+         color: var(--dark-color);
+         background-color: var(--light-color);
+         }
+         .container {
+         width: 90%;
+         max-width: 1200px;
+         margin: 0 auto;
+         }
+         .navbar {
+         background-color: var(--secondary-color);
+         /* padding: 1rem 0; */
+         position: fixed;
+         top: 0;
+         left: 0;
+         right: 0;
+         z-index: 1000;
+         }
+         .navbar .container {
+         display: flex;
+         justify-content: space-between;
+         align-items: center;
+         }
+         .navbar-brand {
+         color: var(--light-color);
+         font-size: 1.5rem;
+         font-weight: 700;
+         text-decoration: none;
+         }
+         .navbar-nav {
+         display: flex;
+         list-style: none;
+         }
+         .nav-link {
+         color: var(--light-color);
+         text-decoration: none;
+         padding: 0.5rem 1rem;
+         transition: color 0.3s ease;
+         }
+         .nav-link:hover {
+         color: var(--primary-color);
+         }
+         .hero {
+         position: relative;
+         height: 100vh; /* Adjust this value to control the height */
+         display: flex;
+         align-items: center;
+         justify-content: center;
+         text-align: center;
+         overflow: hidden;
+         color: var(--light-color);
+         }
+         .video-container {
+         position: absolute;
+         top: 0;
+         left: 0;
+         width: 100%;
+         height: 100%;
+         overflow: hidden;
+         z-index: -1; /* Ensures the video stays behind the content */
+         }
+         .hero-video {
+         width: 100%;
+         height: 100%;
+         object-fit: cover;
+         /* opacity: 0.5; Reduce opacity if the video is too overpowering */
+         }
+         .hero-content {
+         position: relative;
+         z-index: 1; /* Keeps content on top of the video */
+         max-width: 800px;
+         margin: 0 auto;
+         padding: 0 20px;
+         }
+         .hero h1 {
+         font-size: 3rem;
+         margin-bottom: 1rem;
+         }
+         .hero p {
+         font-size: 1.2rem;
+         margin-bottom: 2rem;
+         }
+         .btn {
+         display: inline-block;
+         background-color: var(--primary-color);
+         color: var(--light-color);
+         padding: 0.8rem 2rem;
+         text-decoration: none;
+         border-radius: 5px;
+         transition: background-color 0.3s ease;
+         }
+         .btn:hover {
+         background-color: var(--accent-color);
+         }
+         .search-container {
+         margin: 2rem 0;
+         }
+         .search-container input {
+         width: 100%;
+         padding: 0.8rem;
+         border: none;
+         border-radius: 5px;
+         font-size: 1rem;
+         }
+         .features {
+         padding: 4rem 0;
+         background-color: #fff;
+         }
+         .features h2 {
+         text-align: center;
+         margin-bottom: 3rem;
+         }
+         .feature-grid {
+         display: grid;
+         grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+         gap: 2rem;
+         }
+         .feature-item {
+         text-align: center;
+         padding: 2rem;
+         background-color: var(--light-color);
+         border-radius: 5px;
+         transition: transform 0.3s ease;
+         }
+         .feature-item:hover {
+         transform: translateY(-5px);
+         }
+         .feature-icon {
+         font-size: 3rem;
+         color: var(--primary-color);
+         margin-bottom: 1rem;
+         }
+         .brands {
+         padding: 4rem 0;
+         }
+         .brands h2 {
+         text-align: center;
+         margin-bottom: 3rem;
+         }
+         .brand-grid {
+         display: grid;
+         grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+         gap: 1rem;
+         }
+         .brand-item {
+         text-align: center;
+         }
+         .brand-grid a {
+         display: block;
+         padding: 1rem;
+         background-color: #fff;
+         color: var(--dark-color);
+         text-decoration: none;
+         border-radius: 5px;
+         transition: background-color 0.3s ease;
+         }
+         .brand-grid a:hover {
+         background-color: var(--primary-color);
+         color: var(--light-color);
+         }
+         .section-schedule {
+         background-color: #f2f2f2; /* Match the background color */
+         padding: 40px 0;
+         }
+         .section-schedule h2 {
+         text-align: center;
+         color: #333; /* Adjust color if needed */
+         }
+         .section-schedule .container {
+         height: 300px; /* Match the height of the Popular Searches section */
+         display: flex;
+         align-items: center;
+         justify-content: center;
+         }
+         nav a {
+         color: #ffcc00; /* Unvisited links */
+         text-decoration: none;
+         }
+         nav a:visited {
+         color: #ffcc00; /* Visited links (light yellow) */
+         }
+         nav a:hover {
+         color: #ffcc66; /* Hover effect (optional) */
+         }
+         html {
+         scroll-behavior: smooth;
+         }
+         .calendar {
+         width: 100%;
+         max-width: 600px;
+         margin: 20px auto;
+         border-collapse: collapse;
+         background-color: #f5f5f5;
+         border: 1px solid #ddd;
+         font-family: Arial, sans-serif;
+         text-align: center;
+         }
+         .calendar th {
+         background-color: #2a4d8d;
+         color: white;
+         padding: 10px;
+         font-weight: bold;
+         }
+         .calendar td {
+         padding: 10px;
+         border: 1px solid #ddd;
+         }
+         .calendar tbody tr td:hover {
+         background-color: #f0f0f0;
+         cursor: pointer;
+         }
+         footer {
+         background-color: var(--secondary-color);
+         color: var(--light-color);
+         text-align: center;
+         padding: 2rem 0;
+         }
+      </style>
+   </head>
+   <body>
+      <nav class="navbar">
+         <div class="container">
+            <a href="/" class="navbar-brand"><img src="https://i.postimg.cc/h47H7Tcf/header-1.gif" style="height: 80px;">
             </a>
             <ul class="navbar-nav">
-                <li><a href="{% url 'landing_page' %}" class="nav-link">Home</a></li>
-                <li><a href="#show-schedule" class="nav-link">Show Schedule</a></li>
-                <li><a href="{% url 'product_list' %}" class="nav-link">Products</a></li>
-                <li><a href="#auto-links" class="nav-link">Auto Links</a></li>
-                <li><a href="#wanted" class="nav-link">Wanted</a></li>
-                <li><a href="{% url 'view_cart' %}" class="nav-link">Cart</a></li>
-                <li><a href="{% url 'terms' %}" class="nav-link">Terms</a></li>
-                <li><a href="#" class="nav-link">Contact</a></li>
+               <li><a href="#top" id="home-link">Home</a></li>
+               <li><a href="#show-schedule" class="nav-link">Show Schedule</a></li>
+               <li><a href="/product/" class="nav-link">Products</a></li>
+               <li><a href="#" class="nav-link">Auto Links</a></li>
+               <!-- New item -->
+               <li><a href="#about-us" class="nav-link">About Us</a></li>
+               <!-- New item -->
+               <li><a href="/cart/" class="nav-link">Cart</a></li>
+               <li><a href="/terms/" class="nav-link">Terms</a></li>
+               <li><a href="#" class="nav-link">Contact</a></li>
             </ul>
-        </div>
-    </nav>
-
-    <header class="hero">
-        <div class="video-container">
+         </div>
+      </nav>
+      <header class="hero">
+         <div class="video-container">
             <video autoplay muted loop playsinline class="hero-video">
-                <source src="https://videos.pexels.com/video-files/20156193/20156193-uhd_2730_1440_24fps.mp4" type="video/mp4">
-                Your browser does not support the video tag.
+               <source src="https://videos.pexels.com/video-files/20156193/20156193-uhd_2730_1440_24fps.mp4" type="video/mp4">
+               Your browser does not support the video tag.
             </video>
-        </div>
-        <div class="hero-content">
+         </div>
+         <div class="hero-content">
             <h1>Welcome to PJ's Auto Literature</h1>
             <p>Discover the best auto literature for your collection</p>
             <a href="/product" class="btn">Products</a>
-        </div>
-    </header>
-    
-    
-
-    <div class="container">
-        <div class="search-container">
+         </div>
+      </header>
+      <div class="container">
+         <div class="search-container">
             <input type="text" id="search-input" placeholder="Search for auto literature...">
-        </div>
-    </div>
-
-    <section class="features">
-        <div class="container">
-            <h2>Why Choose PJ's Auto Literature?</h2>
+         </div>
+      </div>
+      <section id="about-us" class="features">
+         <div class="container">
+            <h2>About Us</h2>
             <div class="feature-grid">
-                <div class="feature-item">
-                    <i class="fas fa-book feature-icon"></i>
-                    <h3>Vast Collection</h3>
-                    <p>Our website offers a wide range of auto literature, from classic car manuals to the latest industry publications.</p>
-                </div>
-                <div class="feature-item">
-                    <i class="fas fa-shield-alt feature-icon"></i>
-                    <h3>Trusted Source</h3>
-                    <p>With years of experience in the auto industry, we ensure that all our products are authentic and of the highest quality.</p>
-                </div>
-                <div class="feature-item">
-                    <i class="fas fa-headset feature-icon"></i>
-                    <h3>Exceptional Service</h3>
-                    <p>Our dedicated customer service team is always available to assist you with your queries and ensure a seamless shopping experience.</p>
-                </div>
+               <div class="feature-item">
+                  <i class="fas fa-book feature-icon"></i>
+                  <h3>Vast Collection</h3>
+                  <p>PJ's Auto Literature has over 35,000 different items in stock.
+                     If you do not see the literature you are looking for on the website - PLEASE
+                     email us at pjsautolit@aol.com
+                     to inquiry if we have it in stock!  .
+                  </p>
+               </div>
+               <div class="feature-item">
+                  <i class="fas fa-shield-alt feature-icon"></i>
+                  <h3>Trusted Source</h3>
+                  <p>PJ's Auto Literature has been buying, selling and trading automotive sales brochures since 1988. Since 1988 we have added owner's manuals, shop manuals, magazine ads, and color charts.  We now have over 35,000 different literature items in stock and ready to ship.  This inventory includes literature for: cars,  trucks, motorcycles, tractors and other motorized vehicles.   E-mail your specific requests and we will reply within 48 hours. If we don't have it, we have sources that may be able to fill your specific needs.</p>
+               </div>
+               <div class="feature-item">
+                  <i class="fas fa-headset feature-icon"></i>
+                  <h3>Exceptional Service</h3>
+                  <p>Our dedicated customer service team is always available to assist you with your queries and ensure a seamless shopping experience.</p>
+               </div>
             </div>
-        </div>
-    </section>
-
-    <section class="brands">
-        <div class="container">
+         </div>
+      </section>
+      <section class="brands">
+         <div class="container">
             <h2>Popular Searches</h2>
             <div class="brand-grid" id="brand-list">
-                <a href="{% url 'product_list' %}?query=Acura">Acura</a>
-<a href="{% url 'product_list' %}?query=Audi">Audi</a>
-<a href="{% url 'product_list' %}?query=BMW">BMW</a>
-<a href="{% url 'product_list' %}?query=Cadillac">Cadillac</a>
-<a href="{% url 'product_list' %}?query=Chevrolet">Chevrolet</a>
-<a href="{% url 'product_list' %}?query=Chrysler">Chrysler</a>
-<a href="{% url 'product_list' %}?query=Dodge">Dodge</a>
-<a href="{% url 'product_list' %}?query=Ferrari">Ferrari</a>
-<a href="{% url 'product_list' %}?query=Ford">Ford</a>
-<a href="{% url 'product_list' %}?query=Honda">Honda</a>
-<a href="{% url 'product_list' %}?query=Hyundai">Hyundai</a>
-<a href="{% url 'product_list' %}?query=Infiniti">Infiniti</a>
-<a href="{% url 'product_list' %}?query=Jaguar">Jaguar</a>
-<a href="{% url 'product_list' %}?query=Jeep">Jeep</a>
-<a href="{% url 'product_list' %}?query=Lamborghini">Lamborghini</a>
-<a href="{% url 'product_list' %}?query=Lexus">Lexus</a>
-<a href="{% url 'product_list' %}?query=Mazda">Mazda</a>
-<a href="{% url 'product_list' %}?query=Mercedes-Benz">Mercedes-Benz</a>
-<a href="{% url 'product_list' %}?query=Mini">Mini</a>
-<a href="{% url 'product_list' %}?query=Nissan">Nissan</a>
-<a href="{% url 'product_list' %}?query=Porsche">Porsche</a>
-<a href="{% url 'product_list' %}?query=Rolls Royce">Rolls Royce</a>
-<a href="{% url 'product_list' %}?query=Subaru">Subaru</a>
-<a href="{% url 'product_list' %}?query=Fiat">Fiat</a>
-<a href="{% url 'product_list' %}?query=Toyota">Toyota</a>
-<a href="{% url 'product_list' %}?query=Volkswagen">Volkswagen</a>
-<a href="{% url 'product_list' %}?query=Volvo">Volvo</a>
-<a href="{% url 'product_list' %}?query=Buick">Buick</a>
-
-
-
-        </div>
-    </div>
-</section>
-<section class="section" id="show-schedule">
-    <div class="container">
-        <h2>Show Schedule</h2>
-        <!-- Content for Show Schedule will go here -->
-    </div>
-</section>
-
-<section class="section" id="auto-links">
-    <div class="container">
-        <h2>Auto Links</h2>
-        <!-- Content for Auto Links will go here -->
-    </div>
-</section>
-
-<section class="section" id="wanted">
-    <div class="container">
-        <h2>Wanted</h2>
-        <!-- Content for Wanted will go here -->
-    </div>
-</section>
-<footer>
-    <div class="container">
-        <p>&copy; 2024 PJ's Auto Literature. All rights reserved.</p>
-    </div>
-</footer>
-
-<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-<script>
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                document.querySelector(this.getAttribute('href')).scrollIntoView({
-                    behavior: 'smooth'
-                });
-            });
-        });
-    // Handle search input and navigate to the product list page
-    $('#search-input').on('keydown', function (e) {
-        if (e.key === 'Enter') {
-            const query = $(this).val();
-            if (query) {
-                window.location.href = `{% url 'product_list' %}?query=${query}`;
-            }
-        }
-    });
-
-    
-</script>
-</body>
+               <a href="/product/?query=Acura">Acura</a>
+               <a href="/product/?query=Audi">Audi</a>
+               <a href="/product/?query=BMW">BMW</a>
+               <a href="/product/?query=Cadillac">Cadillac</a>
+               <a href="/product/?query=Chevrolet">Chevrolet</a>
+               <a href="/product/?query=Chrysler">Chrysler</a>
+               <a href="/product/?query=Dodge">Dodge</a>
+               <a href="/product/?query=Ferrari">Ferrari</a>
+               <a href="/product/?query=Ford">Ford</a>
+               <a href="/product/?query=Honda">Honda</a>
+               <a href="/product/?query=Hyundai">Hyundai</a>
+               <a href="/product/?query=Infiniti">Infiniti</a>
+               <a href="/product/?query=Jaguar">Jaguar</a>
+               <a href="/product/?query=Jeep">Jeep</a>
+               <a href="/product/?query=Lamborghini">Lamborghini</a>
+               <a href="/product/?query=Lexus">Lexus</a>
+               <a href="/product/?query=Mazda">Mazda</a>
+               <a href="/product/?query=Mercedes-Benz">Mercedes-Benz</a>
+               <a href="/product/?query=Mini">Mini</a>
+               <a href="/product/?query=Nissan">Nissan</a>
+               <a href="/product/?query=Porsche">Porsche</a>
+               <a href="/product/?query=Rolls Royce">Rolls Royce</a>
+               <a href="/product/?query=Subaru">Subaru</a>
+               <a href="/product/?query=Fiat">Fiat</a>
+               <a href="/product/?query=Toyota">Toyota</a>
+               <a href="/product/?query=Volkswagen">Volkswagen</a>
+               <a href="/product/?query=Volvo">Volvo</a>
+               <a href="/product/?query=Buick">Buick</a>
+            </div>
+         </div>
+      </section>
+      <section id="show-schedule">
+         <h2 align="center">Show Schedule</h2>
+         <table class="calendar">
+            <thead>
+               <tr>
+                  <th colspan="7">September 2024</th>
+               </tr>
+               <tr>
+                  <th>Sun</th>
+                  <th>Mon</th>
+                  <th>Tue</th>
+                  <th>Wed</th>
+                  <th>Thu</th>
+                  <th>Fri</th>
+                  <th>Sat</th>
+               </tr>
+            </thead>
+            <tbody>
+               <tr>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                  <td>1</td>
+                  <td>2</td>
+                  <td>3</td>
+               </tr>
+               <tr>
+                  <td>4</td>
+                  <td>5</td>
+                  <td>6</td>
+                  <td>7</td>
+                  <td>8</td>
+                  <td>9</td>
+                  <td>10</td>
+               </tr>
+               <tr>
+                  <td>11</td>
+                  <td>12</td>
+                  <td>13</td>
+                  <td>14</td>
+                  <td>15</td>
+                  <td>16</td>
+                  <td>17</td>
+               </tr>
+               <tr>
+                  <td>18</td>
+                  <td>19</td>
+                  <td>20</td>
+                  <td>21</td>
+                  <td>22</td>
+                  <td>23</td>
+                  <td>24</td>
+               </tr>
+               <tr>
+                  <td>25</td>
+                  <td>26</td>
+                  <td>27</td>
+                  <td>28</td>
+                  <td>29</td>
+                  <td>30</td>
+                  <td></td>
+               </tr>
+            </tbody>
+         </table>
+      </section>
+      <footer>
+         <div class="container">
+            <p>&copy; 2024 PJ's Auto Literature. All rights reserved.</p>
+         </div>
+      </footer>
+      <script>
+         document.getElementById('home-link').addEventListener('click', function(event) {
+             event.preventDefault(); // Prevent default link behavior
+         
+             // Check if the user is already at the top
+             if (window.scrollY !== 0) {
+                 window.scrollTo({ top: 0, behavior: 'smooth' }); // Smooth scroll to top
+             }
+         });
+      </script>
+      <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+      <script>
+         // Handle search input and navigate to the product list page
+         $('#search-input').on('keydown', function (e) {
+             if (e.key === 'Enter') {
+                 const query = $(this).val();
+                 if (query) {
+                     window.location.href = `/product/?query=${query}`;
+                 }
+             }
+         });
+         
+         
+      </script>
+   </body>
 </html>

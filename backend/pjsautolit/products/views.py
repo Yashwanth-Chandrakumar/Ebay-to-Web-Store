@@ -7,7 +7,7 @@ import re
 import threading
 import time
 import xml.etree.ElementTree as ET
-from datetime import datetime
+from datetime import datetime, timedelta
 from decimal import ROUND_HALF_UP, Decimal
 from signal import signal
 
@@ -866,9 +866,9 @@ def fetch_changelog(request):
     if date_str:
         try:
             date = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
-            start_datetime = timezone.make_aware(datetime.datetime.combine(date, datetime.time.min))
-            end_datetime = timezone.make_aware(datetime.datetime.combine(date, datetime.time.max))
-            logs = ProductChangeLog.objects.filter(date__range=(start_datetime, end_datetime))
+            
+            # Use __date to filter by the date part of a DateTimeField
+            logs = ProductChangeLog.objects.filter(date__date=date)
         except ValueError:
             return JsonResponse({'error': 'Invalid date format'}, status=400)
     else:

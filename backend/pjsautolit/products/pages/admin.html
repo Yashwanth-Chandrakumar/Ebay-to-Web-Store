@@ -23,8 +23,8 @@
 
     <div class="row mb-3">
         <div class="col">
-            <button class="btn btn-primary btn-action" id="fetch-items">Fetch Items</button>
-            <button class="btn btn-success btn-action" id="generate-html">Generate HTML</button>
+            <button class="btn btn-primary btn-action" id="fetch-items">Put eBay Listings in Database</button>
+            <button class="btn btn-success btn-action" id="generate-html">Generate Product Listings from Database</button>
             <button class="btn btn-warning btn-action" id="generate-report">Generate Report</button>
         </div>
     </div>
@@ -88,11 +88,11 @@
     })
     .then(response => response.json())
     .then(data => {
-        console.log('Received data:', data);  // Debugging line
+        console.log('Received data:', data);
         const tbody = document.getElementById('changelogBody');
         tbody.innerHTML = '';
         data.forEach(log => {
-            console.log('Processing log:', log);  // Debugging line
+            console.log('Processing log:', log);
             const row = tbody.insertRow();
             row.insertCell(0).textContent = log.item_id;
             row.insertCell(1).textContent = log.product_name;
@@ -101,7 +101,7 @@
             
             const changesCell = row.insertCell(4);
             changesCell.className = 'changes-cell';
-            console.log('Changes for this log:', log.changes);  // Debugging line
+            console.log('Changes for this log:', log.changes);
             changesCell.innerHTML = formatChanges(log.changes);
         });
         showAlert('Changelog fetched successfully', 'success');
@@ -111,7 +111,6 @@
         showAlert('An error occurred while fetching the changelog', 'danger');
     });
 }
-
 function formatChanges(changes) {
     console.log('Formatting changes:', changes);  // Debugging line
     if (!changes || Object.keys(changes).length === 0) {
@@ -186,24 +185,24 @@ function formatChanges(changes) {
     });
 
     document.getElementById('filterButton').addEventListener('click', function() {
-        const date = document.getElementById('datePicker').value;
-        if (date) {
-            fetchChangelog(date);
-        } else {
-            showAlert('Please select a date', 'warning');
-        }
-    });
+    const date = document.getElementById('datePicker').value;
+    if (date) {
+        fetchChangelog(date);
+    } else {
+        showAlert('Please select a date', 'warning');
+    }
+});
 
-    document.getElementById('downloadExcel').addEventListener('click', function() {
-        const date = document.getElementById('datePicker').value;
-        if (date) {
-            window.location.href = `/download-excel/?date=${date}`;
-        } else {
-            showAlert('Please select a date for Excel download', 'warning');
-        }
-    });
+document.getElementById('downloadExcel').addEventListener('click', function() {
+    const date = document.getElementById('datePicker').value;
+    if (date) {
+        window.location.href = `/download-excel/?date=${date}`;
+    } else {
+        showAlert('Please select a date for Excel download', 'warning');
+    }
+});
 
-    document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function() {
     fetchChangelog();
 });
 </script>
