@@ -60,7 +60,7 @@ def fetch_all_items(request):
 
     try:
         is_first_range = False
-        while min_price <= 4000.00:  # Assuming 600 is the maximum price as per your example
+        while min_price <= 4000.00:  
             if is_first_range:
                 current_page = 50  
                 is_first_range = False
@@ -277,8 +277,8 @@ import time
 from threading import Lock
 
 # Global variables for rate limiting
-RATE_LIMIT_PER_SECOND = 5  # Adjust this based on eBay's guidelines
-RATE_LIMIT_PERIOD = 1.0  # 1 second
+RATE_LIMIT_PER_SECOND = 5  
+RATE_LIMIT_PERIOD = 1.0  
 token_bucket = RATE_LIMIT_PER_SECOND
 last_request_time = time.time()
 bucket_lock = Lock()
@@ -346,7 +346,7 @@ def fetch_browse_api_data(item_id):
             }
 
         except HTTPError as e:
-            if response.status_code == 401:  # Unauthorized
+            if response.status_code == 401:  
                 print("Access token expired, fetching a new one...")
                 new_token = fetch_new_access_token()
                 if new_token:
@@ -449,7 +449,7 @@ def save_product_data(product_data):
         else:
             print(f"Updated existing product: {product_data['title']} - {product_data['item_id']}")
         
-        # Generate and save HTML
+        
 
     except Exception as e:
         print(f"Error saving product data: {e}")
@@ -470,7 +470,6 @@ def generate_html_pages():
     errors = []
     from django.template import loader
 
-    # HTML template (should replace this with your actual template tell to chao during production)
     try:
         template = loader.get_template('pages/template.html')
     except Exception as e:
@@ -1187,17 +1186,15 @@ from django.shortcuts import get_object_or_404, render
 
 from .models import Order
 
-# Set up a logger
 logger = logging.getLogger(__name__)
 
 def order_confirmation(request, order_id):
     try:
-        # Fetch the order and associated items
         order = get_object_or_404(Order, id=order_id)
-        order_items = order.cart.cartitem_set.all()  # Ensure `cart` relation is correct
-        order_total = order.total_amount  # Ensure this property/method is correct
+        order_items = order.cart.cartitem_set.all()  
+        order_total = order.total_amount 
 
-        # Render the confirmation page
+        
         return render(request, 'pages/order_confirmation.html', {
             'order': order,
             'order_items': order_items,
@@ -1205,7 +1202,6 @@ def order_confirmation(request, order_id):
         })
     
     except Exception as e:
-        # Log any unexpected errors
         logger.error(f"Error in order_confirmation view for order_id {order_id}: {e}", exc_info=True)
         return render(request, 'pages/error.html', {'error': 'An unexpected error occurred.'})
 
@@ -1247,11 +1243,11 @@ def get_ebay_product_weight(item_id):
     while True:
         try:
             response = requests.post(url, headers=headers, data=body)
-            print("Response Status Code:", response.status_code)  # Debugging output
+            print("Response Status Code:", response.status_code) 
             
             if response.status_code == 200:
                 response_content = response.content.decode('utf-8')
-                # print("Raw Response Content:", response_content)
+                
 
                 if '<ShortMessage>Expired IAF token.</ShortMessage>' in response_content:
                     print("Expired IAF token error detected")
@@ -1260,12 +1256,11 @@ def get_ebay_product_weight(item_id):
                     if new_token:
                         headers['X-EBAY-API-IAF-TOKEN'] = new_token
                         print("New token fetched and set")
-                        continue  # Retry the request with the new token
+                        continue   
                     else:
                         print("Failed to fetch a new access token")
                         return None
 
-                # Parse the XML response to extract weight (in ounces and pounds)
                 root = ET.fromstring(response_content)
                 
                 namespace = {'ns': 'urn:ebay:apis:eBLBaseComponents'}
@@ -1276,13 +1271,13 @@ def get_ebay_product_weight(item_id):
                 if weight_major_elem is not None:
                     weight_major = weight_major_elem.text
                 else:
-                    print("WeightMajor element not found")  # Debugging output
+                    print("WeightMajor element not found")   
                     weight_major = '0'
 
                 if weight_minor_elem is not None:
                     weight_minor = weight_minor_elem.text
                 else:
-                    print("WeightMinor element not found")  # Debugging output
+                    print("WeightMinor element not found")  
                     weight_minor = '0'
 
                 weight_major = float(weight_major)
@@ -1293,10 +1288,10 @@ def get_ebay_product_weight(item_id):
                 return total_weight_lbs
 
             else:
-                print("Failed to fetch data from eBay API")  # Debugging output
+                print("Failed to fetch data from eBay API")  
                 print("Response Content:", response_content)
                 return None
 
         except Exception as e:
-            print("Exception occurred:", str(e))  # Debugging output
+            print("Exception occurred:", str(e)) 
             return None
