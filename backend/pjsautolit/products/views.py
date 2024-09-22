@@ -41,16 +41,32 @@ def process_queue(q):
         time.sleep(2)  # 2-second delay
         q.task_done()
 
+import queue
+import threading
+
+from django.core.cache import cache
+from django.http import JsonResponse
+from django.views.decorators.http import require_GET
+
+from .models import Product
+
+
 @require_GET
 def fetch_all_items(request):
+    cache.set('fetch_items_progress', {'progress': 0, 'completed': False})
     total_items = 0
-    min_price = 01.00
+    min_price = 1.00
     max_price = 10.00
     price_increment = 10.00
+    total_price_ranges = (4000.00 - min_price) / price_increment
 
     q = queue.Queue()
     num_worker_threads = 5
     threads = []
+
+    def update_progress(current_price):
+        progress = int((current_price / 4000.00) * 100)
+        cache.set('fetch_items_progress', {'progress': progress, 'completed': False})
 
     # Start worker threads
     for _ in range(num_worker_threads):
@@ -59,29 +75,14 @@ def fetch_all_items(request):
         threads.append(t)
 
     try:
-        is_first_range = False
         while min_price <= 4000.00:  
-            if is_first_range:
-                current_page = 50  
-                is_first_range = False
-            else:
-                current_page = 1
+            current_page = 1
             total_pages = 1
 
             while current_page <= total_pages:
                 try:
                     items, total_pages = fetch_finding_api_data(page_number=current_page, min_price=min_price, max_price=max_price)
                     
-                    # for item in items:
-                    #     item_id = item['item_id']
-                    #     try:
-                    #         browse_data = fetch_browse_api_data(item_id)
-                    #         print(f"product covered {item_id} in page {current_page}, price range ${min_price}-${max_price}")
-                    #         combined_data = {**item, **browse_data}
-                    #         q.put(combined_data)
-                    #         total_items += 1
-                    #     except Exception as e:
-                    #         print(f"Error processing item {item_id}: {e}")
                     for item in items:
                         item_id = item['item_id']
                         try:
@@ -100,6 +101,7 @@ def fetch_all_items(request):
                 
                 current_page += 1
 
+            update_progress(min_price)
             min_price = max_price + 0.01
             max_price += price_increment
 
@@ -118,6 +120,7 @@ def fetch_all_items(request):
         except Exception as e:
             print(f"Error generating HTML pages: {e}")
 
+        cache.set('fetch_items_progress', {'progress': 100, 'completed': True})
         return JsonResponse({
             "status": "success",
             "message": f"Fetched and stored information for {total_items} items",
@@ -126,10 +129,16 @@ def fetch_all_items(request):
 
     except Exception as e:
         print(f"Error in fetch_all_items: {e}")
+        cache.set('fetch_items_progress', {'progress': 0, 'completed': True})
         return JsonResponse({
             "status": "error",
             "message": str(e)
         }, status=500)
+
+@require_GET
+def get_fetch_items_progress(request):
+    progress_info = cache.get('fetch_items_progress', {'progress': 0, 'completed': False})
+    return JsonResponse(progress_info)
 
 # def fetch_product_data(item_id):
 #     finding_data = fetch_finding_api_data(item_id)
@@ -283,6 +292,10 @@ token_bucket = RATE_LIMIT_PER_SECOND
 last_request_time = time.time()
 bucket_lock = Lock()
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 def fetch_browse_api_data(item_id):
     global token_bucket, last_request_time
 
@@ -315,13 +328,19 @@ def fetch_browse_api_data(item_id):
             response = requests.get(url, headers=headers)
             response.raise_for_status()
             data = response.json()
+            
+            if not data:
+                logger.error(f"Empty response for item_id: {item_id}")
+                return {}
+
             item_data = data.get('item', {})
             additional_images = data.get('additionalImages', [])
             additional_image_urls = [img['imageUrl'] for img in additional_images]
-            return {
+            
+            result = {
                 'description': data.get('description', ''),
-                'price': float(data['price']['value']),
-                'currency': data['price']['currency'],
+                'price': float(data['price']['value']) if 'price' in data and 'value' in data['price'] else None,
+                'currency': data['price']['currency'] if 'price' in data and 'currency' in data['price'] else None,
                 'category_path': data.get('categoryPath', ''),
                 'category_id_path': data.get('categoryIdPath', ''),
                 'item_creation_date': data.get('itemCreationDate'),
@@ -341,31 +360,40 @@ def fetch_browse_api_data(item_id):
                 'max_estimated_delivery_date': data.get('shippingOptions', [{}])[0].get('maxEstimatedDeliveryDate'),
                 'shipping_cost': float(data.get('shippingOptions', [{}])[0].get('shippingCost', {}).get('value', 0)),
                 'shipping_cost_type': data.get('shippingOptions', [{}])[0].get('shippingCostType', ''),
-                'primary_image_url': data['image']['imageUrl'],
+                'primary_image_url': data['image']['imageUrl'] if 'image' in data and 'imageUrl' in data['image'] else None,
                 'additional_image_urls': additional_image_urls,
             }
+            
+            # Log any fields that are None
+            none_fields = [field for field, value in result.items() if value is None]
+            if none_fields:
+                logger.warning(f"Fields with None values for item_id {item_id}: {', '.join(none_fields)}")
+            
+            return result
 
         except HTTPError as e:
             if response.status_code == 401:  
-                print("Access token expired, fetching a new one...")
+                logger.warning("Access token expired, fetching a new one...")
                 new_token = fetch_new_access_token()
                 if new_token:
                     headers["Authorization"] = f"Bearer {new_token}"
                     continue
-            print(f"Error fetching Browse API data (attempt {attempt + 1}): {e}")
+            logger.error(f"Error fetching Browse API data (attempt {attempt + 1}): {e}")
             attempt += 1
             time.sleep(RETRY_DELAY * (2 ** attempt))  # Exponential backoff
 
         except RequestException as e:
-            print(f"Error fetching Browse API data (attempt {attempt + 1}): {e}")
+            logger.error(f"Error fetching Browse API data (attempt {attempt + 1}): {e}")
             attempt += 1
             time.sleep(RETRY_DELAY * (2 ** attempt))  # Exponential backoff
 
-    print(f"Failed to fetch Browse API data after {MAX_RETRIES} attempts")
+    logger.error(f"Failed to fetch Browse API data after {MAX_RETRIES} attempts for item_id: {item_id}")
     return {}
+
 import re
 
 from bs4 import BeautifulSoup
+from django.db import IntegrityError
 from django.utils.text import slugify
 
 
@@ -380,80 +408,82 @@ def save_product_data(product_data):
 
         description = product_data.get('description', '')
         cleaned_description = clean_description(description)
-        print(cleaned_description)
+
+        defaults = {
+            'title': product_data['title'],
+            'global_id': product_data.get('global_id'),
+            'category_id': product_data.get('category_id'),
+            'category_name': product_data.get('category_name'),
+            'gallery_url': product_data.get('gallery_url'),
+            'view_item_url': product_data.get('view_item_url'),
+            'auto_pay': product_data.get('auto_pay', False),
+            'postal_code': product_data.get('postal_code'),
+            'location': product_data.get('location'),
+            'country': product_data.get('country'),
+            'selling_state': product_data.get('selling_state'),
+            'time_left': product_data.get('time_left'),
+            'best_offer_enabled': product_data.get('best_offer_enabled', False),
+            'buy_it_now_available': product_data.get('buy_it_now_available', False),
+            'start_time': product_data.get('start_time'),
+            'end_time': product_data.get('end_time'),
+            'listing_type': product_data.get('listing_type'),
+            'gift': product_data.get('gift', False),
+            'watch_count': product_data.get('watch_count'),
+            'returns_accepted': product_data.get('returns_accepted', False),
+            'is_multi_variation_listing': product_data.get('is_multi_variation_listing', False),
+            'top_rated_listing': product_data.get('top_rated_listing', False),
+            'short_description': cleaned_description,
+            'price': product_data.get('price'),
+            'currency': product_data.get('currency'),
+            'category_path': product_data.get('category_path', ''),
+            'category_id_path': product_data.get('category_id_path', ''),
+            'item_creation_date': product_data.get('item_creation_date'),
+            'estimated_availability_status': product_data.get('estimated_availability_status', ''),
+            'estimated_available_quantity': product_data.get('estimated_available_quantity'),
+            'estimated_sold_quantity': product_data.get('estimated_sold_quantity'),
+            'enabled_for_guest_checkout': product_data.get('enabled_for_guest_checkout', False),
+            'eligible_for_inline_checkout': product_data.get('eligible_for_inline_checkout', False),
+            'lot_size': product_data.get('lot_size', 0),
+            'legacy_item_id': product_data.get('legacy_item_id', ''),
+            'priority_listing': product_data.get('priority_listing', False),
+            'adult_only': product_data.get('adult_only', False),
+            'listing_marketplace_id': product_data.get('listing_marketplace_id', ''),
+            'seller_username': product_data.get('seller_username'),
+            'feedback_score': product_data.get('feedback_score'),
+            'positive_feedback_percent': product_data.get('positive_feedback_percent'),
+            'feedback_rating_star': product_data.get('feedback_rating_star'),
+            'top_rated_seller': product_data.get('top_rated_seller', False),
+            'shipping_type': product_data.get('shipping_type'),
+            'ship_to_locations': product_data.get('ship_to_locations'),
+            'expedited_shipping': product_data.get('expedited_shipping', False),
+            'one_day_shipping_available': product_data.get('one_day_shipping_available', False),
+            'handling_time': product_data.get('handling_time'),
+            'shipping_service_code': product_data.get('shipping_service_code'),
+            'shipping_carrier_code': product_data.get('shipping_carrier_code'),
+            'min_estimated_delivery_date': product_data.get('min_estimated_delivery_date'),
+            'max_estimated_delivery_date': product_data.get('max_estimated_delivery_date'),
+            'shipping_cost': product_data.get('shipping_cost'),
+            'shipping_cost_type': product_data.get('shipping_cost_type'),
+            'primary_image_url': product_data.get('primary_image_url'),
+            'additional_image_urls': product_data.get('additional_image_urls'),
+            'html_link': sanitized_name,
+        }
 
         product, created = Product.objects.update_or_create(
             item_id=product_data['item_id'],
-            defaults={
-                'title': product_data['title'],
-                'global_id': product_data.get('global_id'),
-                'category_id': product_data.get('category_id'),
-                'category_name': product_data.get('category_name'),
-                'gallery_url': product_data.get('gallery_url'),
-                'view_item_url': product_data.get('view_item_url'),
-                'auto_pay': product_data.get('auto_pay', False),
-                'postal_code': product_data.get('postal_code'),
-                'location': product_data.get('location'),
-                'country': product_data.get('country'),
-                'selling_state': product_data.get('selling_state'),
-                'time_left': product_data.get('time_left'),
-                'best_offer_enabled': product_data.get('best_offer_enabled', False),
-                'buy_it_now_available': product_data.get('buy_it_now_available', False),
-                'start_time': product_data.get('start_time'),
-                'end_time': product_data.get('end_time'),
-                'listing_type': product_data.get('listing_type'),
-                'gift': product_data.get('gift', False),
-                'watch_count': product_data.get('watch_count'),
-                'returns_accepted': product_data.get('returns_accepted', False),
-                'is_multi_variation_listing': product_data.get('is_multi_variation_listing', False),
-                'top_rated_listing': product_data.get('top_rated_listing', False),
-                'short_description': cleaned_description,  # Use the parsed description here
-                'price': product_data.get('price'),
-                'currency': product_data.get('currency'),
-                'category_path': product_data.get('category_path', ''),
-                'category_id_path': product_data.get('category_id_path', ''),
-                'item_creation_date': product_data.get('item_creation_date'),
-                'estimated_availability_status': product_data.get('estimated_availability_status', ''),
-                'estimated_available_quantity': product_data.get('estimated_available_quantity'),
-                'estimated_sold_quantity': product_data.get('estimated_sold_quantity'),
-                'enabled_for_guest_checkout': product_data.get('enabled_for_guest_checkout', False),
-                'eligible_for_inline_checkout': product_data.get('eligible_for_inline_checkout', False),
-                'lot_size': product_data.get('lot_size', 0),
-                'legacy_item_id': product_data.get('legacy_item_id', ''),
-                'priority_listing': product_data.get('priority_listing', False),
-                'adult_only': product_data.get('adult_only', False),
-                'listing_marketplace_id': product_data.get('listing_marketplace_id', ''),
-                'seller_username': product_data.get('seller_username'),
-                'feedback_score': product_data.get('feedback_score'),
-                'positive_feedback_percent': product_data.get('positive_feedback_percent'),
-                'feedback_rating_star': product_data.get('feedback_rating_star'),
-                'top_rated_seller': product_data.get('top_rated_seller', False),
-                'shipping_type': product_data.get('shipping_type'),
-                'ship_to_locations': product_data.get('ship_to_locations'),
-                'expedited_shipping': product_data.get('expedited_shipping', False),
-                'one_day_shipping_available': product_data.get('one_day_shipping_available', False),
-                'handling_time': product_data.get('handling_time'),
-                'shipping_service_code': product_data.get('shipping_service_code'),
-                'shipping_carrier_code': product_data.get('shipping_carrier_code'),
-                'min_estimated_delivery_date': product_data.get('min_estimated_delivery_date'),
-                'max_estimated_delivery_date': product_data.get('max_estimated_delivery_date'),
-                'shipping_cost': product_data.get('shipping_cost'),
-                'shipping_cost_type': product_data.get('shipping_cost_type'),
-                'primary_image_url': product_data.get('primary_image_url'),
-                'additional_image_urls': product_data.get('additional_image_urls'),
-                'html_link': sanitized_name,
-            }
+            defaults=defaults
         )
+        
         if created:
-            print(f"Created new product: {product_data['title']} - {product_data['item_id']}")
+            logger.info(f"Created new product: {product_data['title']} - {product_data['item_id']}")
         else:
-            print(f"Updated existing product: {product_data['title']} - {product_data['item_id']}")
-        
-        
+            logger.info(f"Updated existing product: {product_data['title']} - {product_data['item_id']}")
 
+    except IntegrityError as e:
+        logger.error(f"IntegrityError while saving product {product_data['item_id']}: {e}")
     except Exception as e:
-        print(f"Error saving product data: {e}")
-        print(f"Product data: {product_data['item_id']}")
+        logger.error(f"Error saving product data: {e}")
+        logger.error(f"Product data: {product_data['item_id']}")
 
 def generate_html_view(request):
     try:
@@ -472,25 +502,45 @@ from django.http import JsonResponse
 from django.template import loader
 
 logger = logging.getLogger(__name__)
+import ast
+import logging
+import os
+
+from django.conf import settings
+from django.core.cache import cache
+from django.http import JsonResponse
+from django.shortcuts import render
+from django.template import loader
+
+from .models import Product
+
+logger = logging.getLogger(__name__)
 
 def generate_html_pages():
+    # Check if the generation is already in progress
+    if cache.get('html_generation_in_progress'):
+        logger.warning("HTML generation is already in progress.")
+        return
+
+    # Set the in-progress flag
+    cache.set('html_generation_in_progress', True)
+
     output_dir = os.path.join(settings.BASE_DIR, 'products', 'viewproduct')
     os.makedirs(output_dir, exist_ok=True)
 
     products = Product.objects.all()
-    total_products = products.count()  # Get total count for progress calculation
-    completed = 0  # Track completed products
-
+    total_products = products.count()
+    completed = 0
     errors = []
 
     try:
         template = loader.get_template('pages/template.html')
     except Exception as e:
         logger.error(f"Error loading template: {e}")
+        cache.set('html_generation_in_progress', False)
         return
 
     for product in products:
-        # Parse additional images
         if product.additional_image_urls:
             try:
                 additional_images = ast.literal_eval(product.additional_image_urls)
@@ -523,26 +573,30 @@ def generate_html_pages():
 
         # Update progress
         completed += 1
-        if total_products > 0:
-            progress = int((completed / total_products) * 100)
-        else:
-            progress = 100  # If no products, consider it 100% completed
-
-        # Update progress in cache
+        progress = int((completed / total_products) * 100) if total_products > 0 else 100
         cache.set('html_generation_progress', {'progress': progress, 'completed': False})
 
-    # After completion, mark as completed
+    # Mark as completed
     cache.set('html_generation_progress', {'progress': 100, 'completed': True})
+    cache.set('html_generation_in_progress', False)  # Reset in-progress flag
 
     if errors:
         logger.error(f"Errors encountered while generating HTML pages: {errors}")
     else:
         logger.info("HTML pages generated successfully.")
 
-
 def get_html_generation_progress(request):
     progress_info = cache.get('html_generation_progress', {'progress': 0, 'completed': False})
     return JsonResponse(progress_info)
+
+def initiate_html_generation(request):
+    if request.method == 'GET':
+        # Reset progress for a new generation
+        cache.set('html_generation_progress', {'progress': 0, 'completed': False})
+
+        # Start the generation process
+        generate_html_pages()
+        return JsonResponse({'message': 'HTML generation started.'})
 
 
 from django.shortcuts import render
@@ -871,18 +925,124 @@ def daily_update():
     
     print("Daily update completed.")
 
+from django.core.cache import cache
 from django.http import JsonResponse
+from django.utils import timezone
+from django.views.decorators.http import require_GET
 
+from .models import FetchStatus, Product, ProductChangeLog
 from .tasks import run_daily_update_async
 
 
 @require_GET
 def run_daily_update(request):
+    cache.set('generate_report_progress', {'progress': 0, 'completed': False})
+    
     try:
-        daily_update()
+        fetch_status, created = FetchStatus.objects.get_or_create(fetch_type='daily')
+        existing_item_ids = set(Product.objects.values_list('item_id', flat=True))
+        updated_item_ids = set()
+
+        price_ranges = []
+        min_price = 1.00
+        max_price = 10.00
+        price_increment = 10.00
+
+        while min_price <= 4000.00:
+            price_ranges.append((min_price, max_price))
+            min_price = max_price + 0.01
+            max_price += price_increment
+
+        fields_to_check = ['item_id', 'title', 'global_id', 'category_id', 'category_name', 'gallery_url',
+                           'view_item_url', 'auto_pay', 'postal_code', 'location', 'country', 'shipping_type',
+                           'ship_to_locations']
+        field_mapping = {
+            'description': 'short_description',
+            # Add any other mismatched field names here
+        }
+
+        for index, (min_price, max_price) in enumerate(price_ranges):
+            current_page = 1
+            total_pages = 1
+
+            while current_page <= total_pages:
+                try:
+                    items, total_pages = fetch_finding_api_data(page_number=current_page, min_price=min_price, max_price=max_price)
+
+                    for item in items:
+                        item_id = item['item_id']
+                        updated_item_ids.add(item_id)
+
+                        # Apply field mapping to the fetched item
+                        mapped_item = {field_mapping.get(k, k): v for k, v in item.items() if k in fields_to_check}
+
+                        try:
+                            product = Product.objects.get(item_id=item_id)
+                            before_dict = {key: getattr(product, key) for key in fields_to_check if hasattr(product, key)}
+                            after_dict = {key: value for key, value in mapped_item.items() if key in fields_to_check and hasattr(product, key)}
+
+                            changes = {key: value for key, value in after_dict.items() if before_dict.get(key) != value}
+
+                            if changes:
+                                for key, value in changes.items():
+                                    setattr(product, key, value)
+                                product.save()
+                                
+                                change_log = ProductChangeLog.objects.create(
+                                    item_id=item_id,
+                                    product_name=product.title,
+                                    operation='updated'
+                                )
+                                change_log.set_changes(before_dict, after_dict)
+                                change_log.save()
+                        except Product.DoesNotExist:
+                            browse_data = fetch_browse_api_data(item_id)
+                            # Apply field mapping to the browse data
+                            mapped_browse_data = {field_mapping.get(k, k): v for k, v in browse_data.items() if k in fields_to_check}
+                            combined_data = {**mapped_item, **mapped_browse_data}
+                            new_product = Product.objects.create(**combined_data)
+                            ProductChangeLog.objects.create(
+                                item_id=item_id,
+                                product_name=new_product.title,
+                                operation='created'
+                            )
+
+                    current_page += 1
+
+                except Exception as e:
+                    print(f"Error fetching data for page {current_page}, price range ${min_price:.2f}-${max_price:.2f}: {e}")
+
+            # Update progress
+            progress = int(((index + 1) / len(price_ranges)) * 100)
+            cache.set('generate_report_progress', {'progress': progress, 'completed': False})
+
+        deleted_item_ids = existing_item_ids - updated_item_ids
+        for item_id in deleted_item_ids:
+            product = Product.objects.get(item_id=item_id)
+            product_name = product.title
+            product.delete()
+            ProductChangeLog.objects.create(
+                item_id=item_id,
+                product_name=product_name,
+                operation='deleted'
+            )
+
+        fetch_status.last_run = timezone.now()
+        fetch_status.save()
+
+        cache.set('generate_report_progress', {'progress': 100, 'completed': True})
         return JsonResponse({"status": "success", "message": "Daily update completed successfully"})
+
     except Exception as e:
+        print(f"Error in run_daily_update: {e}")
+        cache.set('generate_report_progress', {'progress': 0, 'completed': True})
         return JsonResponse({"status": "error", "message": str(e)})
+
+@require_GET
+def get_generate_report_progress(request):
+    progress_info = cache.get('generate_report_progress', {'progress': 0, 'completed': False})
+    return JsonResponse(progress_info)
+        
 import datetime
 
 from django.http import JsonResponse

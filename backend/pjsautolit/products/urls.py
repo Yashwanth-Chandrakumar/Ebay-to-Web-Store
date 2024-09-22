@@ -25,6 +25,8 @@ urlpatterns = [
     path('order-confirmation/<int:order_id>/', views.order_confirmation, name='order_confirmation'),
 path('process-payment/', views.process_payment, name='process_payment'),
 path('html-generation-progress/', views.get_html_generation_progress, name='html_generation_progress'),
+path('fetch-items-progress/', views.get_fetch_items_progress, name='fetch_items_progress'),
+path('generate-report-progress/', views.get_generate_report_progress, name='generate_report_progress'),
 
 ]
 

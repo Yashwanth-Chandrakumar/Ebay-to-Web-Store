@@ -40,9 +40,15 @@
             <button class="btn btn-warning" id="downloadExcel">Download Excel</button>
         </div>
     </div>
-    <div id="loaderContainer" style="display:none;">
-        <div class="progress" style="margin-top: 20px;">
-            <div id="progressBar" class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
+    <div id="loaderContainer">
+        <div id="fetchItemsProgress" class="progress" style="margin-top: 20px;display:none">
+            <div id="fetchItemsProgressBar" class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
+        </div>
+        <div id="generateHtmlProgress" class="progress" style="margin-top: 20px;display:none">
+            <div id="generateHtmlProgressBar" class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
+        </div>
+        <div id="generateReportProgress" class="progress" style="margin-top: 20px;display:none">
+            <div id="generateReportProgressBar" class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
         </div>
     </div>
     
@@ -132,31 +138,53 @@ function formatChanges(changes) {
 // Make sure to call fetchChangelog() when the page loads
 
 
-    document.getElementById('fetch-items').addEventListener('click', function() {
+document.getElementById('fetch-items').addEventListener('click', function() {
         if (confirm('Are you sure you want to fetch items?')) {
+            document.getElementById('fetchItemsProgress').style.display = 'block';
+            document.getElementById('fetchItemsProgressBar').style.width = '0%';
+            document.getElementById('fetchItemsProgressBar').innerText = '0%';
+
+            const interval = setInterval(() => {
+                fetch('/fetch-items-progress/')
+                .then(response => response.json())
+                .then(data => {
+                    const progress = data.progress;
+                    const completed = data.completed;
+                    const progressBar = document.getElementById('fetchItemsProgressBar');
+
+                    progressBar.style.width = progress + '%';
+                    progressBar.innerText = progress + '%';
+
+                    if (progress >= 100 || completed) {
+                        clearInterval(interval);
+                        showAlert('Items fetched successfully', 'success');
+                        document.getElementById('fetchItemsProgress').style.display = 'none';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching progress:', error);
+                    clearInterval(interval);
+                    showAlert('An error occurred while fetching items', 'danger');
+                });
+            }, 1000);
+
             fetch('/fetch-items/', {
                 method: 'GET',
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
                 },
-            })
-            .then(response => response.text())
-            .then(data => {
-                showAlert('Items fetched successfully', 'success');
-            })
-            .catch(error => {
+            }).catch(error => {
                 console.error('Error:', error);
                 showAlert('An error occurred while fetching items', 'danger');
             });
         }
     });
-
     document.getElementById('generate-html').addEventListener('click', function() {
     if (confirm('Are you sure you want to generate HTML?')) {
-        // Show the loader
-        document.getElementById('loaderContainer').style.display = 'block';
-        document.getElementById('progressBar').style.width = '0%';
-        document.getElementById('progressBar').innerText = '0%';
+        // Reset the progress bar
+        document.getElementById('generateHtmlProgress').style.display = 'block';
+        document.getElementById('generateHtmlProgressBar').style.width = '0%';
+        document.getElementById('generateHtmlProgressBar').innerText = '0%';
 
         // Start polling for progress
         const interval = setInterval(() => {
@@ -165,7 +193,7 @@ function formatChanges(changes) {
             .then(data => {
                 const progress = data.progress;
                 const completed = data.completed; // Check if task is completed
-                const progressBar = document.getElementById('progressBar');
+                const progressBar = document.getElementById('generateHtmlProgressBar');
 
                 progressBar.style.width = progress + '%';
                 progressBar.innerText = progress + '%';
@@ -173,9 +201,8 @@ function formatChanges(changes) {
                 // Stop polling when progress reaches 100% or completed flag is true
                 if (progress >= 100 || completed) {
                     clearInterval(interval);
-                    
                     showAlert('HTML generated successfully', 'success');
-                    document.getElementById('loaderContainer').style.display = 'none';  // Hide loader
+                    document.getElementById('generateHtmlProgress').style.display = 'none';  // Hide loader
                 }
             })
             .catch(error => {
@@ -191,32 +218,59 @@ function formatChanges(changes) {
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
             },
+        }).then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to initiate HTML generation');
+            }
         }).catch(error => {
             console.error('Error:', error);
             showAlert('An error occurred while generating HTML', 'danger');
+            document.getElementById('generateHtmlProgress').style.display = 'none';  // Hide loader
         });
     }
 });
 
-    document.getElementById('generate-report').addEventListener('click', function() {
+document.getElementById('generate-report').addEventListener('click', function() {
         if (confirm('Are you sure you want to generate a report?')) {
+            document.getElementById('generateReportProgress').style.display = 'block';
+            document.getElementById('generateReportProgressBar').style.width = '0%';
+            document.getElementById('generateReportProgressBar').innerText = '0%';
+
+            const interval = setInterval(() => {
+                fetch('/generate-report-progress/')
+                .then(response => response.json())
+                .then(data => {
+                    const progress = data.progress;
+                    const completed = data.completed;
+                    const progressBar = document.getElementById('generateReportProgressBar');
+
+                    progressBar.style.width = progress + '%';
+                    progressBar.innerText = progress + '%';
+
+                    if (progress >= 100 || completed) {
+                        clearInterval(interval);
+                        showAlert('Report generated successfully', 'success');
+                        document.getElementById('generateReportProgress').style.display = 'none';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching progress:', error);
+                    clearInterval(interval);
+                    showAlert('An error occurred while generating the report', 'danger');
+                });
+            }, 1000);
+
             fetch('/sync/', {
                 method: 'GET',
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
                 },
-            })
-            .then(response => response.text())
-            .then(data => {
-                showAlert('Report generated successfully', 'success');
-            })
-            .catch(error => {
+            }).catch(error => {
                 console.error('Error:', error);
                 showAlert('An error occurred while generating the report', 'danger');
             });
         }
     });
-
     document.getElementById('filterButton').addEventListener('click', function() {
     const date = document.getElementById('datePicker').value;
     if (date) {

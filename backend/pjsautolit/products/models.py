@@ -2,7 +2,7 @@ from django.db import models
 
 
 class Product(models.Model):
-    item_id = models.CharField(max_length=100, unique=True)
+    item_id = models.CharField(max_length=100, primary_key=True)
     title = models.CharField(max_length=255)
     global_id = models.CharField(max_length=255, blank=True, null=True)
     category_id = models.CharField(max_length=255, blank=True, null=True)
