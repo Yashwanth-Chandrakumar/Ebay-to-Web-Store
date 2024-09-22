@@ -24,6 +24,7 @@ urlpatterns = [
     path('checkout/', views.checkout, name='checkout'),
     path('order-confirmation/<int:order_id>/', views.order_confirmation, name='order_confirmation'),
 path('process-payment/', views.process_payment, name='process_payment'),
+path('html-generation-progress/', views.get_html_generation_progress, name='html_generation_progress'),
 
 ]
 

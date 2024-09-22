@@ -40,7 +40,12 @@
             <button class="btn btn-warning" id="downloadExcel">Download Excel</button>
         </div>
     </div>
-
+    <div id="loaderContainer" style="display:none;">
+        <div class="progress" style="margin-top: 20px;">
+            <div id="progressBar" class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
+        </div>
+    </div>
+    
     <div id="alert" class="alert" style="display: none;" role="alert"></div>
 
     <table id="changelogTable" class="table table-striped">
@@ -147,23 +152,51 @@ function formatChanges(changes) {
     });
 
     document.getElementById('generate-html').addEventListener('click', function() {
-        if (confirm('Are you sure you want to generate HTML?')) {
-            fetch('/generate-html/', {
-                method: 'GET',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                },
-            })
-            .then(response => response.text())
+    if (confirm('Are you sure you want to generate HTML?')) {
+        // Show the loader
+        document.getElementById('loaderContainer').style.display = 'block';
+        document.getElementById('progressBar').style.width = '0%';
+        document.getElementById('progressBar').innerText = '0%';
+
+        // Start polling for progress
+        const interval = setInterval(() => {
+            fetch('/html-generation-progress/')
+            .then(response => response.json())
             .then(data => {
-                showAlert('HTML generated successfully', 'success');
+                const progress = data.progress;
+                const completed = data.completed; // Check if task is completed
+                const progressBar = document.getElementById('progressBar');
+
+                progressBar.style.width = progress + '%';
+                progressBar.innerText = progress + '%';
+
+                // Stop polling when progress reaches 100% or completed flag is true
+                if (progress >= 100 || completed) {
+                    clearInterval(interval);
+                    
+                    showAlert('HTML generated successfully', 'success');
+                    document.getElementById('loaderContainer').style.display = 'none';  // Hide loader
+                }
             })
             .catch(error => {
-                console.error('Error:', error);
+                console.error('Error fetching progress:', error);
+                clearInterval(interval);  // Stop polling on error
                 showAlert('An error occurred while generating HTML', 'danger');
             });
-        }
-    });
+        }, 1000);  // Poll every second
+
+        // Trigger the generate HTML process on the backend
+        fetch('/generate-html/', {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+        }).catch(error => {
+            console.error('Error:', error);
+            showAlert('An error occurred while generating HTML', 'danger');
+        });
+    }
+});
 
     document.getElementById('generate-report').addEventListener('click', function() {
         if (confirm('Are you sure you want to generate a report?')) {

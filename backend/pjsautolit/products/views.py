@@ -462,54 +462,87 @@ def generate_html_view(request):
     except Exception as e:
         return JsonResponse({"status": "error", "message": str(e)}, status=500)
 
+import ast
+import logging
+import os
+
+from django.conf import settings
+from django.core.cache import cache
+from django.http import JsonResponse
+from django.template import loader
+
+logger = logging.getLogger(__name__)
+
 def generate_html_pages():
     output_dir = os.path.join(settings.BASE_DIR, 'products', 'viewproduct')
     os.makedirs(output_dir, exist_ok=True)
 
     products = Product.objects.all()
+    total_products = products.count()  # Get total count for progress calculation
+    completed = 0  # Track completed products
+
     errors = []
-    from django.template import loader
 
     try:
         template = loader.get_template('pages/template.html')
     except Exception as e:
-        print(f"Error loading template: {e}")
+        logger.error(f"Error loading template: {e}")
         return
 
     for product in products:
-        # product.short_description = clean_description(product.short_description)
-       
+        # Parse additional images
         if product.additional_image_urls:
             try:
                 additional_images = ast.literal_eval(product.additional_image_urls)
-                
                 additional_images = [str(url).strip() for url in additional_images if url]
-            except:
-                print(f"Error parsing additional image URLs for product {product.item_id}: {e}")
+            except Exception as e:
+                logger.error(f"Error parsing additional image URLs for product {product.item_id}: {e}")
                 additional_images = []
         else:
             additional_images = []
+
         context = {
             'product': product,
             'additional_images': additional_images
         }
+
         try:
             rendered_html = template.render(context)
         except Exception as e:
             errors.append(f"Error rendering HTML for product {product.item_id}: {e}")
             continue
+
         filename = f"{product.html_link}.html"
         filepath = os.path.join(output_dir, filename)
+
         try:
             with open(filepath, 'w', encoding='utf-8') as file:
                 file.write(rendered_html)
         except Exception as e:
-            errors.append(str(e))
+            errors.append(f"Error writing file for product {product.item_id}: {e}")
+
+        # Update progress
+        completed += 1
+        if total_products > 0:
+            progress = int((completed / total_products) * 100)
+        else:
+            progress = 100  # If no products, consider it 100% completed
+
+        # Update progress in cache
+        cache.set('html_generation_progress', {'progress': progress, 'completed': False})
+
+    # After completion, mark as completed
+    cache.set('html_generation_progress', {'progress': 100, 'completed': True})
 
     if errors:
-        print(f"Errors encountered while generating HTML pages: {errors}")
+        logger.error(f"Errors encountered while generating HTML pages: {errors}")
     else:
-        print("HTML pages generated successfully.")
+        logger.info("HTML pages generated successfully.")
+
+
+def get_html_generation_progress(request):
+    progress_info = cache.get('html_generation_progress', {'progress': 0, 'completed': False})
+    return JsonResponse(progress_info)
 
 
 from django.shortcuts import render
