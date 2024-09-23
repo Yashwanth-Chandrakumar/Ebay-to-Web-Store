@@ -1,2 +1,2 @@
 # Ebay-to-Web-Store
-Using ebay api's to create custom estores
+Using ebay api's to create custom ecommerce stores
