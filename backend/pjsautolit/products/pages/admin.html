@@ -25,7 +25,7 @@
         <div class="col">
             <button class="btn btn-primary btn-action" id="fetch-items">Put eBay Listings in Database</button>
             <button class="btn btn-success btn-action" id="generate-html">Generate Product Listings from Database</button>
-            <button class="btn btn-warning btn-action" id="generate-report">Generate Report</button>
+            <button class="btn btn-warning btn-action" id="generate-report">Update Listings and generate report</button>
         </div>
     </div>
 
@@ -230,42 +230,68 @@ document.getElementById('fetch-items').addEventListener('click', function() {
     }
 });
 
+// document.getElementById('generate-report').addEventListener('click', function() {
+//         if (confirm('Are you sure you want to generate a report?')) {
+//             document.getElementById('generateReportProgress').style.display = 'block';
+//             document.getElementById('generateReportProgressBar').style.width = '0%';
+//             document.getElementById('generateReportProgressBar').innerText = '0%';
+
+//             const interval = setInterval(() => {
+//                 fetch('/sync/')
+//                 .then(response => response.json())
+//                 .then(data => {
+//                     const progress = data.progress;
+//                     const completed = data.completed;
+//                     const progressBar = document.getElementById('generateReportProgressBar');
+
+//                     progressBar.style.width = progress + '%';
+//                     progressBar.innerText = progress + '%';
+
+//                     if (progress >= 100 || completed) {
+//                         clearInterval(interval);
+//                         showAlert('Report generated successfully', 'success');
+//                         document.getElementById('generateReportProgress').style.display = 'none';
+//                     }
+//                 })
+//                 .catch(error => {
+//                     console.error('Error fetching progress:', error);
+//                     clearInterval(interval);
+//                     showAlert('An error occurred while generating the report', 'danger');
+//                 });
+//             }, 1000);
+
+//             fetch('/sync/', {
+//                 method: 'GET',
+//                 headers: {
+//                     'X-Requested-With': 'XMLHttpRequest',
+//                 },
+//             }).catch(error => {
+//                 console.error('Error:', error);
+//                 showAlert('An error occurred while generating the report', 'danger');
+//             });
+//         }
+//     });
+//     document.getElementById('filterButton').addEventListener('click', function() {
+//     const date = document.getElementById('datePicker').value;
+//     if (date) {
+//         fetchChangelog(date);
+//     } else {
+//         showAlert('Please select a date', 'warning');
+//     }
+// });
 document.getElementById('generate-report').addEventListener('click', function() {
         if (confirm('Are you sure you want to generate a report?')) {
-            document.getElementById('generateReportProgress').style.display = 'block';
-            document.getElementById('generateReportProgressBar').style.width = '0%';
-            document.getElementById('generateReportProgressBar').innerText = '0%';
-
-            const interval = setInterval(() => {
-                fetch('/generate-report-progress/')
-                .then(response => response.json())
-                .then(data => {
-                    const progress = data.progress;
-                    const completed = data.completed;
-                    const progressBar = document.getElementById('generateReportProgressBar');
-
-                    progressBar.style.width = progress + '%';
-                    progressBar.innerText = progress + '%';
-
-                    if (progress >= 100 || completed) {
-                        clearInterval(interval);
-                        showAlert('Report generated successfully', 'success');
-                        document.getElementById('generateReportProgress').style.display = 'none';
-                    }
-                })
-                .catch(error => {
-                    console.error('Error fetching progress:', error);
-                    clearInterval(interval);
-                    showAlert('An error occurred while generating the report', 'danger');
-                });
-            }, 1000);
-
             fetch('/sync/', {
                 method: 'GET',
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
                 },
-            }).catch(error => {
+            })
+            .then(response => response.text())
+            .then(data => {
+                showAlert('Report generated successfully', 'success');
+            })
+            .catch(error => {
                 console.error('Error:', error);
                 showAlert('An error occurred while generating the report', 'danger');
             });
@@ -279,7 +305,6 @@ document.getElementById('generate-report').addEventListener('click', function() 
         showAlert('Please select a date', 'warning');
     }
 });
-
 document.getElementById('downloadExcel').addEventListener('click', function() {
     const date = document.getElementById('datePicker').value;
     if (date) {

@@ -406,7 +406,9 @@ def save_product_data(product_data):
             sanitized_name = f"{base_name}-{counter}"
             counter += 1
 
-        description = product_data.get('description', '')
+        description = product_data.get('description') or product_data.get('short_description', '')
+
+        # print(f"description {description}")
         cleaned_description = clean_description(description)
 
         defaults = {
@@ -648,7 +650,7 @@ from bs4 import BeautifulSoup
 
 
 def clean_description(description):
-    # Check if the description is HTML
+    # Check if the description contains HTML
     if '<' in description and '>' in description:
         # Parse the HTML and extract the text content
         soup = BeautifulSoup(description, 'html.parser')
@@ -657,16 +659,18 @@ def clean_description(description):
         # If it's not HTML, use the description as is
         text_content = description
     
-    # Remove unwanted characters
+    # Remove unwanted characters (like Â from encoding issues)
     cleaned_text = text_content.replace("Â", "")
     
-    # Remove everything after "**Please check out**"
-    cleaned_text = re.split(r"(condition)\b.*", cleaned_text, flags=re.IGNORECASE)[0] + ' condition'
+    # Remove everything after the first occurrence of the word "condition"
+    cleaned_text = re.split(r"(condition)\b", cleaned_text, flags=re.IGNORECASE)[0] + 'condition.'
     
     # Remove extra whitespace
     cleaned_text = re.sub(r'\s+', ' ', cleaned_text).strip()
     
     return cleaned_text
+
+
 import queue
 import re
 import threading
@@ -828,7 +832,7 @@ def daily_update():
     updated_item_ids = set()
 
     price_ranges = []
-    min_price = 01.00
+    min_price = 1.00
     max_price = 10.00
     price_increment = 10.00
 
@@ -863,7 +867,7 @@ def daily_update():
                         updated_item_ids.add(item_id)
                         
                         # Apply field mapping
-                        mapped_item = {field_mapping.get(k, k): v for k, v in item.items() if k in fields_to_check}
+                        mapped_item = {field_mapping.get(k, k): v for k, v in item.items()}
                         
                         try:
                             product = Product.objects.get(item_id=item_id)
@@ -886,17 +890,19 @@ def daily_update():
                                 )
                                 change_log.set_changes(before_dict, after_dict)
                                 change_log.save()
-                            else:
-                                print(f"No changes for checked fields in product: {item_id} - {product.title}")
+                            # else:
+                            #     print(f"No changes for checked fields in product: {item_id} - {product.title}")
                         except Product.DoesNotExist:
                             browse_data = fetch_browse_api_data(item_id)
-                            mapped_browse_data = {field_mapping.get(k, k): v for k, v in browse_data.items() if k in fields_to_check}
+                            # print(f"Browse API data for {item_id}: {browse_data}")
+                            mapped_browse_data = {field_mapping.get(k, k): v for k, v in browse_data.items()}
                             combined_data = {**mapped_item, **mapped_browse_data}
-                            new_product = Product.objects.create(**combined_data)
-                            print(f"Created new product: {item_id} - {new_product.title}")
+                            save_product_data(combined_data)
+                            print(f"Created new product: {item_id} - {combined_data.get('title', 'Unknown Title')}")
+                            
                             ProductChangeLog.objects.create(
                                 item_id=item_id,
-                                product_name=new_product.title,
+                                product_name=combined_data.get('title', 'Unknown Title'),
                                 operation='created'
                             )
                     
@@ -936,107 +942,120 @@ from .tasks import run_daily_update_async
 
 @require_GET
 def run_daily_update(request):
-    cache.set('generate_report_progress', {'progress': 0, 'completed': False})
-    
     try:
-        fetch_status, created = FetchStatus.objects.get_or_create(fetch_type='daily')
-        existing_item_ids = set(Product.objects.values_list('item_id', flat=True))
-        updated_item_ids = set()
-
-        price_ranges = []
-        min_price = 1.00
-        max_price = 10.00
-        price_increment = 10.00
-
-        while min_price <= 4000.00:
-            price_ranges.append((min_price, max_price))
-            min_price = max_price + 0.01
-            max_price += price_increment
-
-        fields_to_check = ['item_id', 'title', 'global_id', 'category_id', 'category_name', 'gallery_url',
-                           'view_item_url', 'auto_pay', 'postal_code', 'location', 'country', 'shipping_type',
-                           'ship_to_locations']
-        field_mapping = {
-            'description': 'short_description',
-            # Add any other mismatched field names here
-        }
-
-        for index, (min_price, max_price) in enumerate(price_ranges):
-            current_page = 1
-            total_pages = 1
-
-            while current_page <= total_pages:
-                try:
-                    items, total_pages = fetch_finding_api_data(page_number=current_page, min_price=min_price, max_price=max_price)
-
-                    for item in items:
-                        item_id = item['item_id']
-                        updated_item_ids.add(item_id)
-
-                        # Apply field mapping to the fetched item
-                        mapped_item = {field_mapping.get(k, k): v for k, v in item.items() if k in fields_to_check}
-
-                        try:
-                            product = Product.objects.get(item_id=item_id)
-                            before_dict = {key: getattr(product, key) for key in fields_to_check if hasattr(product, key)}
-                            after_dict = {key: value for key, value in mapped_item.items() if key in fields_to_check and hasattr(product, key)}
-
-                            changes = {key: value for key, value in after_dict.items() if before_dict.get(key) != value}
-
-                            if changes:
-                                for key, value in changes.items():
-                                    setattr(product, key, value)
-                                product.save()
-                                
-                                change_log = ProductChangeLog.objects.create(
-                                    item_id=item_id,
-                                    product_name=product.title,
-                                    operation='updated'
-                                )
-                                change_log.set_changes(before_dict, after_dict)
-                                change_log.save()
-                        except Product.DoesNotExist:
-                            browse_data = fetch_browse_api_data(item_id)
-                            # Apply field mapping to the browse data
-                            mapped_browse_data = {field_mapping.get(k, k): v for k, v in browse_data.items() if k in fields_to_check}
-                            combined_data = {**mapped_item, **mapped_browse_data}
-                            new_product = Product.objects.create(**combined_data)
-                            ProductChangeLog.objects.create(
-                                item_id=item_id,
-                                product_name=new_product.title,
-                                operation='created'
-                            )
-
-                    current_page += 1
-
-                except Exception as e:
-                    print(f"Error fetching data for page {current_page}, price range ${min_price:.2f}-${max_price:.2f}: {e}")
-
-            # Update progress
-            progress = int(((index + 1) / len(price_ranges)) * 100)
-            cache.set('generate_report_progress', {'progress': progress, 'completed': False})
-
-        deleted_item_ids = existing_item_ids - updated_item_ids
-        for item_id in deleted_item_ids:
-            product = Product.objects.get(item_id=item_id)
-            product_name = product.title
-            product.delete()
-            ProductChangeLog.objects.create(
-                item_id=item_id,
-                product_name=product_name,
-                operation='deleted'
-            )
-
-        fetch_status.last_run = timezone.now()
-        fetch_status.save()
-
-        cache.set('generate_report_progress', {'progress': 100, 'completed': True})
+        daily_update()
         return JsonResponse({"status": "success", "message": "Daily update completed successfully"})
-
     except Exception as e:
-        print(f"Error in run_daily_update: {e}")
-        cache.set('generate_report_progress', {'progress': 0, 'completed': True})
         return JsonResponse({"status": "error", "message": str(e)})
+
+# @require_GET
+# def run_daily_update(request):
+#     cache.set('generate_report_progress', {'progress': 0, 'completed': False})
+    
+#     try:
+#         fetch_status, created = FetchStatus.objects.get_or_create(fetch_type='daily')
+#         existing_item_ids = set(Product.objects.values_list('item_id', flat=True))
+#         updated_item_ids = set()
+
+#         price_ranges = []
+#         min_price = 1.00
+#         max_price = 10.00
+#         price_increment = 10.00
+
+#         while min_price <= 4000.00:
+#             price_ranges.append((min_price, max_price))
+#             min_price = max_price + 0.01
+#             max_price += price_increment
+
+#         fields_to_check = ['item_id', 'title', 'global_id', 'category_id', 'category_name', 'gallery_url',
+#                            'view_item_url', 'auto_pay', 'postal_code', 'location', 'country', 'shipping_type',
+#                            'ship_to_locations']
+#         field_mapping = {
+#             'description': 'short_description',
+#         }
+
+#         for index, (min_price, max_price) in enumerate(price_ranges):
+#             current_page = 1
+#             total_pages = 1
+
+#             while current_page <= total_pages:
+#                 try:
+#                     items, total_pages = fetch_finding_api_data(page_number=current_page, min_price=min_price, max_price=max_price)
+
+#                     for item in items:
+#                         item_id = item['item_id']
+#                         updated_item_ids.add(item_id)
+
+#                         # Apply field mapping to the fetched item
+#                         mapped_item = {field_mapping.get(k, k): v for k, v in item.items() if k in fields_to_check}
+
+#                         try:
+#                             product = Product.objects.get(item_id=item_id)
+#                             before_dict = {key: getattr(product, key) for key in fields_to_check if hasattr(product, key)}
+#                             after_dict = {key: value for key, value in mapped_item.items() if key in fields_to_check and hasattr(product, key)}
+
+#                             changes = {key: value for key, value in after_dict.items() if before_dict.get(key) != value}
+
+#                             if changes:
+#                                 # Print the product ID and what has changed
+#                                 print(f"Updating product {item_id}: {changes}", flush=True)
+
+#                                 for key, value in changes.items():
+#                                     setattr(product, key, value)
+#                                 product.save()
+                                
+#                                 change_log = ProductChangeLog.objects.create(
+#                                     item_id=item_id,
+#                                     product_name=product.title,
+#                                     operation='updated'
+#                                 )
+#                                 change_log.set_changes(before_dict, after_dict)
+#                                 change_log.save()
+#                         except Product.DoesNotExist:
+#                             browse_data = fetch_browse_api_data(item_id)
+#                             # Apply field mapping to the browse data
+#                             mapped_browse_data = {field_mapping.get(k, k): v for k, v in browse_data.items() if k in fields_to_check}
+#                             combined_data = {**mapped_item, **mapped_browse_data}
+#                             new_product = Product.objects.create(**combined_data)
+#                             print(f"Created new product {item_id}", flush=True)  # Print new product creation
+#                             ProductChangeLog.objects.create(
+#                                 item_id=item_id,
+#                                 product_name=new_product.title,
+#                                 operation='created'
+#                             )
+
+#                     current_page += 1
+
+#                 except Exception as e:
+#                     print(f"Error fetching data for page {current_page}, price range ${min_price:.2f}-${max_price:.2f}: {e}", flush=True)
+
+#             # Update progress
+#             progress = int(((index + 1) / len(price_ranges)) * 100)
+#             cache.set('generate_report_progress', {'progress': progress, 'completed': False})
+
+#         deleted_item_ids = existing_item_ids - updated_item_ids
+#         for item_id in deleted_item_ids:
+#             product = Product.objects.get(item_id=item_id)
+#             product_name = product.title
+#             product.delete()
+#             print(f"Deleted product {item_id}", flush=True)  # Print product deletion
+#             ProductChangeLog.objects.create(
+#                 item_id=item_id,
+#                 product_name=product_name,
+#                 operation='deleted'
+#             )
+
+#         fetch_status.last_run = timezone.now()
+#         fetch_status.save()
+
+#         cache.set('generate_report_progress', {'progress': 100, 'completed': True})
+#         return JsonResponse({"status": "success", "message": "Daily update completed successfully"})
+
+#     except Exception as e:
+#         print(f"Error in run_daily_update: {e}", flush=True)
+#         cache.set('generate_report_progress', {'progress': 0, 'completed': True})
+#         return JsonResponse({"status": "error", "message": str(e)})
+
 
 @require_GET
 def get_generate_report_progress(request):
