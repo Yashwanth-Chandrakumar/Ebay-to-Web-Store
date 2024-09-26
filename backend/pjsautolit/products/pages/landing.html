@@ -6,7 +6,7 @@
       <meta name="description" content="PJ's Auto Literature. Buy Auto literature at the best price. Explore more details including condition, seller information, and shipping options.">
       <meta name="google-site-verification" content="y91eOp-jsN4mY8IQlUl-QhHdb4U9H1NdJbMEdyhShz8" />
       <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
-      <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@700&display=swap" rel="stylesheet">
+      <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@700;900&display=swap" rel="stylesheet">
     
       <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
       <style>
@@ -89,180 +89,351 @@
             padding: 2px 6px;
             font-size: 12px;
         }
-         .hero {
-         position: relative;
-         height: 100vh; /* Adjust this value to control the height */
-         display: flex;
-         align-items: center;
-         justify-content: center;
-         text-align: center;
-         overflow: hidden;
-         color: var(--light-color);
+        .hero {
+    position: relative;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    text-align: center;
+}
+
+.video-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    z-index: -1;
+}
+
+.hero-content {
+    z-index: 1;
+    width: 100%;
+    max-width: 1200px;
+    padding: 0 20px;
+}
+
+.hero h1 {
+    font-size: 4rem;
+    font-weight: bold;
+    margin-bottom: 2rem;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    font-weight: 900;
+}
+
+.search-container {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+#search-input {
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    border: none;
+    border-radius: 4px;
+    background-color: white;
+    color: #333;
+    min-width: 200px;
+}
+
+.search-button {
+    padding: 0.75rem 2rem;
+    font-size: 1rem;
+    font-weight: bold;
+    border: none;
+    border-radius: 4px;
+    background-color: #c41e3a;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.search-button:hover {
+    background-color: #a51a30;
+}
+
+@media (max-width: 768px) {
+    .hero h1 {
+        font-size: 3rem;
+    }
+
+    .search-container {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .search-input, .search-button {
+        width: 100%;
+        max-width: 300px;
+    }
+}
+.about-us {
+    background-color: #0056b3;
+    color: white;
+    padding: 4rem 0;
+    text-align: center;
+}
+
+.about-us .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+.about-us h2 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+}
+
+.about-us .subtitle {
+    font-size: 1.2rem;
+    margin-bottom: 3rem;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.features {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 2rem;
+}
+
+.feature-item {
+    flex-basis: calc(25% - 2rem);
+    min-width: 250px;
+    background-color: rgba(255, 255, 255, 0.1);
+    padding: 2rem;
+    border-radius: 10px;
+    transition: transform 0.3s ease;
+}
+
+.feature-item:hover {
+    transform: translateY(-10px);
+}
+
+.icon-container {
+    background-color: white;
+    color: #0056b3;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0 auto 1.5rem;
+}
+
+.feature-item i {
+    font-size: 2.5rem;
+}
+
+.feature-item h3 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.feature-item p {
+    font-size: 1rem;
+    line-height: 1.5;
+}
+
+@media (max-width: 1200px) {
+    .feature-item {
+        flex-basis: calc(50% - 2rem);
+    }
+}
+
+@media (max-width: 768px) {
+    .feature-item {
+        flex-basis: 100%;
+    }
+}
+.brands {
+    background-color: #f0f0f0;
+    padding: 4rem 0;
+    text-align: center;
+}
+
+.brands h2 {
+    color: #0056b3;
+    font-size: 2rem;
+    margin-bottom: 2rem;
+}
+
+.brand-grid {
+             display: grid;
+             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+             gap: 2rem;
+             margin-bottom: 2rem;
          }
-         .video-container {
-         position: absolute;
-         top: 0;
-         left: 0;
-         width: 100%;
-         height: 100%;
-         overflow: hidden;
-         z-index: -1; /* Ensures the video stays behind the content */
-         }
-         .hero-video {
-         width: 100%;
-         height: 100%;
-         object-fit: cover;
-         /* opacity: 0.5; Reduce opacity if the video is too overpowering */
-         }
-         .hero-content {
-         position: relative;
-         z-index: 1; /* Keeps content on top of the video */
-         max-width: 800px;
-         margin: 0 auto;
-         padding: 0 20px;
-         }
-         .hero h1 {
-         font-size: 3rem;
-         margin-bottom: 1rem;
-         }
-         .hero p {
-         font-size: 1.2rem;
-         margin-bottom: 2rem;
-         }
-         .btn {
-         display: inline-block;
-         background-color: var(--primary-color);
-         color: var(--light-color);
-         padding: 0.8rem 2rem;
-         text-decoration: none;
-         border-radius: 5px;
-         transition: background-color 0.3s ease;
-         }
-         .btn:hover {
-         background-color: var(--accent-color);
-         }
-         .search-container {
-         margin: 2rem 0;
-         }
-         .search-container input {
-         width: 100%;
-         padding: 0.8rem;
-         border: none;
-         border-radius: 5px;
-         font-size: 1rem;
-         }
-         .features {
-         padding: 4rem 0;
-         background-color: #fff;
-         }
-         .features h2 {
-         text-align: center;
-         margin-bottom: 3rem;
-         }
-         .feature-grid {
-         display: grid;
-         grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-         gap: 2rem;
-         }
-         .feature-item {
-         text-align: center;
-         padding: 2rem;
-         background-color: var(--light-color);
-         border-radius: 5px;
-         transition: transform 0.3s ease;
-         }
-         .feature-item:hover {
-         transform: translateY(-5px);
-         }
-         .feature-icon {
-         font-size: 3rem;
-         color: var(--primary-color);
-         margin-bottom: 1rem;
-         }
-         .brands {
-         padding: 4rem 0;
-         }
-         .brands h2 {
-         text-align: center;
-         margin-bottom: 3rem;
-         }
-         .brand-grid {
-         display: grid;
-         grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-         gap: 1rem;
-         }
+         
          .brand-item {
-         text-align: center;
+             position: relative;
+             width: 150px;
+             height: 150px;
+             display: flex;
+             flex-direction: column;
+             align-items: center;
+             justify-content: center;
+             cursor: pointer;
+             transition: all 0.3s ease;
+             background-color: #f0f0f0;
+             border-radius: 10px;
+             overflow: hidden;
          }
-         .brand-grid a {
-         display: block;
-         padding: 1rem;
-         background-color: #fff;
-         color: var(--dark-color);
-         text-decoration: none;
-         border-radius: 5px;
-         transition: background-color 0.3s ease;
+         
+         .brand-item:hover {
+             background-color: #0056b3; /* Blue background on hover */
+             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
          }
-         .brand-grid a:hover {
-         background-color: var(--primary-color);
-         color: var(--light-color);
+         
+         .brand-item img {
+             width: 80px;
+             height: 80px;
+             object-fit: contain;
+             transition: transform 0.3s ease;
          }
-         .section-schedule {
-         background-color: #f2f2f2; /* Match the background color */
-         padding: 40px 0;
+         
+         .brand-item:hover img {
+             transform: scale(1.1);
          }
-         .section-schedule h2 {
-         text-align: center;
-         color: #333; /* Adjust color if needed */
+         
+         .brand-item span {
+             font-weight: bold;
+             color: #333;
+             margin-top: 10px;
+             transition: color 0.3s ease;
          }
-         .section-schedule .container {
-         height: 300px; /* Match the height of the Popular Searches section */
-         display: flex;
-         align-items: center;
-         justify-content: center;
+         
+         .brand-item:hover span {
+             color: white;
          }
-         nav a {
-         color: #ffcc00; /* Unvisited links */
-         text-decoration: none;
+
+.view-all {
+    margin-top: 2rem;
+}
+
+.btn {
+    display: inline-block;
+    background-color: #0056b3;
+    color: white;
+    padding: 0.75rem 2rem;
+    border-radius: 50px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: background-color 0.3s ease;
+}
+
+.btn:hover {
+    background-color: #003d82;
+}
+#show-schedule {
+             background-color: #f8f9fa;
+             padding: 4rem 0;
+             text-align: center;
          }
-         nav a:visited {
-         color: #ffcc00; /* Visited links (light yellow) */
+         
+         #show-schedule h2 {
+             color: #0056b3;
+             margin-bottom: 2rem;
          }
-         nav a:hover {
-         color: #ffcc66; /* Hover effect (optional) */
-         }
-         html {
-         scroll-behavior: smooth;
-         }
+         
          .calendar {
-         width: 100%;
-         max-width: 600px;
-         margin: 20px auto;
-         border-collapse: collapse;
-         background-color: #f5f5f5;
-         border: 1px solid #ddd;
-         font-family: Arial, sans-serif;
-         text-align: center;
+             width: 100%;
+             max-width: 600px;
+             margin: 0 auto 2rem;
+             border-collapse: separate;
+             border-spacing: 0;
+             background-color: white;
+             border-radius: 10px;
+             overflow: hidden;
+             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
          }
+         
          .calendar th {
-         background-color: #2a4d8d;
-         color: white;
-         padding: 10px;
-         font-weight: bold;
+             background-color: #0056b3;
+             color: white;
+             padding: 15px;
+             font-weight: bold;
          }
+         
          .calendar td {
-         padding: 10px;
-         border: 1px solid #ddd;
+             padding: 15px;
+             border: 1px solid #e0e0e0;
          }
-         .calendar tbody tr td:hover {
-         background-color: #f0f0f0;
-         cursor: pointer;
+         
+         .calendar tbody tr:hover {
+             background-color: #f0f0f0;
          }
+         
+         /* Auto Links Section */
+         #auto-links {
+             background-color: white;
+             padding: 4rem 0;
+         }
+         
+         #auto-links h2 {
+             color: #0056b3;
+             text-align: center;
+             margin-bottom: 2rem;
+         }
+         
+         .auto-links-container {
+             display: flex;
+             flex-wrap: wrap;
+             justify-content: space-between;
+             gap: 2rem;
+         }
+         
+         .auto-links-category {
+             flex-basis: calc(50% - 1rem);
+             background-color: #f8f9fa;
+             padding: 2rem;
+             border-radius: 10px;
+             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+         }
+         
+         .auto-links-category h3 {
+             color: #0056b3;
+             margin-bottom: 1rem;
+         }
+         
+         .auto-links-category ul {
+             list-style-type: none;
+             padding-left: 0;
+         }
+         
+         .auto-links-category li {
+             margin-bottom: 0.5rem;
+         }
+         
+         .auto-links-category a {
+             color: #333;
+             text-decoration: none;
+             transition: color 0.3s ease;
+         }
+         
+         .auto-links-category a:hover {
+             color: #0056b3;
+         }
+         
+         /* Footer */
          footer {
-         background-color: var(--secondary-color);
-         color: var(--light-color);
-         text-align: center;
-         padding: 2rem 0;
+             background-color: #0056b3;
+             color: white;
+             text-align: center;
+             padding: 2rem 0;
+         }
+         
+         footer p {
+             margin: 0;
          }
       </style>
    </head>
@@ -300,79 +471,180 @@
             </video>
          </div>
          <div class="hero-content">
+            <h1>Discover the best auto literature for your collection.</h1>
+            <div class="search-container">
+               <input type="text" id="search-input" placeholder="Search for auto literature...">
+                <button class="search-button" onclick="search()">Search</button>
+            </div>
+        </div>
+         <!-- <div class="hero-content">
             <h1>Welcome to PJ's Auto Literature</h1>
             <p>Discover the best auto literature for your collection</p>
             <a href="/product" class="btn">Products</a>
-         </div>
+         </div> -->
       </header>
-      <div class="container">
+      <!-- <div class="container">
          <div class="search-container">
             <input type="text" id="search-input" placeholder="Search for auto literature...">
          </div>
+      </div> -->
+      <section class="about-us">
+         <div class="container">
+             <h2>How PJ's Auto Literature Works</h2>
+             <p class="subtitle">PJ's Auto Literature makes it easy for collectors and enthusiasts to find and get the auto literature they're seeking.</p>
+             
+             <div class="features">
+                 <div class="feature-item">
+                     <div class="icon-container">
+                         <i class="fas fa-book"></i>
+                     </div>
+                     <h3>Vast Collection</h3>
+                     <p>Access our inventory of over 35,000 items in stock and ready to ship.</p>
+                 </div>
+                 <div class="feature-item">
+                     <div class="icon-container">
+                         <i class="fas fa-search"></i>
+                     </div>
+                     <h3>Find Rare Items</h3>
+                     <p>Can't find what you need? Email us, and we'll help locate it through our extensive network.</p>
+                 </div>
+                 <div class="feature-item">
+                     <div class="icon-container">
+                         <i class="fas fa-shield-alt"></i>
+                     </div>
+                     <h3>Trusted Source</h3>
+                     <p>Over 35 years of experience with 99.9% positive feedback on eBay from 136K+ sales.</p>
+                 </div>
+                 <div class="feature-item">
+                     <div class="icon-container">
+                         <i class="fas fa-shipping-fast"></i>
+                     </div>
+                     <h3>Fast Shipping</h3>
+                     <p>Quick delivery on all purchased literature to get you started on your project.</p>
+                 </div>
+             </div>
+         </div>
+     </section>
+     <section class="brands">
+      <div class="container">
+          <h2>Popular Brands</h2>
+          <div class="brand-grid">
+            <div class="brand-item" data-brand="Acura">
+               <img src="https://www.carlogos.org/car-logos/acura-logo.png" alt="Acura logo">
+               <span>Acura</span>
+           </div>
+           <div class="brand-item" data-brand="Audi">
+               <img src="https://www.carlogos.org/car-logos/audi-logo.png" alt="Audi logo">
+               <span>Audi</span>
+           </div>
+           <div class="brand-item" data-brand="BMW">
+               <img src="https://www.carlogos.org/car-logos/bmw-logo.png" alt="BMW logo">
+               <span>BMW</span>
+           </div>
+           <div class="brand-item" data-brand="Chevrolet">
+               <img src="https://www.carlogos.org/car-logos/chevrolet-logo.png" alt="Chevrolet logo">
+               <span>Chevrolet</span>
+           </div>
+           <div class="brand-item" data-brand="Ferrari">
+               <img src="https://www.carlogos.org/car-logos/ferrari-logo.png" alt="Ferrari logo">
+               <span>Ferrari</span>
+           </div>
+           <div class="brand-item" data-brand="Ford">
+               <img src="https://www.carlogos.org/car-logos/ford-logo.png" alt="Ford logo">
+               <span>Ford</span>
+           </div>
+           <div class="brand-item" data-brand="Honda">
+               <img src="https://www.carlogos.org/car-logos/honda-logo.png" alt="Honda logo">
+               <span>Honda</span>
+           </div>
+           <div class="brand-item" data-brand="Hyundai">
+               <img src="https://www.carlogos.org/car-logos/hyundai-logo.png" alt="Hyundai logo">
+               <span>Hyundai</span>
+           </div>
+           <div class="brand-item" data-brand="Infiniti">
+               <img src="https://www.carlogos.org/car-logos/infiniti-logo.png" alt="Infiniti logo">
+               <span>Infiniti</span>
+           </div>
+           <div class="brand-item" data-brand="Jaguar">
+               <img src="https://www.carlogos.org/car-logos/jaguar-logo.png" alt="Jaguar logo">
+               <span>Jaguar</span>
+           </div>
+           <div class="brand-item" data-brand="Jeep">
+               <img src="https://www.carlogos.org/car-logos/jeep-logo.png" alt="Jeep logo">
+               <span>Jeep</span>
+           </div>
+           <div class="brand-item" data-brand="Lamborghini">
+               <img src="https://www.carlogos.org/car-logos/lamborghini-logo.png" alt="Lamborghini logo">
+               <span>Lamborghini</span>
+           </div>
+           <div class="brand-item" data-brand="Lexus">
+               <img src="https://www.carlogos.org/car-logos/lexus-logo.png" alt="Lexus logo">
+               <span>Lexus</span>
+           </div>
+           <div class="brand-item" data-brand="Mazda">
+               <img src="https://www.carlogos.org/car-logos/mazda-logo.png" alt="Mazda logo">
+               <span>Mazda</span>
+           </div>
+           <div class="brand-item" data-brand="Mercedes-Benz">
+               <img src="https://www.carlogos.org/car-logos/mercedes-benz-logo.png" alt="Mercedes-Benz logo">
+               <span>Mercedes-Benz</span>
+           </div>
+           <div class="brand-item" data-brand="Mini">
+               <img src="https://www.carlogos.org/car-logos/mini-logo.png" alt="Mini logo">
+               <span>Mini</span>
+           </div>
+           <div class="brand-item" data-brand="Nissan">
+               <img src="https://www.carlogos.org/car-logos/nissan-logo.png" alt="Nissan logo">
+               <span>Nissan</span>
+           </div>
+           <div class="brand-item" data-brand="Porsche">
+               <img src="https://www.carlogos.org/car-logos/porsche-logo.png" alt="Porsche logo">
+               <span>Porsche</span>
+           </div>
+           <div class="brand-item" data-brand="Rolls Royce">
+               <img src="https://www.carlogos.org/car-logos/rolls-royce-logo.png" alt="Rolls Royce logo">
+               <span>Rolls Royce</span>
+           </div>
+           <div class="brand-item" data-brand="Subaru">
+               <img src="https://www.carlogos.org/car-logos/subaru-logo.png" alt="Subaru logo">
+               <span>Subaru</span>
+           </div>
+           <div class="brand-item" data-brand="Fiat">
+               <img src="https://www.carlogos.org/car-logos/fiat-logo.png" alt="Fiat logo">
+               <span>Fiat</span>
+           </div>
+           <div class="brand-item" data-brand="Toyota">
+               <img src="https://www.carlogos.org/car-logos/toyota-logo.png" alt="Toyota logo">
+               <span>Toyota</span>
+           </div>
+           <div class="brand-item" data-brand="Volkswagen">
+               <img src="https://www.carlogos.org/car-logos/volkswagen-logo.png" alt="Volkswagen logo">
+               <span>Volkswagen</span>
+           </div>
+           <div class="brand-item" data-brand="Buick">
+               <img src="https://www.carlogos.org/car-logos/buick-logo.png" alt="Buick logo">
+               <span>Buick</span>
+           </div>
+           <div class="brand-item" data-brand="Cadillac">
+               <img src="https://www.carlogos.org/car-logos/cadillac-logo.png" alt="Cadillac logo">
+               <span>Cadillac</span>
+           </div>
+           <div class="brand-item" data-brand="Chrysler">
+               <img src="https://www.carlogos.org/car-logos/chrysler-logo.png" alt="Chrysler logo">
+               <span>Chrysler</span>
+           </div>
+           <div class="brand-item" data-brand="Dodge">
+               <img src="https://www.carlogos.org/car-logos/dodge-logo.png" alt="Dodge logo">
+               <span>Dodge</span>
+           </div>
+           
+          </div>
       </div>
-      <section id="about-us" class="features">
-         <div class="container">
-            <h2>About Us</h2>
-            <div class="feature-grid">
-               <div class="feature-item">
-                  <i class="fas fa-book feature-icon"></i>
-                  <h3>Vast Collection</h3>
-                  <p><b>PJ's Auto Literature</b> has over 35,000 items in stock and ready to ship. If you do not see the item you are looking for on the website email us at pjsautolit@aol.com to inquire if we have it in stock, and if we don't have it, we have sources that may be able to fill your specific needs.
-                  </p>
-               </div>
-               <div class="feature-item">
-                  <i class="fas fa-shield-alt feature-icon"></i>
-                  <h3>Trusted Source</h3>
-                  <p><b>PJ's Auto Literature</b> has been buying, selling and trading automotive sales brochures since 1988. Our eBay store has 99.9% positive feedback with over 136K of total sales.  
-                  </p>
-               </div>
-               <div class="feature-item">
-                  <i class="fas fa-headset feature-icon"></i>
-                  <h3>History</h3>
-                  <p>Between 1988 and the present time we have added owner's manuals, shop manuals, magazine ads, and color charts. Our inventory includes literature for: <i>cars, trucks, motorcycles, tractors and other motorized vehicles.</i> E-mail your specific requests and we will reply within 48 hours. </p>
-               </div>
-            </div>
-         </div>
-      </section>
-      <section class="brands">
-         <div class="container">
-            <h2>Popular Searches</h2>
-            <div class="brand-grid" id="brand-list">
-               <a href="/product/?query=Acura">Acura</a>
-               <a href="/product/?query=Audi">Audi</a>
-               <a href="/product/?query=BMW">BMW</a>
-               <a href="/product/?query=Cadillac">Cadillac</a>
-               <a href="/product/?query=Chevrolet">Chevrolet</a>
-               <a href="/product/?query=Chrysler">Chrysler</a>
-               <a href="/product/?query=Dodge">Dodge</a>
-               <a href="/product/?query=Ferrari">Ferrari</a>
-               <a href="/product/?query=Ford">Ford</a>
-               <a href="/product/?query=Honda">Honda</a>
-               <a href="/product/?query=Hyundai">Hyundai</a>
-               <a href="/product/?query=Infiniti">Infiniti</a>
-               <a href="/product/?query=Jaguar">Jaguar</a>
-               <a href="/product/?query=Jeep">Jeep</a>
-               <a href="/product/?query=Lamborghini">Lamborghini</a>
-               <a href="/product/?query=Lexus">Lexus</a>
-               <a href="/product/?query=Mazda">Mazda</a>
-               <a href="/product/?query=Mercedes-Benz">Mercedes-Benz</a>
-               <a href="/product/?query=Mini">Mini</a>
-               <a href="/product/?query=Nissan">Nissan</a>
-               <a href="/product/?query=Porsche">Porsche</a>
-               <a href="/product/?query=Rolls Royce">Rolls Royce</a>
-               <a href="/product/?query=Subaru">Subaru</a>
-               <a href="/product/?query=Fiat">Fiat</a>
-               <a href="/product/?query=Toyota">Toyota</a>
-               <a href="/product/?query=Volkswagen">Volkswagen</a>
-               <a href="/product/?query=Volvo">Volvo</a>
-               <a href="/product/?query=Buick">Buick</a>
-            </div>
-         </div>
-         <hr style="margin: 40px 0; border-top: 2px solid #ccc;">
-      </section>
-      <section id="show-schedule">
-         <h2 align="center">Show Schedule</h2>
-         <table class="calendar">
+  </section>
+  <section id="show-schedule">
+   <div class="container">
+       <h2>Show Schedule</h2>
+       <table class="calendar">
             <thead>
                <tr>
                   <th colspan="7">September 2024</th>
@@ -437,44 +709,52 @@
          </table>
          <!-- Google Map embed code goes here -->
          <div style="text-align: center;">
-         <h3>Current Location</h3>
-         <iframe src="https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d343373.9476854687!2d-92.6662433950876!3d42.3523392444068!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2sus!4v1726856596737!5m2!1sen!2sus" width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+            <h3>Current Location</h3>
+            <iframe src="https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d343373.9476854687!2d-92.6662433950876!3d42.3523392444068!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2sus!4v1726856596737!5m2!1sen!2sus" width="100%" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
          <hr style="margin: 40px 0; border-top: 2px solid #ccc;">
       </section>
-      <section id="auto-links" style="text-align: center;">
-         <h2>Auto Links</h2>
-         <div style="display: inline-block; text-align: left; width: 80%; max-width: 800px;">
-            <h3>Automotive Art</h3>
-            <ul>
-               <li><a href="http://www.gearheadgallery.com/gearhead.htm">Gearhead Gallery</a> - Automotive Artwork. The cure for boring walls!</li>
-            </ul>
-            <hr style="margin: 20px 0;">
-            <h3>Hub Caps</h3>
-            <ul>
-               <li><a href="http://www.suburbanwheelcover.com">Suburban Wheel Cover</a> - Secure online ordering of hub caps, wheel covers, center caps, trim rings, wheels, Altezza tail lights, factory CD players, and more.</li>
-            </ul>
-            <hr style="margin: 20px 0;">
-            <h3>Auto Parts & Accessories</h3>
-            <ul>
-               <li><a href="http://www.autopartsplace.com">The Auto Parts Place</a> - Import and domestic auto parts and accessories at wholesale prices.</li>
-            </ul>
-            <hr style="margin: 20px 0;">
-            <h3>Ebay Store</h3>
-            <ul>
-               <li>Visit PJ's Auto Literature's <a href="http://stores.ebay.com/PJs-Auto-Literature">eBay Store</a>.</li>
-            </ul>
-            <hr style="margin: 20px 0;">
-            <h3>Misc. Links</h3>
-            <ul>
-               <li><a href="http://www.addme.com">Addme.com</a> - Search engine submission service.</li>
-               <li><a href="http://www.rpmcat.com">Dale Wilch's RPM</a> - Catalog of used race car and hot rod parts!</li>
-               <li><a href="http://www.49plymouth.com">49 Plymouth</a></li>
-               <li><a href="http://www.charitywheels.org">Charity Wheels</a> - For the diecast car collectors.</li>
-               <li><a href="http://www.5starshine.com">5 Star Shine</a></li>
-               <li><a href="http://www.hondazone.com">Honda Zone</a> - Honda parts and accessories at 80% off for Accord, Civic, Element, Prelude, Odyssey, and more!</li>
-            </ul>
-            <p>&nbsp;</p>
-         </div>
+      <section id="auto-links">
+         <div class="container">
+             <h2>Auto Links</h2>
+             <div class="auto-links-container">
+                 <div class="auto-links-category">
+                     <h3>Automotive Art</h3>
+                     <ul>
+                         <li><a href="http://www.gearheadgallery.com/gearhead.htm"  style="color: blue;">Gearhead Gallery</a> - Automotive Artwork. The cure for boring walls!</li>
+                     </ul>
+                 </div>
+                 <div class="auto-links-category">
+                     <h3>Hub Caps</h3>
+                     <ul>
+                         <li><a href="http://www.suburbanwheelcover.com"  style="color: blue;">Suburban Wheel Cover</a> - Secure online ordering of hub caps, wheel covers, center caps, trim rings, wheels, Altezza tail lights, factory CD players, and more.</li>
+                     </ul>
+                 </div>
+                 <div class="auto-links-category">
+                     <h3>Auto Parts & Accessories</h3>
+                     <ul>
+                         <li><a href="http://www.autopartsplace.com"  style="color: blue;">The Auto Parts Place</a> - Import and domestic auto parts and accessories at wholesale prices.</li>
+                     </ul>
+                 </div>
+                 <div class="auto-links-category">
+                     <h3>Ebay Store</h3>
+                     <ul>
+                         <li>Visit PJ's Auto Literature's <a href="http://stores.ebay.com/PJs-Auto-Literature" style="color: blue;">eBay Store</a>.</li>
+                     </ul>
+                  </div>
+            <!-- <hr style="margin: 20px 0;"> -->
+            
+        </div>
+        <div class="auto-links-category">
+        <h3>Misc. Links</h3>
+        <ul>
+           <li><a href="http://www.addme.com"  style="color: blue;">Addme.com</a> - Search engine submission service.</li>
+           <li><a href="http://www.rpmcat.com"  style="color: blue;">Dale Wilch's RPM</a> - Catalog of used race car and hot rod parts!</li>
+           <li><a href="http://www.49plymouth.com"  style="color: blue;">49 Plymouth</a></li>
+           <li><a href="http://www.charitywheels.org"  style="color: blue;">Charity Wheels</a> - For the diecast car collectors.</li>
+           <li><a href="http://www.5starshine.com"  style="color: blue;">5 Star Shine</a></li>
+           <li><a href="http://www.hondazone.com"  style="color: blue;">Honda Zone</a> - Honda parts and accessories at 80% off for Accord, Civic, Element, Prelude, Odyssey, and more!</li>
+        </ul>
+        </div>
       </section>
       <footer>
          <div class="container">
@@ -502,6 +782,24 @@
                  }
              }
          });
+         function search() {
+    const query = document.getElementById('search-input').value;
+    if (query) {
+        window.location.href = `/product/?query=${query}`;
+      }
+      else{
+       window.location.href = `/product/`;
+
+    }
+}
+$('.brand-item').on('click', function() {
+                 const brandName = $(this).data('brand');
+                 if (brandName) {
+                     window.location.href = `/product/?query=${encodeURIComponent(brandName)}`;
+                 }
+             });
+
+         
          
          
       </script>
