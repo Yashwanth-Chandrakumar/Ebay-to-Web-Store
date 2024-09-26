@@ -615,6 +615,9 @@ def terms_view(request):
 def admin_page(request):
     return render(request,'pages/admin.html')
 
+def admin_page2(request):
+    return render(request,'pages/admin-2.html')
+
 from django.core.paginator import Paginator
 # views.py
 from django.shortcuts import get_object_or_404, render
@@ -1080,14 +1083,14 @@ def fetch_changelog(request):
             date = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
             
             # Use __date to filter by the date part of a DateTimeField
-            logs = ProductChangeLog.objects.filter(date__date=date)
+            logs = ProductChangeLog.objects.filter(date__date=date).order_by('-date')
         except ValueError:
             return JsonResponse({'error': 'Invalid date format'}, status=400)
     else:
         # If no date is provided, return logs for the last 7 days
         end_date = timezone.now()
         start_date = end_date - datetime.timedelta(days=7)
-        logs = ProductChangeLog.objects.filter(date__range=(start_date, end_date))
+        logs = ProductChangeLog.objects.filter(date__range=(start_date, end_date)).order_by('-date')
     
     data = [
         {

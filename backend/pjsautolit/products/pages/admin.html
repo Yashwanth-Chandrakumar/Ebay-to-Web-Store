@@ -23,8 +23,6 @@
 
     <div class="row mb-3">
         <div class="col">
-            <button class="btn btn-primary btn-action" id="fetch-items">Put eBay Listings in Database</button>
-            <button class="btn btn-success btn-action" id="generate-html">Generate Product Listings from Database</button>
             <button class="btn btn-warning btn-action" id="generate-report">Update Listings and generate report</button>
         </div>
     </div>
@@ -41,12 +39,6 @@
         </div>
     </div>
     <div id="loaderContainer">
-        <div id="fetchItemsProgress" class="progress" style="margin-top: 20px;display:none">
-            <div id="fetchItemsProgressBar" class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
-        </div>
-        <div id="generateHtmlProgress" class="progress" style="margin-top: 20px;display:none">
-            <div id="generateHtmlProgressBar" class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
-        </div>
         <div id="generateReportProgress" class="progress" style="margin-top: 20px;display:none">
             <div id="generateReportProgressBar" class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
         </div>
@@ -84,202 +76,57 @@
         setTimeout(() => alert.style.display = 'none', 5000); // Display for 5 seconds
     }
 
-    
-
     function fetchChangelog(date = null) {
-    let url = '/fetch-changelog/';
-    if (date) {
-        url += `?date=${date}`;
-    }
-    fetch(url, {
-        method: 'GET',
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-        },
-    })
-    .then(response => response.json())
-    .then(data => {
-        console.log('Received data:', data);
-        const tbody = document.getElementById('changelogBody');
-        tbody.innerHTML = '';
-        data.forEach(log => {
-            console.log('Processing log:', log);
-            const row = tbody.insertRow();
-            row.insertCell(0).textContent = log.item_id;
-            row.insertCell(1).textContent = log.product_name;
-            row.insertCell(2).textContent = log.operation;
-            row.insertCell(3).textContent = new Date(log.date).toLocaleString();
-            
-            const changesCell = row.insertCell(4);
-            changesCell.className = 'changes-cell';
-            console.log('Changes for this log:', log.changes);
-            changesCell.innerHTML = formatChanges(log.changes);
-        });
-        showAlert('Changelog fetched successfully', 'success');
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showAlert('An error occurred while fetching the changelog', 'danger');
-    });
-}
-function formatChanges(changes) {
-    console.log('Formatting changes:', changes);  // Debugging line
-    if (!changes || Object.keys(changes).length === 0) {
-        return 'No changes';
-    }
-    let formattedChanges = '<ul>';
-    for (const [key, value] of Object.entries(changes)) {
-        formattedChanges += `<li><strong>${key}:</strong> ${value.before} → ${value.after}</li>`;
-    }
-    formattedChanges += '</ul>';
-    return formattedChanges;
-}
-
-// Make sure to call fetchChangelog() when the page loads
-
-
-document.getElementById('fetch-items').addEventListener('click', function() {
-        if (confirm('Are you sure you want to fetch items?')) {
-            document.getElementById('fetchItemsProgress').style.display = 'block';
-            document.getElementById('fetchItemsProgressBar').style.width = '0%';
-            document.getElementById('fetchItemsProgressBar').innerText = '0%';
-
-            const interval = setInterval(() => {
-                fetch('/fetch-items-progress/')
-                .then(response => response.json())
-                .then(data => {
-                    const progress = data.progress;
-                    const completed = data.completed;
-                    const progressBar = document.getElementById('fetchItemsProgressBar');
-
-                    progressBar.style.width = progress + '%';
-                    progressBar.innerText = progress + '%';
-
-                    if (progress >= 100 || completed) {
-                        clearInterval(interval);
-                        showAlert('Items fetched successfully', 'success');
-                        document.getElementById('fetchItemsProgress').style.display = 'none';
-                    }
-                })
-                .catch(error => {
-                    console.error('Error fetching progress:', error);
-                    clearInterval(interval);
-                    showAlert('An error occurred while fetching items', 'danger');
-                });
-            }, 1000);
-
-            fetch('/fetch-items/', {
-                method: 'GET',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                },
-            }).catch(error => {
-                console.error('Error:', error);
-                showAlert('An error occurred while fetching items', 'danger');
-            });
+        let url = '/fetch-changelog/';
+        if (date) {
+            url += `?date=${date}`;
         }
-    });
-    document.getElementById('generate-html').addEventListener('click', function() {
-    if (confirm('Are you sure you want to generate HTML?')) {
-        // Reset the progress bar
-        document.getElementById('generateHtmlProgress').style.display = 'block';
-        document.getElementById('generateHtmlProgressBar').style.width = '0%';
-        document.getElementById('generateHtmlProgressBar').innerText = '0%';
-
-        // Start polling for progress
-        const interval = setInterval(() => {
-            fetch('/html-generation-progress/')
-            .then(response => response.json())
-            .then(data => {
-                const progress = data.progress;
-                const completed = data.completed; // Check if task is completed
-                const progressBar = document.getElementById('generateHtmlProgressBar');
-
-                progressBar.style.width = progress + '%';
-                progressBar.innerText = progress + '%';
-
-                // Stop polling when progress reaches 100% or completed flag is true
-                if (progress >= 100 || completed) {
-                    clearInterval(interval);
-                    showAlert('HTML generated successfully', 'success');
-                    document.getElementById('generateHtmlProgress').style.display = 'none';  // Hide loader
-                }
-            })
-            .catch(error => {
-                console.error('Error fetching progress:', error);
-                clearInterval(interval);  // Stop polling on error
-                showAlert('An error occurred while generating HTML', 'danger');
-            });
-        }, 1000);  // Poll every second
-
-        // Trigger the generate HTML process on the backend
-        fetch('/generate-html/', {
+        fetch(url, {
             method: 'GET',
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
             },
-        }).then(response => {
-            if (!response.ok) {
-                throw new Error('Failed to initiate HTML generation');
-            }
-        }).catch(error => {
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Received data:', data);
+            const tbody = document.getElementById('changelogBody');
+            tbody.innerHTML = '';
+            data.forEach(log => {
+                console.log('Processing log:', log);
+                const row = tbody.insertRow();
+                row.insertCell(0).textContent = log.item_id;
+                row.insertCell(1).textContent = log.product_name;
+                row.insertCell(2).textContent = log.operation;
+                row.insertCell(3).textContent = new Date(log.date).toLocaleString();
+                
+                const changesCell = row.insertCell(4);
+                changesCell.className = 'changes-cell';
+                console.log('Changes for this log:', log.changes);
+                changesCell.innerHTML = formatChanges(log.changes);
+            });
+            showAlert('Changelog fetched successfully', 'success');
+        })
+        .catch(error => {
             console.error('Error:', error);
-            showAlert('An error occurred while generating HTML', 'danger');
-            document.getElementById('generateHtmlProgress').style.display = 'none';  // Hide loader
+            showAlert('An error occurred while fetching the changelog', 'danger');
         });
     }
-});
 
-// document.getElementById('generate-report').addEventListener('click', function() {
-//         if (confirm('Are you sure you want to generate a report?')) {
-//             document.getElementById('generateReportProgress').style.display = 'block';
-//             document.getElementById('generateReportProgressBar').style.width = '0%';
-//             document.getElementById('generateReportProgressBar').innerText = '0%';
+    function formatChanges(changes) {
+        console.log('Formatting changes:', changes);
+        if (!changes || Object.keys(changes).length === 0) {
+            return 'No changes';
+        }
+        let formattedChanges = '<ul>';
+        for (const [key, value] of Object.entries(changes)) {
+            formattedChanges += `<li><strong>${key}:</strong> ${value.before} → ${value.after}</li>`;
+        }
+        formattedChanges += '</ul>';
+        return formattedChanges;
+    }
 
-//             const interval = setInterval(() => {
-//                 fetch('/sync/')
-//                 .then(response => response.json())
-//                 .then(data => {
-//                     const progress = data.progress;
-//                     const completed = data.completed;
-//                     const progressBar = document.getElementById('generateReportProgressBar');
-
-//                     progressBar.style.width = progress + '%';
-//                     progressBar.innerText = progress + '%';
-
-//                     if (progress >= 100 || completed) {
-//                         clearInterval(interval);
-//                         showAlert('Report generated successfully', 'success');
-//                         document.getElementById('generateReportProgress').style.display = 'none';
-//                     }
-//                 })
-//                 .catch(error => {
-//                     console.error('Error fetching progress:', error);
-//                     clearInterval(interval);
-//                     showAlert('An error occurred while generating the report', 'danger');
-//                 });
-//             }, 1000);
-
-//             fetch('/sync/', {
-//                 method: 'GET',
-//                 headers: {
-//                     'X-Requested-With': 'XMLHttpRequest',
-//                 },
-//             }).catch(error => {
-//                 console.error('Error:', error);
-//                 showAlert('An error occurred while generating the report', 'danger');
-//             });
-//         }
-//     });
-//     document.getElementById('filterButton').addEventListener('click', function() {
-//     const date = document.getElementById('datePicker').value;
-//     if (date) {
-//         fetchChangelog(date);
-//     } else {
-//         showAlert('Please select a date', 'warning');
-//     }
-// });
-document.getElementById('generate-report').addEventListener('click', function() {
+    document.getElementById('generate-report').addEventListener('click', function() {
         if (confirm('Are you sure you want to generate a report?')) {
             fetch('/sync/', {
                 method: 'GET',
@@ -297,26 +144,28 @@ document.getElementById('generate-report').addEventListener('click', function() 
             });
         }
     });
-    document.getElementById('filterButton').addEventListener('click', function() {
-    const date = document.getElementById('datePicker').value;
-    if (date) {
-        fetchChangelog(date);
-    } else {
-        showAlert('Please select a date', 'warning');
-    }
-});
-document.getElementById('downloadExcel').addEventListener('click', function() {
-    const date = document.getElementById('datePicker').value;
-    if (date) {
-        window.location.href = `/download-excel/?date=${date}`;
-    } else {
-        showAlert('Please select a date for Excel download', 'warning');
-    }
-});
 
-document.addEventListener('DOMContentLoaded', function() {
-    fetchChangelog();
-});
+    document.getElementById('filterButton').addEventListener('click', function() {
+        const date = document.getElementById('datePicker').value;
+        if (date) {
+            fetchChangelog(date);
+        } else {
+            showAlert('Please select a date', 'warning');
+        }
+    });
+
+    document.getElementById('downloadExcel').addEventListener('click', function() {
+        const date = document.getElementById('datePicker').value;
+        if (date) {
+            window.location.href = `/download-excel/?date=${date}`;
+        } else {
+            showAlert('Please select a date for Excel download', 'warning');
+        }
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        fetchChangelog();
+    });
 </script>
 
 </body>
