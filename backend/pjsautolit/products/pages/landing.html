@@ -6,6 +6,8 @@
       <meta name="description" content="PJ's Auto Literature. Buy Auto literature at the best price. Explore more details including condition, seller information, and shipping options.">
       <meta name="google-site-verification" content="y91eOp-jsN4mY8IQlUl-QhHdb4U9H1NdJbMEdyhShz8" />
       <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+      <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@700&display=swap" rel="stylesheet">
+    
       <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
       <style>
          :root {
@@ -17,11 +19,12 @@
          }
          * {
          margin: 0;
-         padding: 0;
-         box-sizing: border-box;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 700;
          }
          body {
-         font-family: 'Roboto', sans-serif;
          line-height: 1.6;
          color: var(--dark-color);
          background-color: var(--light-color);
@@ -32,38 +35,60 @@
          margin: 0 auto;
          }
          .navbar {
-         background-color: var(--secondary-color);
-         /* padding: 1rem 0; */
-         position: fixed;
-         top: 0;
-         left: 0;
-         right: 0;
-         z-index: 1000;
-         }
-         .navbar .container {
-         display: flex;
-         justify-content: space-between;
-         align-items: center;
-         }
-         .navbar-brand {
-         color: var(--light-color);
-         font-size: 1.5rem;
-         font-weight: 700;
-         text-decoration: none;
-         }
-         .navbar-nav {
-         display: flex;
-         list-style: none;
-         }
-         .nav-link {
-         color: var(--light-color);
-         text-decoration: none;
-         padding: 0.5rem 1rem;
-         transition: color 0.3s ease;
-         }
-         .nav-link:hover {
-         color: var(--primary-color);
-         }
+            background-color: white;
+            padding: 10px 50px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            margin-left: 40px;
+        }
+
+        .logo img {
+            height: 50px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 20px;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #333;
+            font-size: 18px;
+        }
+
+        .user-actions {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .user-icon, .cart-icon {
+            font-size: 20px;
+            color: #333;
+        }
+
+        .cart-icon {
+            position: relative;
+        }
+
+        .cart-count {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background-color: red;
+            color: white;
+            border-radius: 50%;
+            padding: 2px 6px;
+            font-size: 12px;
+        }
          .hero {
          position: relative;
          height: 100vh; /* Adjust this value to control the height */
@@ -243,22 +268,29 @@
    </head>
    <body>
       <nav class="navbar">
-         <div class="container">
+         <!-- <div class="container"> -->
+            <div class="logo">
             <a href="/" class="navbar-brand"><img src="https://i.postimg.cc/h47H7Tcf/header-1.gif" style="height: 80px;">
+            </div>
             </a>
-            <ul class="navbar-nav">
-               <li><a href="#top" id="home-link">Home</a></li>
-               <li><a href="#show-schedule" class="nav-link">Show Schedule</a></li>
-               <li><a href="/product/" class="nav-link">Products</a></li>
-               <li><a href="#auto-links" class="nav-link">Auto Links</a></li>
+            <div class="nav-links">
+               <a href="#top" id="home-link">Home</a>
+               <a href="#show-schedule" class="nav-link">Show Schedule</a>
+               <a href="/product/" class="nav-link">Products</a></li>
+               <a href="#auto-links" class="nav-link">Auto Links</a>
                <!-- New item -->
-               <li><a href="#about-us" class="nav-link">About Us</a></li>
+               <a href="#about-us" class="nav-link">About Us</a>
                <!-- New item -->
-               <li><a href="/cart/" class="nav-link">Cart</a></li>
-               <li><a href="/terms/" class="nav-link">Terms</a></li>
-               <li><a href="#" class="nav-link">Contact</a></li>
-            </ul>
-         </div>
+               <a href="/terms/" class="nav-link">Terms</a>
+               <a href="#" class="nav-link">Contact</a>
+            </div>
+            <div class="user-actions">
+               <div class="cart-icon">
+                  <a href="/cart/" class="nav-link">🛒</a>
+                   <span class="cart-count">0</span>
+               </div>
+           </div>
+         <!-- </div> -->
       </nav>
       <header class="hero">
          <div class="video-container">

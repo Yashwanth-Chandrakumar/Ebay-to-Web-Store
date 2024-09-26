@@ -41,7 +41,7 @@ TEMPLATES = [
 SECRET_KEY = 'django-insecure-ydu@0gbnw*q_q*+^k!&vn!%zcmz(d)%&+%l6&wcsh46!k5c()b'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['*']
 
@@ -106,7 +106,7 @@ DATABASES = {
     #     'NAME': BASE_DIR / 'db.sqlite3',
     # }
     # aiven
-    'default': dj_database_url.config(default="postgres://avnadmin:AVNS_zMc7r76SFXAIO99_PQb@pjsautolit-freshnco.e.aivencloud.com:26164/pjs", conn_max_age=1800),
+    'default': dj_database_url.config(default="postgres://avnadmin:AVNS_zMc7r76SFXAIO99_PQb@pjsautolit-freshnco.e.aivencloud.com:26164/pjsauto", conn_max_age=1800),
 
 }
 

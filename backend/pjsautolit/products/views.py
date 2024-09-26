@@ -1241,11 +1241,14 @@ def process_payment(request):
 def add_to_cart(request, product_id):
     product = get_object_or_404(Product, item_id=product_id)
     cart, created = Cart.objects.get_or_create(id=request.session.get('cart_id'))
-
-    # Fetch the weight from eBay API
+    
     print("Proceeding for weight checking")
     weight = get_ebay_product_weight(product.item_id)
     print(f"Fetched weight for product {product_id}: {weight}")  # Debugging output
+    
+    if weight is None:
+        messages.error(request, f"Unable to fetch weight for {product.title}. Please try again later.")
+        return redirect('product_list')
 
     if not created:
         cart_item, item_created = CartItem.objects.get_or_create(cart=cart, product=product)
@@ -1260,20 +1263,49 @@ def add_to_cart(request, product_id):
     messages.success(request, f"{product.title} has been added to your cart.")
     return redirect('product_list')
 
+import traceback
+
+from django.core.exceptions import ObjectDoesNotExist
+from django.db.models import BigIntegerField, F, Value
+from django.db.models.functions import Cast
+
+
 def view_cart(request):
     cart_id = request.session.get('cart_id')
     if cart_id:
-        cart = get_object_or_404(Cart, id=cart_id)
-        cart_items = cart.cartitem_set.all()
-        cart_total = cart.total_amount()
+        try:
+            cart = get_object_or_404(Cart, id=cart_id)
+            cart_items = cart.cartitem_set.select_related('product').all()
+            
+            valid_cart_items = []
+            invalid_items = []
+            for item in cart_items:
+                try:
+                    # Use item.product directly since it's now correctly linked by item_id
+                    item.product = Product.objects.get(item_id=item.product.item_id)
+                    valid_cart_items.append(item)
+                except Product.DoesNotExist:
+                    invalid_items.append(item)
+            
+            # Delete invalid items
+            CartItem.objects.filter(id__in=[item.id for item in invalid_items]).delete()
+            
+            # Recalculate cart total using only valid items
+            cart_total = sum(item.product.price * item.quantity for item in valid_cart_items)
+        except Exception as e:
+            # Log the full error traceback
+            print(f"Error processing cart:\n{traceback.format_exc()}")
+            valid_cart_items = []
+            cart_total = 0
     else:
-        cart_items = []
+        valid_cart_items = []
         cart_total = 0
 
     return render(request, 'pages/cart.html', {
-        'cart_items': cart_items,
+        'cart_items': valid_cart_items,
         'cart_total': cart_total
     })
+
 
 def update_cart(request, item_id):
     cart_item = get_object_or_404(CartItem, id=item_id)

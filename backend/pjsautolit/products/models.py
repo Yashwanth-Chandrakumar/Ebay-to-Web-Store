@@ -128,17 +128,31 @@ class Cart(models.Model):
 
 class CartItem(models.Model):
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE)
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, to_field='item_id', on_delete=models.CASCADE, db_column='product_id')
     quantity = models.PositiveIntegerField(default=1)
-    weight = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)  # weight in lbs
+    weight = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
 
     def get_total_weight(self):
         return self.quantity * self.weight if self.weight else 0
+
     def __str__(self):
         return f"{self.quantity} x {self.product.title}"
 
     def subtotal(self):
         return self.product.price * self.quantity
+
+    def get_total_weight(self):
+        return self.quantity * self.weight if self.weight else 0
+
+    def __str__(self):
+        return f"{self.quantity} x {self.product.title}"
+
+    def subtotal(self):
+        return self.product.price * self.quantity
+
+    class Meta:
+        unique_together = (('cart', 'product'),)  # Composite key
+
 
 class Order(models.Model):
     STATUS_CHOICES = (
