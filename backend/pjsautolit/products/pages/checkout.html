@@ -1,203 +1,162 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Checkout</title>
-
-    <!-- Fonts and Icons -->
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
-    
-    <!-- CSS Variables and Styles -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary-color: #3498db;
-            --secondary-color: #2c3e50;
-            --accent-color: #e74c3c;
-            --light-color: #ecf0f1;
-            --dark-color: #34495e;
-            --success-color: #2ecc71;
-            --warning-color: #f39c12;
+            --primary-color: #0056b3;
+            --secondary-color: #f8f9fa;
+            --accent-color: #dc3545;
+            --text-color: #333;
+            --light-gray: #e9ecef;
         }
 
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 700;
         }
 
         body {
             font-family: 'Roboto', sans-serif;
-            background-color: var(--light-color);
-            color: var(--dark-color);
-            padding-top: 80px;
             line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--secondary-color);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
         }
 
-        /* Navbar Styles */
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            flex-grow: 1;
+        }
+
         .navbar {
-            background-color: var(--secondary-color);
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             z-index: 1000;
-            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
-        }
-
-        .navbar .container {
+            background-color: white;
+            padding: 10px 50px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
-
-        .navbar-brand {
-            color: var(--light-color);
-            font-size: 1.8rem;
-            font-weight: 700;
-            text-decoration: none;
-        }
-
-        .navbar-nav {
+        .logo {
             display: flex;
-            list-style: none;
+            align-items: center;
+            margin-left: 40px;
         }
-
-        .navbar-nav li {
-            margin-left: 20px;
+        .logo img {
+            height: 50px;
         }
-
-        .nav-link {
-            color: var(--light-color);
+        .nav-links {
+            display: flex;
+            gap: 20px;
+        }
+        .nav-links a {
             text-decoration: none;
-            padding: 0.5rem 1rem;
-            font-weight: 500;
-            transition: color 0.3s ease;
+            color: #333;
+            font-size: 18px;
+        }
+        .user-actions {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .user-icon, .cart-icon {
+            font-size: 20px;
+            color: #333;
+        }
+        .cart-icon {
+            position: relative;
+        }
+        .cart-count {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background-color: red;
+            color: white;
+            border-radius: 50%;
+            padding: 2px 6px;
+            font-size: 12px;
         }
 
-        .nav-link:hover {
+        .checkout-content {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            padding: 40px;
+            margin-top: 100px;
+        }
+
+        h1 {
+            font-size: 36px;
+            font-weight: 900;
+            margin-bottom: 20px;
+            color: var(--primary-color);
+            text-align: center;
+        }
+
+        .summary {
+            margin-bottom: 30px;
+        }
+
+        .summary h3 {
+            font-size: 24px;
+            margin-bottom: 15px;
             color: var(--primary-color);
         }
 
-        .checkout {
-            margin-top: 1rem;
-        }
-
-        .container {
-            width: 90%;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        /* Button Styles */
-        .btn {
-            display: inline-block;
-            padding: 0.75rem 1.5rem;
-            border-radius: 5px;
-            font-size: 1rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            text-align: center;
-            transition: background-color 0.3s ease, transform 0.3s ease;
-            cursor: pointer;
-        }
-
-        .btn-primary {
-            background-color: var(--primary-color);
-            color: #fff;
-            border: none;
-        }
-
-        .btn-primary:hover {
-            background-color: var(--accent-color);
-            transform: translateY(-2px);
-        }
-
-        .btn-success {
-            background-color: var(--success-color);
-            color: #fff;
-            border: none;
-        }
-
-        .btn-success:hover {
-            background-color: var(--dark-color);
-            transform: translateY(-2px);
-        }
-
-        /* Card Container Styles */
-        #card-container {
-            border: 1px solid var(--secondary-color);
-            padding: 1rem;
-            border-radius: 5px;
-            background-color: #fff;
-            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
-        }
-
-        /* List Group Styles */
         .list-group-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 1rem 1.5rem;
-            background-color: #fff;
-            border: 1px solid var(--secondary-color);
+            padding: 10px 0;
+            border-bottom: 1px solid var(--light-gray);
+        }
+
+        .list-group-item:last-child {
+            border-bottom: none;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: var(--primary-color);
+            color: white;
+            text-decoration: none;
             border-radius: 5px;
-            margin-bottom: 0.5rem;
-            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.05);
+            transition: background-color 0.3s;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
         }
 
-        .list-group-item h6 {
-            font-size: 1rem;
-            font-weight: 500;
-            margin-bottom: 0.25rem;
+        .btn:hover {
+            background-color: var(--accent-color);
         }
 
-        .list-group-item small {
-            color: var(--dark-color);
-        }
-
-        .list-group-item span {
-            font-weight: 600;
-        }
-
-        /* Summary Styles */
-        .summary {
-            border: 1px solid var(--secondary-color);
+        #card-container {
+            border: 1px solid var(--light-gray);
+            padding: 20px;
             border-radius: 5px;
-            background-color: #fff;
-            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
-            padding: 1rem;
-            margin-bottom: 1rem;
+            margin-bottom: 20px;
         }
 
-        .summary h3 {
-            margin-bottom: 1rem;
-            font-size: 1.25rem;
-            font-weight: 600;
-        }
-
-        .summary .list-group-item {
-            font-size: 1rem;
-            padding: 1rem 1.5rem;
-        }
-
-        /* Footer Styles */
-        footer {
-            background-color: var(--secondary-color);
-            color: var(--light-color);
-            text-align: center;
-            padding: 2rem 0;
-            margin-top: 2rem;
-            box-shadow: 0px -4px 12px rgba(0, 0, 0, 0.1);
-        }
-
-        footer p {
-            margin: 0;
-        }
-
-        /* Modal Styles */
         .modal {
             display: none;
             position: fixed;
@@ -225,13 +184,13 @@
             float: right;
             font-size: 28px;
             font-weight: bold;
+            cursor: pointer;
         }
 
         .close:hover,
         .close:focus {
             color: black;
             text-decoration: none;
-            cursor: pointer;
         }
 
         .info-button {
@@ -245,96 +204,96 @@
             color: var(--accent-color);
         }
 
+        footer {
+            background-color: var(--primary-color);
+            color: white;
+            text-align: center;
+            padding: 20px 0;
+            margin-top: auto;
+        }
+
         @media (max-width: 768px) {
-            .navbar .container {
+            .navbar {
                 flex-direction: column;
+                padding: 10px;
             }
-
-            .navbar-nav {
-                flex-direction: column;
-                margin-top: 1rem;
+            .nav-links {
+                margin-top: 10px;
             }
-
-            .navbar-nav li {
+            .logo {
                 margin-left: 0;
-                margin-bottom: 10px;
             }
         }
     </style>
     <script src="https://sandbox.web.squarecdn.com/v1/square.js"></script>
 </head>
-
 <body>
-    <!-- Navbar -->
     <nav class="navbar">
-        <div class="container">
-            <a href="{% url 'landing_page' %}" class="navbar-brand">
-                <img src="https://i.postimg.cc/h47H7Tcf/header-1.gif" style="height: 80px;">
-            </a>
-            <ul class="navbar-nav">
-                <li><a href="{% url 'landing_page' %}" class="nav-link">Home</a></li>
-                <li><a href="{% url 'landing_page' %}#show-schedule" class="nav-link">Show Schedule</a></li>
-                <li><a href="{% url 'product_list' %}" class="nav-link">Products</a></li>
-                <li><a href="{% url 'landing_page' %}#auto-links" class="nav-link">Auto Links</a></li>
-                <li><a href="{% url 'landing_page' %}#wanted" class="nav-link">Wanted</a></li>
-                <li><a href="{% url 'view_cart' %}" class="nav-link">Cart</a></li>
-                <li><a href="{% url 'terms' %}" class="nav-link">Terms</a></li>
-                <li><a href="#" class="nav-link">Contact</a></li>
-            </ul>
+        <div class="logo">
+            <a href="/" class="navbar-brand"><img src="https://i.postimg.cc/h47H7Tcf/header-1.gif" style="height: 80px;"></a>
+        </div>
+        <div class="nav-links">
+            <a href="{% url 'landing_page' %}" id="home-link">Home</a>
+            <a href="{% url 'landing_page' %}#show-schedule" class="nav-link">Show Schedule</a>
+            <a href="{% url 'product_list' %}" class="nav-link">Products</a>
+            <a href="{% url 'landing_page' %}#auto-links" class="nav-link">Auto Links</a>
+            <a href="{% url 'landing_page' %}#about-us" class="nav-link">About Us</a>
+            <a href="{% url 'terms' %}" class="nav-link">Terms</a>
+            <a href="#" class="nav-link">Contact</a>
+        </div>
+        <div class="user-actions">
+            <div class="cart-icon">
+                <a href="/cart/" class="nav-link"> <i class="fas fa-shopping-cart"></i></a>
+                <span class="cart-count">{{cart_count}}</span>
+            </div>
         </div>
     </nav>
 
-    <!-- Checkout Section -->
     <div class="container">
-        <h1 class="checkout">Checkout</h1>
-        <div class="row">
-            <div class="col-md-6">
-                <div class="summary">
-                    <h3>Order Summary</h3>
-                    <ul class="list-group mb-3">
-                        {% for item in cart_items %}
-                        <li class="list-group-item d-flex justify-content-between lh-sm">
-                            <div>
-                                <h6 class="my-0">{{ item.product.title }}</h6>
-                                <small class="text-muted">Quantity: {{ item.quantity }}</small>
-                            </div>
-                            <span class="text-muted">${{ item.subtotal }}</span>
-                        </li>
-                        {% endfor %}
-                        <li class="list-group-item d-flex justify-content-between">
-                            <span>Total Weight</span>
-                            <strong>{{ total_weight_major }} lb {{ total_weight_minor }} oz</strong>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between">
-                            <span>Total (USD)</span>
-                            <strong>${{ cart_total }}</strong>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between">
-                            <div >
+        <div class="checkout-content">
+            <h1>Checkout</h1>
+            <div class="summary">
+                <h3>Order Summary</h3>
+                <ul class="list-group">
+                    {% for item in cart_items %}
+                    <li class="list-group-item">
+                        <div>
+                            <h5>{{ item.product.title }}</h5>
+                            <small>Quantity: {{ item.quantity }}</small>
+                        </div>
+                        <span>${{ item.subtotal }}</span>
+                    </li>
+                    {% endfor %}
+                    <li class="list-group-item">
+                        <span>Total Weight</span>
+                        <strong>{{ total_weight_major }} lb {{ total_weight_minor }} oz</strong>
+                    </li>
+                    <li class="list-group-item">
+                        <span>Total (USD)</span>
+                        <strong>${{ cart_total }}</strong>
+                    </li>
+                    <li class="list-group-item">
+                        <div>
                             <span>Shipping Cost</span>
                             <button type="button" class="info-button" onclick="showModal()" id="shippingInfoBtn">
                                 <i class="fas fa-info-circle"></i>
                             </button>
                         </div>
-                            <strong>+${{ shipping_cost }}</strong>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between">
-                            <span>Total Cost (Including Shipping)</span>
-                            <strong>${{ total_including_shipping }}</strong>
-                        </li>
-                    </ul>
-                </div>
+                        <strong>+${{ shipping_cost }}</strong>
+                    </li>
+                    <li class="list-group-item">
+                        <span>Total Cost (Including Shipping)</span>
+                        <strong>${{ total_including_shipping }}</strong>
+                    </li>
+                </ul>
             </div>
-            <div class="col-md-6">
-                <form id="payment-form">
-                    <div id="card-container"></div>
-                    <button id="card-button" type="button" class="btn btn-primary mt-3">Pay ${{ total_including_shipping }}</button>
-                </form>
-            </div>
+            <form id="payment-form">
+                <div id="card-container"></div>
+                <button id="card-button" type="button" class="btn">Pay ${{ total_including_shipping }}</button>
+            </form>
         </div>
     </div>
 
-    <!-- Shipping Info Modal -->
     <div id="shippingInfoModal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeModal()">&times;</span>
@@ -348,7 +307,6 @@
         </div>
     </div>
 
-    <!-- Footer -->
     <footer>
         <div class="container">
             <p>&copy; 2024 PJ's Auto Literature. All rights reserved.</p>
@@ -356,27 +314,22 @@
     </footer>
 
     <script>
+        const modal = document.getElementById("shippingInfoModal");
+        const btn = document.getElementById("shippingInfoBtn");
+        const span = document.getElementsByClassName("close")[0];
 
-const modal = document.getElementById("shippingInfoModal");
-            const btn = document.getElementById("shippingInfoBtn");
-            const span = document.getElementsByClassName("close")[0];
+        function showModal() {
+            modal.style.display = "block";
+        }
+        function closeModal() {
+            modal.style.display = "none";
+        }
 
-            console.log('Modal elements:', { modal, btn, span });
-
-            function showModal(){
-                modal.style.display = "block";
-            }
-            function closeModal(){
+        window.addEventListener('click', function(event) {
+            if (event.target == modal) {
                 modal.style.display = "none";
             }
-            
-
-            window.addEventListener('click', function(event) {
-                if (event.target == modal) {
-                    // console.log('Clicked outside modal');
-                    modal.style.display = "none";
-                }
-            });
+        });
 
         const appId = '{{ square_application_id }}';
         const locationId = '{{ square_location_id }}';
@@ -444,7 +397,6 @@ const modal = document.getElementById("shippingInfoModal");
                     const paymentResults = await createPayment(token);
                     console.log('Payment Success', paymentResults);
                     window.location.href = `{% url "order_confirmation" 0 %}`.replace(0, paymentResults.order_id);
-
                 } catch (e) {
                     console.error(e.message);
                 }
@@ -454,10 +406,7 @@ const modal = document.getElementById("shippingInfoModal");
             cardButton.addEventListener('click', async function (event) {
                 await handlePaymentMethodSubmission(event, card);
             });
-
-           
         });
     </script>
 </body>
-
 </html>

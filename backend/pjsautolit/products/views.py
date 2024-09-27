@@ -605,12 +605,43 @@ from django.shortcuts import render
 
 
 def landing_page(request):
-    return render(request, 'pages/landing.html')
+    cart_count = 0
+
+    # Check if there's a cart in the session
+    cart_id = request.session.get('cart_id')
+    if cart_id:
+        try:
+            # Get all cart items related to the cart
+            cart_items = CartItem.objects.filter(cart_id=cart_id)
+            # Sum up the quantity of all items in the cart to get the cart count
+            cart_count = sum(item.quantity for item in cart_items)
+        except CartItem.DoesNotExist:
+            # If the cart items don't exist, the cart is empty or invalid
+            cart_count = 0
+
+    return render(request, 'pages/landing.html',{
+        'cart_count': cart_count,
+    })
 from django.shortcuts import render
 
 
 def terms_view(request):
-    return render(request, 'pages/terms.html')
+    cart_count = 0
+
+    # Check if there's a cart in the session
+    cart_id = request.session.get('cart_id')
+    if cart_id:
+        try:
+            # Get all cart items related to the cart
+            cart_items = CartItem.objects.filter(cart_id=cart_id)
+            # Sum up the quantity of all items in the cart to get the cart count
+            cart_count = sum(item.quantity for item in cart_items)
+        except CartItem.DoesNotExist:
+            # If the cart items don't exist, the cart is empty or invalid
+            cart_count = 0
+    return render(request, 'pages/terms.html',{
+        'cart_count': cart_count,
+    })
 
 def admin_page(request):
     return render(request,'pages/admin.html')
@@ -628,6 +659,19 @@ from .models import Product
 def product_list(request):
     query = request.GET.get('query', '')
     products = Product.objects.all()
+    
+    cart_count = 0
+    cart_id = request.session.get('cart_id')
+
+    if cart_id:
+        try:
+            # Get all cart items related to the cart
+            cart_items = CartItem.objects.filter(cart_id=cart_id)
+            # Sum up the quantity of all items in the cart to get the cart count
+            cart_count = sum(item.quantity for item in cart_items)
+        except CartItem.DoesNotExist:
+            # If the cart items don't exist, the cart is empty or invalid
+            cart_count = 0  
 
     if query:
         products = products.filter(title__icontains=query)
@@ -638,7 +682,8 @@ def product_list(request):
 
     context = {
         'page_obj': page_obj,
-        'query': query
+        'query': query,
+        'cart_count': cart_count,
     }
     return render(request, 'pages/product_list.html', context)
 
@@ -1275,11 +1320,12 @@ from django.db.models.functions import Cast
 
 def view_cart(request):
     cart_id = request.session.get('cart_id')
+    cart_count = 0
     if cart_id:
         try:
             cart = get_object_or_404(Cart, id=cart_id)
             cart_items = cart.cartitem_set.select_related('product').all()
-            
+            cart_count = sum(item.quantity for item in cart_items)
             valid_cart_items = []
             invalid_items = []
             for item in cart_items:
@@ -1300,13 +1346,16 @@ def view_cart(request):
             print(f"Error processing cart:\n{traceback.format_exc()}")
             valid_cart_items = []
             cart_total = 0
+            cart_count = 0
     else:
         valid_cart_items = []
         cart_total = 0
+        cart_count = 0
 
     return render(request, 'pages/cart.html', {
         'cart_items': valid_cart_items,
-        'cart_total': cart_total
+        'cart_total': cart_total,
+        'cart_count': cart_count,
     })
 
 
@@ -1339,6 +1388,16 @@ def checkout(request):
     try:
         # Step 1: Check if cart_id is in session
         cart_id = request.session.get('cart_id')
+        cart_count = 0
+        if cart_id:
+            try:
+                # Get all cart items related to the cart
+                cart_items = CartItem.objects.filter(cart_id=cart_id)
+                # Sum up the quantity of all items in the cart to get the cart count
+                cart_count = sum(item.quantity for item in cart_items)
+            except CartItem.DoesNotExist:
+                # If the cart items don't exist, the cart is empty or invalid
+                cart_count = 0
         print("Cart ID:", cart_id)  # Debugging output
         if not cart_id:
             print("No cart ID in session")
@@ -1421,6 +1480,7 @@ def checkout(request):
             'square_application_id': settings.SQUARE_APPLICATION_ID,
             'square_location_id': settings.SQUARE_LOCATION_ID,
             'total_including_shipping': total_including_shipping,
+            'cart_count': cart_count,
         })
     except Exception as e:
         print("Exception occurred:", str(e))  # Debugging output

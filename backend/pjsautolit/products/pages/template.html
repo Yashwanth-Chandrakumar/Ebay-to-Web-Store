@@ -13,6 +13,8 @@
     <meta property="og:image" content="{{ product.primary_image_url }}">
     <meta property="og:url" content="{% url 'product_detail' product_slug=product.html_link %}">
     <meta property="og:type" content="product">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@700;900&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
 
@@ -294,7 +296,7 @@
 <body>
     <nav class="navbar">
         <div class="logo">
-            <a href="{% url 'landing_page' %}" class="navbar-brand"><img src="{% static 'images/header-1.gif' %}" style="height: 80px;"></a>
+            <a href="/" class="navbar-brand"><img src="https://i.postimg.cc/h47H7Tcf/header-1.gif" style="height: 80px;"></a>
         </div>
         <div class="nav-links">
             <a href="{% url 'landing_page' %}" id="home-link">Home</a>
@@ -307,8 +309,7 @@
         </div>
         <div class="user-actions">
             <div class="cart-icon">
-                <a href="{% url 'view_cart' %}" class="nav-link">🛒</a>
-                <span class="cart-count">{{ cart_count }}</span>
+                <a href="/cart/" class="nav-link"> <i class="fas fa-shopping-cart"></i></a>
             </div>
         </div>
     </nav>

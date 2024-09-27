@@ -4,139 +4,176 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Terms and Conditions</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary-color: #3498db;
-            --secondary-color: #2c3e50;
-            --accent-color: #e74c3c;
-            --light-color: #ecf0f1;
-            --dark-color: #34495e;
+            --primary-color: #0056b3;
+            --secondary-color: #f8f9fa;
+            --accent-color: #dc3545;
+            --text-color: #333;
+            --light-gray: #e9ecef;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 700;
         }
 
         body {
             font-family: 'Roboto', sans-serif;
-            background-color: var(--light-color);
-            color: var(--dark-color);
-            padding-top: 80px;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--secondary-color);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            flex-grow: 1;
         }
 
         .navbar {
-            background-color: var(--secondary-color);
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             z-index: 1000;
-        }
-
-        .navbar .container {
+            background-color: white;
+            padding: 10px 50px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
-
-        .navbar-brand {
-            color: var(--light-color);
-            font-size: 1.5rem;
-            font-weight: 700;
-            text-decoration: none;
-        }
-
-        .navbar-nav {
+        .logo {
             display: flex;
-            flex-direction: row;
-            justify-content: space-between;
-            list-style: none;
+            align-items: center;
+            margin-left: 40px;
         }
-
-        .nav-link {
-            color: var(--light-color);
+        .logo img {
+            height: 50px;
+        }
+        .nav-links {
+            display: flex;
+            gap: 20px;
+        }
+        .nav-links a {
             text-decoration: none;
-            padding: 0.5rem 1rem;
-            margin-left: 25px;
-            transition: color 0.3s ease;
+            color: #333;
+            font-size: 18px;
         }
-
-        .nav-link:hover {
-            color: var(--primary-color);
+        .user-actions {
+            display: flex;
+            align-items: center;
+            gap: 20px;
         }
-
-        .container {
-            width: 90%;
-            max-width: 1200px;
-            margin: 0 auto;
+        .user-icon, .cart-icon {
+            font-size: 20px;
+            color: #333;
         }
-
-        h1 {
-            margin-bottom: 1rem;
-            color: var(--dark-color);
-            text-align: center;
+        .cart-icon {
+            position: relative;
+        }
+        .cart-count {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background-color: red;
+            color: white;
+            border-radius: 50%;
+            padding: 2px 6px;
+            font-size: 12px;
         }
 
         .terms-content {
-            background-color: #fff;
-            border-radius: 10px;
-            padding: 2rem;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            padding: 40px;
+            margin-top: 100px;
         }
 
-        .btn-primary {
-            background-color: var(--primary-color);
-            border-color: var(--primary-color);
+        h1 {
+            font-size: 36px;
+            font-weight: 900;
+            margin-bottom: 20px;
+            color: var(--primary-color);
+            text-align: center;
         }
 
-        .btn-primary:hover {
-            background-color: var(--accent-color);
-            border-color: var(--accent-color);
+        p {
+            margin-bottom: 15px;
+            font-size: 16px;
         }
 
         footer {
-            background-color: var(--secondary-color);
-            color: var(--light-color);
+            background-color: var(--primary-color);
+            color: white;
             text-align: center;
-            padding: 2rem 0;
-            margin-top: 2rem;
+            padding: 20px 0;
+            margin-top: auto;
+        }
+
+        @media (max-width: 768px) {
+            .navbar {
+                flex-direction: column;
+                padding: 10px;
+            }
+            .nav-links {
+                margin-top: 10px;
+            }
+            .logo {
+                margin-left: 0;
+            }
         }
     </style>
 </head>
 <body>
-    <!-- Navbar -->
     <nav class="navbar">
-        <div class="container">
-            <a href="{% url 'landing_page' %}" class="navbar-brand"><img src="https://i.postimg.cc/h47H7Tcf/header-1.gif" style="height: 80px;"></a>
-            <ul class="navbar-nav">
-                <li><a href="{% url 'landing_page' %}" class="nav-link">Home</a></li>
-                <li><a href="{% url 'landing_page' %}#show-schedule" class="nav-link">Show Schedule</a></li>
-                <li><a href="{% url 'product_list' %}" class="nav-link">Products</a></li>
-                <li><a href="{% url 'landing_page' %}#auto-links" class="nav-link">Auto Links</a></li>
-                <li><a href="{% url 'landing_page' %}#wanted" class="nav-link">Wanted</a></li>
-                <li><a href="{% url 'view_cart' %}" class="nav-link">Cart</a></li>
-                <li><a href="{% url 'terms' %}" class="nav-link">Terms</a></li>
-                <li><a href="#" class="nav-link">Contact</a></li>
-            </ul>
+        <div class="logo">
+            <a href="/" class="navbar-brand"><img src="https://i.postimg.cc/h47H7Tcf/header-1.gif" style="height: 80px;"></a>
+        </div>
+        <div class="nav-links">
+            <a href="{% url 'landing_page' %}" id="home-link">Home</a>
+            <a href="{% url 'landing_page' %}#show-schedule" class="nav-link">Show Schedule</a>
+            <a href="{% url 'product_list' %}" class="nav-link">Products</a>
+            <a href="{% url 'landing_page' %}#auto-links" class="nav-link">Auto Links</a>
+            <a href="{% url 'landing_page' %}#about-us" class="nav-link">About Us</a>
+            <a href="{% url 'terms' %}" class="nav-link">Terms</a>
+            <a href="#" class="nav-link">Contact</a>
+        </div>
+        <div class="user-actions">
+            <div class="cart-icon">
+                <a href="/cart/" class="nav-link"> <i class="fas fa-shopping-cart"></i></a>
+                <span class="cart-count">{{cart_count}}</span>
+            </div>
         </div>
     </nav>
 
-    <!-- Terms and Conditions -->
-    <div class="container mt-5">
+    <div class="container">
         <div class="terms-content">
             <h1>Terms and Conditions</h1>
             <p>Payment must be received within 10 days. We accept PayPal and we offer a 30-day satisfaction guarantee.</p>
-        <p>International orders with multiple purchases: Please wait for your invoice! You will pay actual postage + $3 for handling and packaging. Your invoice will include this $3.</p>
-   
+            <p>International orders with multiple purchases: Please wait for your invoice! You will pay actual postage + $3 for handling and packaging. Your invoice will include this $3.</p>
         </div>
     </div>
 
-    <!-- Footer -->
     <footer>
         <div class="container">
             <p>&copy; 2024 PJ's Auto Literature. All rights reserved.</p>
         </div>
     </footer>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/js/all.min.js"></script>
 </body>
 </html>
