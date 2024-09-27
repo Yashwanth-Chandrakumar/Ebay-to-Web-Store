@@ -35,6 +35,11 @@
          margin: 0 auto;
          }
          .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
             background-color: white;
             padding: 10px 50px;
             display: flex;
@@ -42,43 +47,35 @@
             align-items: center;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
-
         .logo {
             display: flex;
             align-items: center;
             margin-left: 40px;
         }
-
         .logo img {
             height: 50px;
         }
-
         .nav-links {
             display: flex;
             gap: 20px;
         }
-
         .nav-links a {
             text-decoration: none;
             color: #333;
             font-size: 18px;
         }
-
         .user-actions {
             display: flex;
             align-items: center;
             gap: 20px;
         }
-
         .user-icon, .cart-icon {
             font-size: 20px;
             color: #333;
         }
-
         .cart-icon {
             position: relative;
         }
-
         .cart-count {
             position: absolute;
             top: -10px;
@@ -488,7 +485,7 @@
             <input type="text" id="search-input" placeholder="Search for auto literature...">
          </div>
       </div> -->
-      <section class="about-us">
+      <section class="about-us" id="about-us">
          <div class="container">
              <h2>How PJ's Auto Literature Works</h2>
              <p class="subtitle">PJ's Auto Literature makes it easy for collectors and enthusiasts to find and get the auto literature they're seeking.</p>
