@@ -104,3 +104,4 @@ websockets==11.0.3
 Werkzeug==3.0.3
 whitenoise==6.7.0
 yarl==1.9.4
+django_celery_results
