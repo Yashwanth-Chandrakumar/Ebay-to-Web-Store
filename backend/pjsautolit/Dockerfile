@@ -13,6 +13,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y \
     default-libmysqlclient-dev \
     gcc \
+    libpq-dev \  # Added PostgreSQL dev libraries
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
