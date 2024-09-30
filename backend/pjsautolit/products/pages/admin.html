@@ -128,6 +128,33 @@
 
     document.getElementById('generate-report').addEventListener('click', function() {
         if (confirm('Are you sure you want to generate a report?')) {
+            // Hide changelog section and show the loader
+            document.getElementById('changelogTable').style.display = 'none';
+            const progressBar = document.getElementById('generateReportProgressBar');
+            const progressContainer = document.getElementById('generateReportProgress');
+            progressContainer.style.display = 'block';
+
+            // Simulate a progress bar over 90 minutes (5400 seconds)
+            let timeElapsed = 0;
+            const totalDuration = 90 * 60; // 90 minutes in seconds
+            const interval = 1000; // Update every second (1000 ms)
+
+            const intervalId = setInterval(() => {
+                timeElapsed += 1;
+                const percentage = (timeElapsed / totalDuration) * 100;
+                progressBar.style.width = `${percentage}%`;
+                progressBar.innerText = `${Math.floor(percentage)}%`;
+
+                if (timeElapsed >= totalDuration) {
+                    clearInterval(intervalId);
+                    // Hide loader, show success, and re-display changelog
+                    progressContainer.style.display = 'none';
+                    showAlert('Report generated successfully', 'success');
+                    document.getElementById('changelogTable').style.display = 'table';
+                }
+            }, interval);
+
+            // Start report generation (server call)
             fetch('/sync/', {
                 method: 'GET',
                 headers: {
@@ -136,11 +163,14 @@
             })
             .then(response => response.text())
             .then(data => {
-                showAlert('Report generated successfully', 'success');
+                // Optionally handle success state
             })
             .catch(error => {
                 console.error('Error:', error);
                 showAlert('An error occurred while generating the report', 'danger');
+                clearInterval(intervalId); // Stop the progress if there's an error
+                progressContainer.style.display = 'none';
+                document.getElementById('changelogTable').style.display = 'table';
             });
         }
     });
