@@ -872,7 +872,17 @@ def process_price_range(min_price, max_price, existing_item_ids, updated_item_id
 
     updated_item_ids_queue.put(local_updated_item_ids)
 
-def daily_update():
+
+from celery import shared_task
+from django.http import JsonResponse
+from django.utils import timezone
+from django.views.decorators.http import require_GET
+
+from .models import FetchStatus, Product, ProductChangeLog
+
+
+@shared_task
+def run_daily_update_async():
     print("Starting daily update...")
     fetch_status, created = FetchStatus.objects.get_or_create(fetch_type='daily')
     
@@ -893,7 +903,6 @@ def daily_update():
                        'view_item_url', 'auto_pay', 'postal_code', 'location', 'country', 'shipping_type',
                        'ship_to_locations']
 
-    # Field mapping for mismatched names
     field_mapping = {
         'description': 'short_description',
         # Add any other mismatched field names here
@@ -938,11 +947,8 @@ def daily_update():
                                 )
                                 change_log.set_changes(before_dict, after_dict)
                                 change_log.save()
-                            # else:
-                            #     print(f"No changes for checked fields in product: {item_id} - {product.title}")
                         except Product.DoesNotExist:
                             browse_data = fetch_browse_api_data(item_id)
-                            # print(f"Browse API data for {item_id}: {browse_data}")
                             mapped_browse_data = {field_mapping.get(k, k): v for k, v in browse_data.items()}
                             combined_data = {**mapped_item, **mapped_browse_data}
                             save_product_data(combined_data)
@@ -959,42 +965,42 @@ def daily_update():
                 except Exception as e:
                     print(f"Error fetching data for page {current_page}, price range ${min_price:.2f} - ${max_price:.2f}: {e}")
 
-    except KeyboardInterrupt:
-        print("Interrupted by user, shutting down...")
+    except Exception as e:
+        print(f"Error during daily update: {e}")
 
-    # deleted_item_ids = existing_item_ids - updated_item_ids
-    # for item_id in deleted_item_ids:
-    #     product = Product.objects.get(item_id=item_id)
-    #     product_name = product.title
-    #     product.delete()
-    #     print(f"Deleted product: {item_id} - {product_name}")
-    #     ProductChangeLog.objects.create(
-    #         item_id=item_id,
-    #         product_name=product_name,
-    #         operation='deleted'
-    #     )
+    # Deletion process
+    items_to_delete = existing_item_ids - updated_item_ids
+    for item_id in items_to_delete:
+        listing_status = get_ebay_listing_status(item_id)
+        if listing_status != "Active":
+            try:
+                product = Product.objects.get(item_id=item_id)
+                product_name = product.title
+                product.delete()
+                print(f"Deleted inactive product: {item_id} - {product_name}")
+                ProductChangeLog.objects.create(
+                    item_id=item_id,
+                    product_name=product_name,
+                    operation='deleted'
+                )
+            except Product.DoesNotExist:
+                print(f"Product {item_id} not found in database, skipping deletion")
+
+    fetch_status.last_run = timezone.now()
+    fetch_status.save()
+    generate_html_pages()
+
+    print("Daily update completed.")
     
-    # fetch_status.last_run = timezone.now()
-    # fetch_status.save()
-    
-    # print("Daily update completed.")
-
-from django.core.cache import cache
-from django.http import JsonResponse
-from django.utils import timezone
-from django.views.decorators.http import require_GET
-
-from .models import FetchStatus, Product, ProductChangeLog
-from .tasks import run_daily_update_async
-
-
 @require_GET
 def run_daily_update(request):
     try:
-        daily_update()
-        return JsonResponse({"status": "success", "message": "Daily update completed successfully"})
+        run_daily_update_async.delay()
+        return JsonResponse({"status": "success", "message": "Daily update task has been scheduled"})
     except Exception as e:
         return JsonResponse({"status": "error", "message": str(e)})
+
+# Add any other view functions here
 
 # @require_GET
 # def run_daily_update(request):
@@ -1602,3 +1608,87 @@ def get_ebay_product_weight(item_id):
         except Exception as e:
             print("Exception occurred:", str(e)) 
             return None
+
+import time
+import xml.etree.ElementTree as ET
+
+import requests
+
+
+def get_ebay_listing_status(item_id):
+    print(f"Fetching status for item ID: {item_id}")
+    url = 'https://api.ebay.com/ws/api.dll'
+    headers = {
+        'X-EBAY-API-SITEID': '0',
+        'X-EBAY-API-COMPATIBILITY-LEVEL': '967',
+        'X-EBAY-API-CALL-NAME': 'GetItem',
+        'X-EBAY-API-IAF-TOKEN': EBAY_AUTH_TOKEN,
+        'Content-Type': 'text/xml'
+    }
+    body = f"""
+    <?xml version="1.0" encoding="utf-8"?>
+    <GetItemRequest xmlns="urn:ebay:apis:eBLBaseComponents">    
+        <ErrorLanguage>en_US</ErrorLanguage>
+        <WarningLevel>High</WarningLevel>
+        <ItemID>{item_id}</ItemID>
+    </GetItemRequest>
+    """
+
+    max_retries = 3
+    retry_delay = 5  # seconds
+
+    for attempt in range(max_retries):
+        try:
+            response = requests.post(url, headers=headers, data=body)
+            print("Response Status Code:", response.status_code) 
+            
+            if response.status_code == 200:
+                response_content = response.content.decode('utf-8')
+                
+                if '<ShortMessage>Expired IAF token.</ShortMessage>' in response_content:
+                    print("Expired IAF token error detected")
+                    print("Access token expired, fetching a new one...")
+                    new_token = fetch_new_access_token()
+                    if new_token:
+                        headers['X-EBAY-API-IAF-TOKEN'] = new_token
+                        print("New token fetched and set")
+                        continue
+                    else:
+                        print("Failed to fetch a new access token")
+                        return None
+
+                root = ET.fromstring(response_content)
+                
+                namespace = {'ns': 'urn:ebay:apis:eBLBaseComponents'}
+                
+                status_elem = root.find('.//ns:ListingStatus', namespace)
+                
+                if status_elem is not None:
+                    listing_status = status_elem.text
+                    print(f"{item_id} - status - {listing_status}")
+                    return listing_status
+                else:
+                    print("ListingStatus element not found")   
+                    return None
+
+            else:
+                print("Failed to fetch data from eBay API")  
+                print("Response Content:", response.content.decode('utf-8'))
+                
+                if attempt < max_retries - 1:
+                    print(f"Retrying in {retry_delay} seconds...")
+                    time.sleep(retry_delay)
+                else:
+                    print("Max retries reached. Giving up.")
+                    return None
+
+        except Exception as e:
+            print("Exception occurred:", str(e))
+            if attempt < max_retries - 1:
+                print(f"Retrying in {retry_delay} seconds...")
+                time.sleep(retry_delay)
+            else:
+                print("Max retries reached. Giving up.")
+                return None
+
+    return None  # If we've exhausted all retries

@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'products',
+     'django_celery_results',
 ]
 
 EBAY_APP_ID = 'PJsAutoL-keyset-PRD-d2986db2a-865af761'
@@ -91,7 +92,11 @@ ROOT_URLCONF = 'pjsautolit.urls'
 
 ASGI_APPLICATION = 'pjsautolit.asgi.application'
 WSGI_APPLICATION = 'pjsautolit.wsgi.application'
-
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = 'django-db'
+CELERY_ACCEPT_CONTENT = ['application/json']
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TASK_SERIALIZER = 'json'
 
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
