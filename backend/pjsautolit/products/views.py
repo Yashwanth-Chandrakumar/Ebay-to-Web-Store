@@ -962,22 +962,22 @@ def daily_update():
     except KeyboardInterrupt:
         print("Interrupted by user, shutting down...")
 
-    deleted_item_ids = existing_item_ids - updated_item_ids
-    for item_id in deleted_item_ids:
-        product = Product.objects.get(item_id=item_id)
-        product_name = product.title
-        product.delete()
-        print(f"Deleted product: {item_id} - {product_name}")
-        ProductChangeLog.objects.create(
-            item_id=item_id,
-            product_name=product_name,
-            operation='deleted'
-        )
+    # deleted_item_ids = existing_item_ids - updated_item_ids
+    # for item_id in deleted_item_ids:
+    #     product = Product.objects.get(item_id=item_id)
+    #     product_name = product.title
+    #     product.delete()
+    #     print(f"Deleted product: {item_id} - {product_name}")
+    #     ProductChangeLog.objects.create(
+    #         item_id=item_id,
+    #         product_name=product_name,
+    #         operation='deleted'
+    #     )
     
-    fetch_status.last_run = timezone.now()
-    fetch_status.save()
+    # fetch_status.last_run = timezone.now()
+    # fetch_status.save()
     
-    print("Daily update completed.")
+    # print("Daily update completed.")
 
 from django.core.cache import cache
 from django.http import JsonResponse
