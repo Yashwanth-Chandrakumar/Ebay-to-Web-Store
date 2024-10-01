@@ -14,12 +14,19 @@
         #changelogTable { margin-top: 20px; }
         #alert { margin-top: 20px; }
         .changes-cell { max-width: 300px; overflow-wrap: break-word; }
+        .flashing-text {
+            animation: flash 1s linear infinite;
+        }
+        @keyframes flash {
+            50% { opacity: 0; }
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
     <h1 class="mb-4">Admin Page</h1>
+    
 
     <div class="row mb-3">
         <div class="col">
@@ -39,13 +46,14 @@
         </div>
     </div>
     <div id="loaderContainer">
+        <h3 id="updatingListings" class="flashing-text" style="display: none;">Updating Listings</h3>
         <div id="generateReportProgress" class="progress" style="margin-top: 20px;display:none">
             <div id="generateReportProgressBar" class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
         </div>
     </div>
     
     <div id="alert" class="alert" style="display: none;" role="alert"></div>
-
+    <h2 id="lastRunTitle" class="mb-3"></h2>
     <table id="changelogTable" class="table table-striped">
         <thead>
             <tr>
@@ -77,84 +85,137 @@
     }
 
     function fetchChangelog() {
-    fetch('/fetch-changelog/', {
-        method: 'GET',
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-        },
-    })
-    .then(response => response.json())
-    .then(result => {
-        console.log('Received data:', result);
-        if (result.error) {
-            throw new Error(result.error);
-        }
-        const tbody = document.getElementById('changelogBody');
-        tbody.innerHTML = '';
-        if (result.data.length === 0) {
-            showAlert('No changelog entries found', 'info');
-        } else {
-            result.data.forEach(log => {
-                console.log('Processing log:', log);
-                const row = tbody.insertRow();
-                row.insertCell(0).textContent = log.item_id;
-                row.insertCell(1).textContent = log.product_name;
-                row.insertCell(2).textContent = log.operation;
-                row.insertCell(3).textContent = new Date(log.date).toLocaleString();
-                
-                const changesCell = row.insertCell(4);
-                changesCell.className = 'changes-cell';
-                console.log('Changes for this log:', log.changes);
-                changesCell.innerHTML = formatChanges(log.changes);
-            });
-            showAlert(`Changelog fetched successfully for ${result.date}`, 'success');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showAlert(`An error occurred while fetching the changelog: ${error.message}`, 'danger');
-    });
-}
+        fetch('/fetch-changelog/', {
+            method: 'GET',  
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+        })
+        .then(response => response.json())
+        .then(result => {
+            console.log('Received data:', result);
+            if (result.error) {
+                throw new Error(result.error);
+            }
+            const tbody = document.getElementById('changelogBody');
+            tbody.innerHTML = '';
+            if (result.data.length === 0) {
+                showAlert('No changelog entries found', 'info');
+            } else {
+                result.data.forEach(log => {
+                    console.log('Processing log:', log);
+                    const row = tbody.insertRow();
+                    row.insertCell(0).textContent = log.item_id;
+                    row.insertCell(1).textContent = log.product_name;
+                    row.insertCell(2).textContent = log.operation;
+                    row.insertCell(3).textContent = new Date(log.date).toLocaleString();
+                    
+                    const changesCell = row.insertCell(4);
+                    changesCell.className = 'changes-cell';
+                    console.log('Changes for this log:', log.changes);
+                    changesCell.innerHTML = formatChanges(log.changes);
+                });
+                showAlert(`Changelog fetched successfully for ${result.date}`, 'success');
+                updateLastRunTitle(result.date);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert(`An error occurred while fetching the changelog: ${error.message}`, 'danger');
+        });
+    }
 
-function formatChanges(changes) {
-    if (!changes || Object.keys(changes).length === 0) {
-        return 'No changes';
+    function formatChanges(changes) {
+        if (!changes || Object.keys(changes).length === 0) {
+            return 'No changes';
+        }
+        let formattedChanges = '<ul>';
+        for (const [key, value] of Object.entries(changes)) {
+            formattedChanges += `<li><strong>${key}:</strong> ${value.before} → ${value.after}</li>`;
+        }
+        formattedChanges += '</ul>';
+        return formattedChanges;
     }
-    let formattedChanges = '<ul>';
-    for (const [key, value] of Object.entries(changes)) {
-        formattedChanges += `<li><strong>${key}:</strong> ${value.before} → ${value.after}</li>`;
+
+    function updateLastRunTitle(date) {
+        const title = document.getElementById('lastRunTitle');
+        title.textContent = `Changes Report for ${new Date(date).toLocaleString()}`;
     }
-    formattedChanges += '</ul>';
-    return formattedChanges;
-}
+
+    function updateProgressBar(percentage) {
+        const progressBar = document.getElementById('generateReportProgressBar');
+        const progressContainer = document.getElementById('generateReportProgress');
+        const updatingListings = document.getElementById('updatingListings');
+        
+        progressBar.style.width = `${percentage}%`;
+        progressBar.innerText = `${Math.floor(percentage)}%`;
+        
+        if (percentage > 0 && percentage < 100) {
+            progressContainer.style.display = 'block';
+            updatingListings.style.display = 'block';
+            document.getElementById('changelogTable').style.display = 'none';
+            document.getElementById('lastRunTitle').style.display = 'none';
+        } else {
+            progressContainer.style.display = 'none';
+            updatingListings.style.display = 'none';
+            document.getElementById('changelogTable').style.display = 'table';
+            document.getElementById('lastRunTitle').style.display = 'block';
+        }
+    }
+
+    function saveProgress(timeElapsed, totalDuration) {
+        localStorage.setItem('reportProgress', JSON.stringify({
+            timeElapsed: timeElapsed,
+            totalDuration: totalDuration,
+            timestamp: Date.now()
+        }));
+    }
+
+    function loadProgress() {
+        const savedProgress = JSON.parse(localStorage.getItem('reportProgress'));
+        if (savedProgress) {
+            const elapsedSinceLastSave = (Date.now() - savedProgress.timestamp) / 1000;
+            const updatedTimeElapsed = Math.min(savedProgress.timeElapsed + elapsedSinceLastSave, savedProgress.totalDuration);
+            return {
+                timeElapsed: updatedTimeElapsed,
+                totalDuration: savedProgress.totalDuration
+            };
+        }
+        return null;
+    }
+
+    function clearProgress() {
+        localStorage.removeItem('reportProgress');
+    }
+
+    function startOrResumeProgress() {
+        const totalDuration = 40 * 60; // 40 minutes in seconds
+        const interval = 1000; // Update every second (1000 ms)
+        let progress = loadProgress();
+        let timeElapsed = progress ? progress.timeElapsed : 0;
+
+        function updateProgress() {
+            const percentage = (timeElapsed / totalDuration) * 100;
+            updateProgressBar(percentage);
+            saveProgress(timeElapsed, totalDuration);
+
+            if (timeElapsed >= totalDuration) {
+                clearProgress();
+                showAlert('Report generated successfully', 'success');
+                fetchChangelog(); // Fetch the updated changelog
+            } else {
+                timeElapsed += 1;
+                setTimeout(updateProgress, interval);
+            }
+        }
+
+        updateProgress();
+    }
 
     document.getElementById('generate-report').addEventListener('click', function() {
         if (confirm('Are you sure you want to generate a report?')) {
-            // Hide changelog section and show the loader
-            document.getElementById('changelogTable').style.display = 'none';
-            const progressBar = document.getElementById('generateReportProgressBar');
-            const progressContainer = document.getElementById('generateReportProgress');
-            progressContainer.style.display = 'block';
-
-            // Simulate a progress bar over 90 minutes (5400 seconds)
-            let timeElapsed = 0;
-            const totalDuration = 40 * 60; // 90 minutes in seconds
-            const interval = 1000; // Update every second (1000 ms)
-
-            const intervalId = setInterval(() => {
-                timeElapsed += 1;
-                const percentage = (timeElapsed / totalDuration) * 100;
-                progressBar.style.width = `${percentage}%`;
-                progressBar.innerText = `${Math.floor(percentage)}%`;
-
-                if (timeElapsed >= totalDuration) {
-                    clearInterval(intervalId);
-                    // Hide loader, show success, and re-display changelog
-                    progressContainer.style.display = 'none';
-                    showAlert('Report generated successfully', 'success');
-                    document.getElementById('changelogTable').style.display = 'table';
-                }
-            }, interval);
+            clearProgress(); // Clear any existing progress
+            startOrResumeProgress();
 
             // Start report generation (server call)
             fetch('/sync/', {
@@ -170,9 +231,8 @@ function formatChanges(changes) {
             .catch(error => {
                 console.error('Error:', error);
                 showAlert('An error occurred while generating the report', 'danger');
-                clearInterval(intervalId); // Stop the progress if there's an error
-                progressContainer.style.display = 'none';
-                document.getElementById('changelogTable').style.display = 'table';
+                clearProgress();
+                updateProgressBar(0);
             });
         }
     });
@@ -196,7 +256,12 @@ function formatChanges(changes) {
     });
 
     document.addEventListener('DOMContentLoaded', function() {
-        fetchChangelog();
+        const progress = loadProgress();
+        if (progress) {
+            startOrResumeProgress();
+        } else {
+            fetchChangelog();
+        }
     });
 </script>
 
