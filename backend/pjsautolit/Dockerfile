@@ -13,6 +13,8 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y \
     default-libmysqlclient-dev \
     gcc \
+    libpq-dev \
+    python3-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
@@ -22,17 +24,19 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the project code into the container
 COPY . /app/
 
-# Create a non-root user
+# Copy the start script and set permissions
+COPY start.sh /app/start.sh
+RUN chmod +x /app/start.sh
+
+# Create a non-root user and change ownership of the app directory
 RUN useradd -m myuser
 RUN chown -R myuser:myuser /app
+
+# Switch to non-root user
 USER myuser
 
 # Expose the port Gunicorn will run on
 EXPOSE 8000
-
-# Copy the start script
-COPY start.sh /app/start.sh
-RUN chmod +x /app/start.sh
 
 # Run the start script
 CMD ["/app/start.sh"]
