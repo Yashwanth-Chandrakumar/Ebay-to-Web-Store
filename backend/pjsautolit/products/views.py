@@ -625,32 +625,24 @@ def save_product_data(product_data):
         logger.error(f"Product data: {product_data['item_id']}")
 
 
-def generate_html_view(request):
-    try:
-        generate_html_pages()
-        return JsonResponse(
-            {"status": "success", "message": "HTML pages generated successfully"}
-        )
-    except Exception as e:
-        return JsonResponse({"status": "error", "message": str(e)}, status=500)
-
-
+import ast
+import logging
 import os
 
+from celery import shared_task
+from django.conf import settings
+from django.core.cache import cache
 from django.http import JsonResponse
 from django.template import loader
+from django.views.decorators.http import require_GET
 
-logger = logging.getLogger(__name__)
-import os
-
-from django.http import JsonResponse
-from django.shortcuts import render
-from django.template import loader
+from .models import \
+    Product  # Ensure this import is correct for your project structure
 
 logger = logging.getLogger(__name__)
 
-
-def generate_html_pages():
+@shared_task
+def generate_html_pages_async():
     # Check if the generation is already in progress
     if cache.get("html_generation_in_progress"):
         logger.warning("HTML generation is already in progress.")
@@ -723,6 +715,16 @@ def generate_html_pages():
         logger.error(f"Errors encountered while generating HTML pages: {errors}")
     else:
         logger.info("HTML pages generated successfully.")
+
+@require_GET
+def run_html_generation(request):
+    try:
+        generate_html_pages_async.delay()
+        return JsonResponse(
+            {"status": "success", "message": "HTML generation task has been scheduled"}
+        )
+    except Exception as e:
+        return JsonResponse({"status": "error", "message": str(e)})
 
 
 def get_html_generation_progress(request):
