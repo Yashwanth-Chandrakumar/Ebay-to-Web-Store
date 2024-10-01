@@ -95,6 +95,7 @@ out/
 .venv/
 env/
 venv/
+project_env/
 ENV/
 env.bak/
 venv.bak/
