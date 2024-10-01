@@ -69,7 +69,6 @@ packaging==24.1
 pandas==2.2.2
 pillow==10.4.0
 prompt_toolkit==3.0.47
-psycopg2==2.9.9
 psycopg2-binary==2.9.9
 pycparser==2.22
 PyJWT==2.9.0
