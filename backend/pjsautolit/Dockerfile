@@ -20,6 +20,7 @@ RUN apt-get update && apt-get install -y \
 # Install Python dependencies
 COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir redis==5.0.1
 
 # Copy the project code into the container
 COPY . /app/

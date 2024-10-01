@@ -79,6 +79,7 @@ python3-openid==3.2.0
 pytz==2024.1
 PyYAML==6.0.1
 qrcode==7.4.2
+redis==5.0.1
 regex==2024.7.24
 requests==2.32.3
 requests-oauthlib==2.0.0

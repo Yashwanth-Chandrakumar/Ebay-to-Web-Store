@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Set Redis URL for Celery broker (update this with your actual Redis URL)
+export CELERY_BROKER_URL="redis://your-redis-host:6379/0"
+
 # Start Gunicorn in the background
 gunicorn --bind 0.0.0.0:8000 --timeout 0 pjsautolit.wsgi:application &
 
