@@ -76,23 +76,25 @@
         setTimeout(() => alert.style.display = 'none', 5000); // Display for 5 seconds
     }
 
-    function fetchChangelog(date = null) {
-        let url = '/fetch-changelog/';
-        if (date) {
-            url += `?date=${date}`;
+    function fetchChangelog() {
+    fetch('/fetch-changelog/', {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+        },
+    })
+    .then(response => response.json())
+    .then(result => {
+        console.log('Received data:', result);
+        if (result.error) {
+            throw new Error(result.error);
         }
-        fetch(url, {
-            method: 'GET',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-            },
-        })
-        .then(response => response.json())
-        .then(data => {
-            console.log('Received data:', data);
-            const tbody = document.getElementById('changelogBody');
-            tbody.innerHTML = '';
-            data.forEach(log => {
+        const tbody = document.getElementById('changelogBody');
+        tbody.innerHTML = '';
+        if (result.data.length === 0) {
+            showAlert('No changelog entries found', 'info');
+        } else {
+            result.data.forEach(log => {
                 console.log('Processing log:', log);
                 const row = tbody.insertRow();
                 row.insertCell(0).textContent = log.item_id;
@@ -105,26 +107,26 @@
                 console.log('Changes for this log:', log.changes);
                 changesCell.innerHTML = formatChanges(log.changes);
             });
-            showAlert('Changelog fetched successfully', 'success');
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showAlert('An error occurred while fetching the changelog', 'danger');
-        });
-    }
+            showAlert(`Changelog fetched successfully for ${result.date}`, 'success');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert(`An error occurred while fetching the changelog: ${error.message}`, 'danger');
+    });
+}
 
-    function formatChanges(changes) {
-        console.log('Formatting changes:', changes);
-        if (!changes || Object.keys(changes).length === 0) {
-            return 'No changes';
-        }
-        let formattedChanges = '<ul>';
-        for (const [key, value] of Object.entries(changes)) {
-            formattedChanges += `<li><strong>${key}:</strong> ${value.before} → ${value.after}</li>`;
-        }
-        formattedChanges += '</ul>';
-        return formattedChanges;
+function formatChanges(changes) {
+    if (!changes || Object.keys(changes).length === 0) {
+        return 'No changes';
     }
+    let formattedChanges = '<ul>';
+    for (const [key, value] of Object.entries(changes)) {
+        formattedChanges += `<li><strong>${key}:</strong> ${value.before} → ${value.after}</li>`;
+    }
+    formattedChanges += '</ul>';
+    return formattedChanges;
+}
 
     document.getElementById('generate-report').addEventListener('click', function() {
         if (confirm('Are you sure you want to generate a report?')) {

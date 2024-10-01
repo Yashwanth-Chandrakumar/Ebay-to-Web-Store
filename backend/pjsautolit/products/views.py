@@ -34,7 +34,8 @@ from django.views.decorators.http import require_GET
 from django.views.generic.detail import DetailView
 from requests.exceptions import HTTPError, RequestException
 
-from .models import Cart, CartItem, FetchStatus, Order, Product, ProductChangeLog
+from .models import (Cart, CartItem, FetchStatus, Order, Product,
+                     ProductChangeLog)
 
 EBAY_APP_ID = settings.EBAY_APP_ID
 EBAY_AUTH_TOKEN = settings.EBAY_AUTH_TOKEN
@@ -1320,42 +1321,61 @@ def get_generate_report_progress(request):
     return JsonResponse(progress_info)
 
 
+import datetime
+import logging
+
+from django.core.serializers.json import DjangoJSONEncoder
+from django.db.models import Max
+from django.http import JsonResponse
+from django.utils import timezone
 from django.views.decorators.http import require_GET
 
+from .models import ProductChangeLog
+
+logger = logging.getLogger(__name__)
 
 @require_GET
 def fetch_changelog(request):
-    date_str = request.GET.get("date")
+    try:
+        # Find the most recent date with logs
+        latest_log_date = ProductChangeLog.objects.aggregate(Max('date'))['date__max']
+        
+        if latest_log_date is None:
+            return JsonResponse({"error": "No changelog entries found"}, status=404)
 
-    if date_str:
-        try:
-            date = datetime.datetime.strptime(date_str, "%Y-%m-%d").date()
+        # Set the date range to cover the entire day of the latest log
+        start_date = latest_log_date.replace(hour=0, minute=0, second=0, microsecond=0)
+        end_date = start_date + datetime.timedelta(days=1)
 
-            # Use __date to filter by the date part of a DateTimeField
-            logs = ProductChangeLog.objects.filter(date__date=date).order_by("-date")
-        except ValueError:
-            return JsonResponse({"error": "Invalid date format"}, status=400)
-    else:
-        # If no date is provided, return logs for the last 7 days
-        end_date = timezone.now()
-        start_date = end_date - datetime.timedelta(days=7)
+        # Fetch logs for the entire day
         logs = ProductChangeLog.objects.filter(
             date__range=(start_date, end_date)
         ).order_by("-date")
 
-    data = [
-        {
-            "item_id": log.item_id,
-            "product_name": log.product_name,
-            "operation": log.get_operation_display(),
-            "date": log.date.isoformat(),
-            "changes": log.changes,  # Assuming 'changes' is stored as a JSON field or similar
-        }
-        for log in logs
-    ]
+        logger.info(f"Fetching {logs.count()} changelog entries for {start_date.date()}")
 
-    return JsonResponse(data, safe=False)
+        data = []
+        for log in logs:
+            try:
+                log_data = {
+                    "item_id": log.item_id,
+                    "product_name": log.product_name,
+                    "operation": log.get_operation_display(),
+                    "date": log.date.isoformat(),
+                    "changes": log.changes,
+                }
+                data.append(log_data)
+            except Exception as e:
+                logger.error(f"Error processing log entry {log.id}: {str(e)}")
 
+        return JsonResponse({
+            "date": start_date.date().isoformat(),
+            "data": data
+        }, safe=False, encoder=DjangoJSONEncoder)
+
+    except Exception as e:
+        logger.error(f"Unexpected error in fetch_changelog: {str(e)}", exc_info=True)
+        return JsonResponse({"error": "An unexpected error occurred"}, status=500)
 
 from django.views.decorators.http import require_GET
 from openpyxl import Workbook
