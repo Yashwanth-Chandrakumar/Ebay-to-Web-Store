@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Report Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <style>
+        body { padding: 20px; }
+        #changelogTable { margin-top: 20px; }
+        #alert { margin-top: 20px; }
+        .changes-cell { max-width: 300px; overflow-wrap: break-word; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1 class="mb-4">Report Page</h1>
+
+    <div class="row mb-3">
+        <div class="col-md-4">
+            <input type="text" id="datePicker" class="form-control" placeholder="Select Date">
+        </div>
+        <div class="col-md-4">
+            <button class="btn btn-primary" id="filterButton">Filter</button>
+        </div>
+        <div class="col-md-4">
+            <button class="btn btn-warning" id="downloadExcel">Download Excel</button>
+        </div>
+    </div>
+
+    <div id="alert" class="alert" style="display: none;" role="alert"></div>
+
+    <h2 id="lastRunTitle" class="mb-3"></h2>
+    <table id="changelogTable" class="table table-striped">
+        <thead>
+            <tr>
+                <th>Item ID</th>
+                <th>Product Name</th>
+                <th>Operation</th>
+                <th>Date</th>
+                <th>Changes</th>
+            </tr>
+        </thead>
+        <tbody id="changelogBody">
+        </tbody>
+    </table>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+    flatpickr("#datePicker", {
+        dateFormat: "Y-m-d",
+    });
+
+    function showAlert(message, type) {
+        const alert = document.getElementById('alert');
+        alert.className = `alert alert-${type}`;
+        alert.innerText = message;
+        alert.style.display = 'block';
+        setTimeout(() => alert.style.display = 'none', 5000);
+    }
+
+    function fetchChangelog(date) {
+        fetch(`/fetch-changelog/?date=${date || ''}`, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+        })
+        .then(response => response.json())
+        .then(result => {
+            console.log('Received data:', result);
+            if (result.error) {
+                throw new Error(result.error);
+            }
+            const tbody = document.getElementById('changelogBody');
+            tbody.innerHTML = '';
+            if (result.data.length === 0) {
+                showAlert('No changelog entries found', 'info');
+            } else {
+                result.data.forEach(log => {
+                    const row = tbody.insertRow();
+                    row.insertCell(0).textContent = log.item_id;
+                    row.insertCell(1).textContent = log.product_name;
+                    row.insertCell(2).textContent = log.operation;
+                    row.insertCell(3).textContent = new Date(log.date).toLocaleString();
+                    
+                    const changesCell = row.insertCell(4);
+                    changesCell.className = 'changes-cell';
+                    changesCell.innerHTML = formatChanges(log.changes);
+                });
+                showAlert(`Changelog fetched successfully for ${result.date}`, 'success');
+                updateLastRunTitle(result.date);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert(`An error occurred while fetching the changelog: ${error.message}`, 'danger');
+        });
+    }
+
+    function formatChanges(changes) {
+        if (!changes || Object.keys(changes).length === 0) {
+            return 'No changes';
+        }
+        let formattedChanges = '<ul>';
+        for (const [key, value] of Object.entries(changes)) {
+            formattedChanges += `<li><strong>${key}:</strong> ${value.before} → ${value.after}</li>`;
+        }
+        formattedChanges += '</ul>';
+        return formattedChanges;
+    }
+
+    function updateLastRunTitle(date) {
+        const title = document.getElementById('lastRunTitle');
+        title.textContent = `Changes Report for ${new Date(date).toLocaleString()}`;
+    }
+
+    document.getElementById('filterButton').addEventListener('click', function() {
+        const date = document.getElementById('datePicker').value;
+        if (date) {
+            fetchChangelog(date);
+        } else {
+            showAlert('Please select a date', 'warning');
+        }
+    });
+
+    document.getElementById('downloadExcel').addEventListener('click', function() {
+        const date = document.getElementById('datePicker').value;
+        if (date) {
+            window.location.href = `/download-excel/?date=${date}`;
+        } else {
+            showAlert('Please select a date for Excel download', 'warning');
+        }
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        fetchChangelog();
+    });
+</script>
+
+</body>
+</html>

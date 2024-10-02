@@ -34,8 +34,7 @@ from django.views.decorators.http import require_GET
 from django.views.generic.detail import DetailView
 from requests.exceptions import HTTPError, RequestException
 
-from .models import (Cart, CartItem, FetchStatus, Order, Product,
-                     ProductChangeLog)
+from .models import Cart, CartItem, FetchStatus, Order, Product, ProductChangeLog
 
 EBAY_APP_ID = settings.EBAY_APP_ID
 EBAY_AUTH_TOKEN = settings.EBAY_AUTH_TOKEN
@@ -636,10 +635,10 @@ from django.http import JsonResponse
 from django.template import loader
 from django.views.decorators.http import require_GET
 
-from .models import \
-    Product  # Ensure this import is correct for your project structure
+from .models import Product  # Ensure this import is correct for your project structure
 
 logger = logging.getLogger(__name__)
+
 
 @shared_task
 def generate_html_pages_async():
@@ -715,6 +714,7 @@ def generate_html_pages_async():
         logger.error(f"Errors encountered while generating HTML pages: {errors}")
     else:
         logger.info("HTML pages generated successfully.")
+
 
 @require_GET
 def run_html_generation(request):
@@ -797,6 +797,10 @@ def admin_page(request):
 
 def admin_page2(request):
     return render(request, "pages/admin-2.html")
+
+
+def admin_page3(request):
+    return render(request, "pages/admin-3.html")
 
 
 # views.py
@@ -1336,28 +1340,63 @@ from .models import ProductChangeLog
 
 logger = logging.getLogger(__name__)
 
+
+import datetime
+import io
+import logging
+
+from django.core.paginator import Paginator
+from django.core.serializers.json import DjangoJSONEncoder
+from django.db.models import Max
+from django.http import HttpResponse, JsonResponse
+from django.utils import timezone
+from django.views.decorators.http import require_GET
+from openpyxl import Workbook
+
+from .models import ProductChangeLog
+
+logger = logging.getLogger(__name__)
+
+
 @require_GET
 def fetch_changelog(request):
     try:
-        # Find the most recent date with logs
-        latest_log_date = ProductChangeLog.objects.aggregate(Max('date'))['date__max']
-        
-        if latest_log_date is None:
-            return JsonResponse({"error": "No changelog entries found"}, status=404)
+        # Get date from request, default to the latest date if not provided
+        date_str = request.GET.get("date")
+        page = int(request.GET.get("page", 1))
+        items_per_page = int(request.GET.get("items_per_page", 20))
 
-        # Set the date range to cover the entire day of the latest log
-        start_date = latest_log_date.replace(hour=0, minute=0, second=0, microsecond=0)
-        end_date = start_date + datetime.timedelta(days=1)
+        if date_str:
+            try:
+                selected_date = datetime.datetime.strptime(date_str, "%Y-%m-%d").date()
+            except ValueError:
+                return JsonResponse({"error": "Invalid date format"}, status=400)
+        else:
+            latest_log_date = ProductChangeLog.objects.aggregate(Max("date"))[
+                "date__max"
+            ]
+            if latest_log_date is None:
+                return JsonResponse({"error": "No changelog entries found"}, status=404)
+            selected_date = latest_log_date.date()
 
-        # Fetch logs for the entire day
+        start_date = timezone.make_aware(
+            datetime.datetime.combine(selected_date, datetime.time.min)
+        )
+        end_date = timezone.make_aware(
+            datetime.datetime.combine(selected_date, datetime.time.max)
+        )
+
         logs = ProductChangeLog.objects.filter(
             date__range=(start_date, end_date)
         ).order_by("-date")
 
-        logger.info(f"Fetching {logs.count()} changelog entries for {start_date.date()}")
+        paginator = Paginator(logs, items_per_page)
+        page_obj = paginator.get_page(page)
+
+        logger.info(f"Fetching changelog entries for {selected_date}, page {page}")
 
         data = []
-        for log in logs:
+        for log in page_obj:
             try:
                 log_data = {
                     "item_id": log.item_id,
@@ -1370,14 +1409,21 @@ def fetch_changelog(request):
             except Exception as e:
                 logger.error(f"Error processing log entry {log.id}: {str(e)}")
 
-        return JsonResponse({
-            "date": start_date.date().isoformat(),
-            "data": data
-        }, safe=False, encoder=DjangoJSONEncoder)
+        return JsonResponse(
+            {
+                "date": selected_date.isoformat(),
+                "data": data,
+                "total_pages": paginator.num_pages,
+                "current_page": page,
+            },
+            safe=False,
+            encoder=DjangoJSONEncoder,
+        )
 
     except Exception as e:
         logger.error(f"Unexpected error in fetch_changelog: {str(e)}", exc_info=True)
         return JsonResponse({"error": "An unexpected error occurred"}, status=500)
+
 
 from django.views.decorators.http import require_GET
 from openpyxl import Workbook

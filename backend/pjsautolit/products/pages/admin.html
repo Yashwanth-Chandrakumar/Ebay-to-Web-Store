@@ -7,7 +7,6 @@
     <meta name="description" content="PJ's Auto Literature. Buy Auto literature at the best price. Explore more details including condition, seller information, and shipping options.">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <style>
         body { padding: 20px; }
         .btn-action { margin-right: 10px; }
@@ -26,25 +25,13 @@
 
 <div class="container">
     <h1 class="mb-4">Admin Page</h1>
-    
 
     <div class="row mb-3">
         <div class="col">
-            <button class="btn btn-warning btn-action" id="generate-report">Update Listings and generate report</button>
+            <button class="btn btn-warning btn-action" id="update-listings">Update Listings</button>
         </div>
     </div>
 
-    <div class="row mb-3">
-        <div class="col-md-4">
-            <input type="text" id="datePicker" class="form-control" placeholder="Select Date">
-        </div>
-        <div class="col-md-4">
-            <button class="btn btn-info" id="filterButton">Filter</button>
-        </div>
-        <div class="col-md-4">
-            <button class="btn btn-warning" id="downloadExcel">Download Excel</button>
-        </div>
-    </div>
     <div id="loaderContainer">
         <h3 id="updatingListings" class="flashing-text" style="display: none;">Updating Listings</h3>
         <div id="generateReportProgress" class="progress" style="margin-top: 20px;display:none">
@@ -59,7 +46,7 @@
             <tr>
                 <th>Item ID</th>
                 <th>Product Name</th>
-                <th>Operation</th>
+                <th>Difference type</th>
                 <th>Date</th>
                 <th>Changes</th>
             </tr>
@@ -70,18 +57,13 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script>
-    flatpickr("#datePicker", {
-        dateFormat: "Y-m-d",
-    });
-
     function showAlert(message, type) {
         const alert = document.getElementById('alert');
         alert.className = `alert alert-${type}`;
         alert.innerText = message;
         alert.style.display = 'block';
-        setTimeout(() => alert.style.display = 'none', 5000); // Display for 5 seconds
+        setTimeout(() => alert.style.display = 'none', 5000);
     }
 
     function fetchChangelog() {
@@ -201,8 +183,8 @@
 
             if (timeElapsed >= totalDuration) {
                 clearProgress();
-                showAlert('Report generated successfully', 'success');
-                fetchChangelog(); // Fetch the updated changelog
+                showAlert('Listings updated successfully', 'success');
+                fetchChangelog();
             } else {
                 timeElapsed += 1;
                 setTimeout(updateProgress, interval);
@@ -212,12 +194,11 @@
         updateProgress();
     }
 
-    document.getElementById('generate-report').addEventListener('click', function() {
-        if (confirm('Are you sure you want to generate a report?')) {
-            clearProgress(); // Clear any existing progress
+    document.getElementById('update-listings').addEventListener('click', function() {
+        if (confirm('Are you sure you want to update listings?')) {
+            clearProgress();
             startOrResumeProgress();
 
-            // Start report generation (server call)
             fetch('/sync/', {
                 method: 'GET',
                 headers: {
@@ -230,28 +211,10 @@
             })
             .catch(error => {
                 console.error('Error:', error);
-                showAlert('An error occurred while generating the report', 'danger');
+                showAlert('An error occurred while updating listings', 'danger');
                 clearProgress();
                 updateProgressBar(0);
             });
-        }
-    });
-
-    document.getElementById('filterButton').addEventListener('click', function() {
-        const date = document.getElementById('datePicker').value;
-        if (date) {
-            fetchChangelog(date);
-        } else {
-            showAlert('Please select a date', 'warning');
-        }
-    });
-
-    document.getElementById('downloadExcel').addEventListener('click', function() {
-        const date = document.getElementById('datePicker').value;
-        if (date) {
-            window.location.href = `/download-excel/?date=${date}`;
-        } else {
-            showAlert('Please select a date for Excel download', 'warning');
         }
     });
 
