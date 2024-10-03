@@ -40,5 +40,12 @@ urlpatterns = [
         views.get_fetch_items_progress,
         name="fetch_items_progress",
     ),
-    # path('generate-report-progress/', views.get_generate_report_progress, name='generate_report_progress'),
+    path("generate-report/", views.generate_report, name="generate_report_progress"),
+    path("fetch-report-changelog/", views.fetch_report_log, name="fetch_report_log"),
+    path("delete-report/", views.delete_report, name="delete_report"),
+    path(
+        "download-report-excel/",
+        views.download_report_excel,
+        name="download_report_excel",
+    ),
 ]

@@ -1192,7 +1192,7 @@ def run_daily_update_async():
 
     fetch_status.last_run = timezone.now()
     fetch_status.save()
-    generate_html_pages()
+    generate_html_pages_async.delay()
 
     print("Daily update completed.")
 
@@ -1319,12 +1319,326 @@ def run_daily_update(request):
 #         return JsonResponse({"status": "error", "message": str(e)})
 
 
+import datetime
+import io
+
+# Generate report only:
+import json
+import logging
+
+from celery import shared_task
+from django.core.paginator import Paginator
+from django.db.models import Max
+from django.http import HttpResponse, JsonResponse, StreamingHttpResponse
+from django.utils import timezone
+from django.views.decorators.http import require_GET, require_http_methods
+from ebaysdk.finding import Connection as Finding
+from ebaysdk.shopping import Connection as Shopping
+from openpyxl import Workbook
+
+from .models import Product, Report
+
+logger = logging.getLogger(__name__)
+
+
+@shared_task(bind=True)
+def generate_report_async(self):
+    logger.info("Starting the report generation task.")
+    self.update_state(state="PROGRESS", meta={"progress": 0})
+
+    existing_item_ids = set(Product.objects.values_list("item_id", flat=True))
+    updated_item_ids = set()
+
+    price_ranges = []
+    min_price = 1.00
+    max_price = 10.00
+    price_increment = 10.00
+
+    while min_price <= 4000.00:
+        price_ranges.append((min_price, max_price))
+        min_price = max_price + 0.01
+        max_price += price_increment
+
+    total_pages = 203  # Total number of pages across all price ranges
+    processed_pages = 0
+    reports = []
+
+    try:
+        for min_price, max_price in price_ranges:
+            logger.info(f"Processing price range: ${min_price:.2f} - ${max_price:.2f}")
+            current_page = 1
+            range_total_pages = 1
+
+            while current_page <= range_total_pages:
+                try:
+                    logger.info(
+                        f"Fetching data for page {current_page}, price range ${min_price:.2f} - ${max_price:.2f}"
+                    )
+                    items, range_total_pages = fetch_finding_api_data(
+                        page_number=current_page,
+                        min_price=min_price,
+                        max_price=max_price,
+                    )
+
+                    for item in items:
+                        item_id = item["item_id"]
+                        updated_item_ids.add(item_id)
+
+                        try:
+                            product = Product.objects.get(item_id=item_id)
+                            # Check for changes and create update report if necessary
+                            changes = {}
+                            for key, value in item.items():
+                                if getattr(product, key) != value:
+                                    changes[key] = {
+                                        "before": getattr(product, key),
+                                        "after": value,
+                                    }
+
+                            if changes:
+                                report = Report(
+                                    item_id=item_id,
+                                    product_name=product.title,
+                                    operation="updated",
+                                    changes=json.dumps(changes),
+                                )
+                                reports.append(report)
+
+                            # Update the product
+                            for key, value in item.items():
+                                setattr(product, key, value)
+                            product.save()
+
+                        except Product.DoesNotExist:
+                            # Create new product
+                            new_product = Product(**item)
+                            new_product.save()
+
+                            report = Report(
+                                item_id=item_id,
+                                product_name=item.get("title", "Unknown Title"),
+                                operation="created",
+                                changes=json.dumps(item),
+                            )
+                            reports.append(report)
+
+                    current_page += 1
+                    processed_pages += 1
+                    progress = int(processed_pages / total_pages * 100)
+                    self.update_state(state="PROGRESS", meta={"progress": progress})
+
+                except Exception as e:
+                    logger.error(
+                        f"Error fetching data for page {current_page}, price range ${min_price:.2f} - ${max_price:.2f}: {e}"
+                    )
+
+    except Exception as e:
+        logger.error(f"Error during report generation: {e}")
+
+    # Deletion process
+    items_to_delete = existing_item_ids - updated_item_ids
+    for item_id in items_to_delete:
+        try:
+            product = Product.objects.get(item_id=item_id)
+            report = Report(
+                item_id=item_id,
+                product_name=product.title,
+                operation="deleted",
+                changes=json.dumps({"status": "Item no longer available"}),
+            )
+            reports.append(report)
+            product.delete()
+        except Product.DoesNotExist:
+            logger.warning(
+                f"Product {item_id} not found in database, skipping deletion"
+            )
+
+    # Save all reports to the database
+    Report.objects.bulk_create(reports)
+
+    logger.info("Report generation task completed successfully.")
+    return {"status": "completed"}
+
+
+def generate_report(request):
+    task = generate_report_async.delay()
+
+    def event_stream():
+        previous_progress = 0
+        while True:
+            current_state = task.result
+            if isinstance(current_state, dict) and "progress" in current_state:
+                progress = current_state["progress"]
+                if progress != previous_progress:
+                    yield f"data: {json.dumps({'progress': progress})}\n\n"
+                    previous_progress = progress
+            if task.ready():
+                yield f"data: {json.dumps({'status': 'completed'})}\n\n"
+                break
+
+    return StreamingHttpResponse(event_stream(), content_type="text/event-stream")
+
+
 @require_GET
-def get_generate_report_progress(request):
-    progress_info = cache.get(
-        "generate_report_progress", {"progress": 0, "completed": False}
+def fetch_report_log(request):
+    try:
+        date_str = request.GET.get("date")
+        page = int(request.GET.get("page", 1))
+        items_per_page = int(request.GET.get("items_per_page", 20))
+
+        if date_str:
+            try:
+                selected_date = datetime.datetime.strptime(date_str, "%Y-%m-%d").date()
+            except ValueError:
+                return JsonResponse({"error": "Invalid date format"}, status=400)
+        else:
+            latest_log_date = Report.objects.aggregate(Max("date"))["date__max"]
+            if latest_log_date is None:
+                return JsonResponse({"error": "No report entries found"}, status=404)
+            selected_date = latest_log_date.date()
+
+        start_date = timezone.make_aware(
+            datetime.datetime.combine(selected_date, datetime.time.min)
+        )
+        end_date = timezone.make_aware(
+            datetime.datetime.combine(selected_date, datetime.time.max)
+        )
+
+        # Fetch reports without filtering out any operation types
+        reports = Report.objects.filter(date__range=(start_date, end_date)).order_by(
+            "-date"
+        )
+
+        paginator = Paginator(reports, items_per_page)
+        page_obj = paginator.get_page(page)
+
+        print("Fetching reports from", start_date, "to", end_date)
+        print("Number of reports found:", reports.count())
+
+        data = []
+        for report in page_obj:
+            try:
+                report_data = {
+                    "item_id": report.item_id,
+                    "product_name": report.product_name,
+                    "operation": report.get_operation_display(),
+                    "date": report.date.isoformat(),
+                    "changes": report.changes,  # Assuming 'changes' is already a dict
+                }
+                data.append(report_data)
+            except Exception as e:
+                print(f"Error processing report entry {report.id}: {str(e)}")
+
+        return JsonResponse(
+            {
+                "date": selected_date.isoformat(),
+                "data": data,
+                "total_pages": paginator.num_pages,
+                "current_page": page,
+            },
+            safe=False,
+        )
+
+    except Exception as e:
+        print(f"Unexpected error in fetch_report_log: {str(e)}", exc_info=True)
+        return JsonResponse({"error": "An unexpected error occurred"}, status=500)
+
+
+@require_http_methods(["DELETE"])
+def delete_report(request):
+    date_str = request.GET.get("date")
+    if not date_str:
+        return JsonResponse({"error": "Date parameter is required"}, status=400)
+
+    try:
+        date = datetime.datetime.strptime(date_str, "%Y-%m-%d").date()
+        start_datetime = timezone.make_aware(
+            datetime.datetime.combine(date, datetime.time.min)
+        )
+        end_datetime = timezone.make_aware(
+            datetime.datetime.combine(date, datetime.time.max)
+        )
+
+        deleted_count, _ = Report.objects.filter(
+            date__range=(start_datetime, end_datetime)
+        ).delete()
+
+        if deleted_count > 0:
+            return JsonResponse(
+                {
+                    "success": True,
+                    "message": f"Deleted {deleted_count} report entries for {date_str}",
+                }
+            )
+        else:
+            return JsonResponse(
+                {"success": False, "error": f"No report entries found for {date_str}"},
+                status=404,
+            )
+
+    except ValueError:
+        return JsonResponse({"error": "Invalid date format"}, status=400)
+    except Exception as e:
+        logger.error(f"Error deleting report for {date_str}: {str(e)}")
+        return JsonResponse(
+            {"error": "An unexpected error occurred while deleting the report"},
+            status=500,
+        )
+
+
+@require_GET
+def download_report_excel(request):
+    date_str = request.GET.get("date")
+
+    if not date_str:
+        return HttpResponse("Date parameter is required", status=400)
+
+    try:
+        date = datetime.datetime.strptime(date_str, "%Y-%m-%d").date()
+        start_datetime = timezone.make_aware(
+            datetime.datetime.combine(date, datetime.time.min)
+        )
+        end_datetime = timezone.make_aware(
+            datetime.datetime.combine(date, datetime.time.max)
+        )
+        reports = Report.objects.filter(date__range=(start_datetime, end_datetime))
+    except ValueError:
+        return HttpResponse("Invalid date format", status=400)
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = f"Report {date_str}"
+
+    headers = ["Item ID", "Product Name", "Operation", "Date", "Changes"]
+    for col, header in enumerate(headers, start=1):
+        ws.cell(row=1, column=col, value=header)
+
+    for row, report in enumerate(reports, start=2):
+        ws.cell(row=row, column=1, value=report.item_id)
+        ws.cell(row=row, column=2, value=report.product_name)
+        ws.cell(row=row, column=3, value=report.get_operation_display())
+        ws.cell(row=row, column=4, value=report.date.strftime("%Y-%m-%d %H:%M:%S"))
+        ws.cell(row=row, column=5, value=report.changes)
+
+    excel_file = io.BytesIO()
+    wb.save(excel_file)
+    excel_file.seek(0)
+
+    response = HttpResponse(
+        excel_file.read(),
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )
-    return JsonResponse(progress_info)
+    response["Content-Disposition"] = f"attachment; filename=report_{date_str}.xlsx"
+
+    return response
+
+
+# @require_GET
+# def get_generate_report_progress(request):
+#     progress_info = cache.get(
+#         "generate_report_progress", {"progress": 0, "completed": False}
+#     )
+#     return JsonResponse(progress_info)
 
 
 import datetime

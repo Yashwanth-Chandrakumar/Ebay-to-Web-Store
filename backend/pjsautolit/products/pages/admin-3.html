@@ -11,6 +11,7 @@
         #changelogTable { margin-top: 20px; }
         #alert { margin-top: 20px; }
         .changes-cell { max-width: 300px; overflow-wrap: break-word; }
+        #progressBar { display: none; }
     </style>
 </head>
 <body>
@@ -19,15 +20,28 @@
     <h1 class="mb-4">Report Page</h1>
 
     <div class="row mb-3">
-        <div class="col-md-4">
+        <div class="col-md-3">
             <input type="text" id="datePicker" class="form-control" placeholder="Select Date">
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
             <button class="btn btn-primary" id="filterButton">Filter</button>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
+            <button class="btn btn-success" id="generateReport">Generate Report</button>
+        </div>
+        <div class="col-md-3">
+            <button class="btn btn-danger" id="deleteReport">Delete Report</button>
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-md-12">
             <button class="btn btn-warning" id="downloadExcel">Download Excel</button>
         </div>
+    </div>
+
+    <div id="progressBarContainer" class="progress mb-3" style="display: none;">
+        <div id="progressBar" class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
     </div>
 
     <div id="alert" class="alert" style="display: none;" role="alert"></div>
@@ -64,43 +78,46 @@
     }
 
     function fetchChangelog(date) {
-        fetch(`/fetch-changelog/?date=${date || ''}`, {
-            method: 'GET',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-            },
-        })
-        .then(response => response.json())
-        .then(result => {
-            console.log('Received data:', result);
-            if (result.error) {
-                throw new Error(result.error);
-            }
-            const tbody = document.getElementById('changelogBody');
-            tbody.innerHTML = '';
-            if (result.data.length === 0) {
-                showAlert('No changelog entries found', 'info');
-            } else {
-                result.data.forEach(log => {
-                    const row = tbody.insertRow();
-                    row.insertCell(0).textContent = log.item_id;
-                    row.insertCell(1).textContent = log.product_name;
-                    row.insertCell(2).textContent = log.operation;
-                    row.insertCell(3).textContent = new Date(log.date).toLocaleString();
-                    
-                    const changesCell = row.insertCell(4);
-                    changesCell.className = 'changes-cell';
-                    changesCell.innerHTML = formatChanges(log.changes);
-                });
-                showAlert(`Changelog fetched successfully for ${result.date}`, 'success');
-                updateLastRunTitle(result.date);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showAlert(`An error occurred while fetching the changelog: ${error.message}`, 'danger');
-        });
-    }
+    let url = `/fetch-report-changelog/?date=${date || ''}`;
+    // Add pagination or limit if necessary
+    fetch(url, {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+        },
+    })
+    .then(response => response.json())
+    .then(result => {
+        console.log('Received data:', result);
+        if (result.error) {
+            throw new Error(result.error);
+        }
+        const tbody = document.getElementById('changelogBody');
+        tbody.innerHTML = '';
+        if (result.data.length === 0) {
+            showAlert('No changelog entries found', 'info');
+        } else {
+            result.data.forEach(log => {
+                const row = tbody.insertRow();
+                row.insertCell(0).textContent = log.item_id;
+                row.insertCell(1).textContent = log.product_name;
+                row.insertCell(2).textContent = log.operation;
+                row.insertCell(3).textContent = new Date(log.date).toLocaleString();
+                
+                const changesCell = row.insertCell(4);
+                changesCell.className = 'changes-cell';
+                changesCell.innerHTML = formatChanges(log.changes);
+            });
+            showAlert(`Changelog fetched successfully for ${result.date}`, 'success');
+            updateLastRunTitle(result.date);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert(`An error occurred while fetching the changelog: ${error.message}`, 'danger');
+    });
+}
+
 
     function formatChanges(changes) {
         if (!changes || Object.keys(changes).length === 0) {
@@ -119,6 +136,88 @@
         title.textContent = `Changes Report for ${new Date(date).toLocaleString()}`;
     }
 
+    function generateReport() {
+    showAlert('Generating report...', 'info');
+    const progressBar = document.getElementById('progressBar');
+    const progressBarContainer = document.getElementById('progressBarContainer');
+    
+    progressBarContainer.style.display = 'flex';  // Show progress bar
+    progressBar.style.width = '0%';
+    progressBar.textContent = '0%';
+
+    const eventSource = new EventSource('/generate-report/');
+
+    eventSource.onmessage = function(event) {
+        const data = JSON.parse(event.data);
+        if (data.progress !== undefined) {
+            const progress = Math.round(data.progress);
+            progressBar.style.width = `${progress}%`;
+            progressBar.textContent = `${progress}%`;
+            progressBar.setAttribute('aria-valuenow', progress);
+        }
+        if (data.status === 'completed') {
+            eventSource.close();
+            progressBarContainer.style.display = 'none';  // Hide progress bar
+            showAlert('Report generation completed', 'success');
+            fetchChangelog();  // Fetch the latest report
+        }
+    };
+
+    eventSource.onerror = function(error) {
+        eventSource.close();
+        progressBarContainer.style.display = 'none';  // Hide progress bar
+        showAlert('Error generating report', 'danger');
+        console.error('EventSource failed:', error);
+    };
+}
+
+    function deleteReport() {
+        const date = document.getElementById('datePicker').value;
+        if (!date) {
+            showAlert('Please select a date to delete the report', 'warning');
+            return;
+        }
+
+        if (confirm(`Are you sure you want to delete the report for ${date}?`)) {
+            fetch(`/delete-report/?date=${date}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': getCookie('csrftoken'),
+                },
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    showAlert(`Report for ${date} deleted successfully`, 'success');
+                    document.getElementById('changelogBody').innerHTML = '';
+                    document.getElementById('lastRunTitle').textContent = '';
+                } else {
+                    throw new Error(result.error || 'Failed to delete report');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert(`An error occurred while deleting the report: ${error.message}`, 'danger');
+            });
+        }
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
     document.getElementById('filterButton').addEventListener('click', function() {
         const date = document.getElementById('datePicker').value;
         if (date) {
@@ -128,10 +227,14 @@
         }
     });
 
+    document.getElementById('generateReport').addEventListener('click', generateReport);
+
+    document.getElementById('deleteReport').addEventListener('click', deleteReport);
+
     document.getElementById('downloadExcel').addEventListener('click', function() {
         const date = document.getElementById('datePicker').value;
         if (date) {
-            window.location.href = `/download-excel/?date=${date}`;
+            window.location.href = `/download-report-excel/?date=${date}`;
         } else {
             showAlert('Please select a date for Excel download', 'warning');
         }

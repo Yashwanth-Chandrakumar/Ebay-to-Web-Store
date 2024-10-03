@@ -31,7 +31,9 @@ class Product(models.Model):
     category_path = models.CharField(max_length=255, blank=True, null=True)
     category_id_path = models.CharField(max_length=100, blank=True, null=True)
     item_creation_date = models.DateTimeField(null=True, blank=True)
-    estimated_availability_status = models.CharField(max_length=255, blank=True, null=True)
+    estimated_availability_status = models.CharField(
+        max_length=255, blank=True, null=True
+    )
     estimated_available_quantity = models.IntegerField(null=True, blank=True)
     estimated_sold_quantity = models.IntegerField(null=True, blank=True)
     enabled_for_guest_checkout = models.BooleanField(default=False)
@@ -43,7 +45,9 @@ class Product(models.Model):
     listing_marketplace_id = models.CharField(max_length=255, blank=True, null=True)
     seller_username = models.CharField(max_length=100, blank=True, null=True)
     feedback_score = models.IntegerField(null=True, blank=True)
-    positive_feedback_percent = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    positive_feedback_percent = models.DecimalField(
+        max_digits=5, decimal_places=2, null=True, blank=True
+    )
     feedback_rating_star = models.CharField(max_length=255, blank=True, null=True)
     top_rated_seller = models.BooleanField(default=False)
     shipping_type = models.CharField(max_length=255, blank=True, null=True)
@@ -55,7 +59,9 @@ class Product(models.Model):
     shipping_carrier_code = models.CharField(max_length=255, blank=True, null=True)
     min_estimated_delivery_date = models.DateTimeField(null=True, blank=True)
     max_estimated_delivery_date = models.DateTimeField(null=True, blank=True)
-    shipping_cost = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    shipping_cost = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True
+    )
     shipping_cost_type = models.CharField(max_length=255, blank=True, null=True)
     primary_image_url = models.URLField(blank=True, null=True)
     additional_image_urls = models.TextField(blank=True, null=True)
@@ -63,11 +69,12 @@ class Product(models.Model):
 
     def __str__(self):
         return self.title
-    
+
+
 class FetchStatus(models.Model):
     FETCH_TYPES = (
-        ('initial', 'Initial Fetch'),
-        ('daily', 'Daily Update'),
+        ("initial", "Initial Fetch"),
+        ("daily", "Daily Update"),
     )
     fetch_type = models.CharField(max_length=10, choices=FETCH_TYPES, unique=True)
     last_processed_page = models.IntegerField(default=0)
@@ -77,6 +84,7 @@ class FetchStatus(models.Model):
     def __str__(self):
         return f"{self.get_fetch_type_display()} - Last run: {self.last_run}"
 
+
 import json
 
 # In models.py, add this new model:
@@ -85,9 +93,9 @@ from django.db import models
 
 class ProductChangeLog(models.Model):
     OPERATIONS = (
-        ('created', 'Created'),
-        ('updated', 'Updated'),
-        ('deleted', 'Deleted'),
+        ("created", "Created"),
+        ("updated", "Updated"),
+        ("deleted", "Deleted"),
     )
     item_id = models.CharField(max_length=100)
     product_name = models.CharField(max_length=255)
@@ -101,34 +109,75 @@ class ProductChangeLog(models.Model):
     def set_changes(self, before_dict, after_dict):
         changes = {}
         for key in before_dict.keys() | after_dict.keys():
-            if key in before_dict and key in after_dict and before_dict[key] != after_dict[key]:
-                changes[key] = {
-                    'before': before_dict[key],
-                    'after': after_dict[key]
-                }
+            if (
+                key in before_dict
+                and key in after_dict
+                and before_dict[key] != after_dict[key]
+            ):
+                changes[key] = {"before": before_dict[key], "after": after_dict[key]}
         self.changes = changes
 
     def get_changes(self):
         return self.changes
-    
+
+
+from django.db import models
+
+
+class Report(models.Model):
+    OPERATIONS = (
+        ("created", "Created"),
+        ("updated", "Updated"),
+        ("deleted", "Deleted"),
+    )
+    item_id = models.CharField(max_length=100)
+    product_name = models.CharField(max_length=255)
+    operation = models.CharField(max_length=10, choices=OPERATIONS)
+    date = models.DateTimeField(auto_now_add=True)
+    changes = models.JSONField(default=dict)
+
+    def __str__(self):
+        return f"Report - {self.get_operation_display()} - {self.product_name}"
+
+    def set_changes(self, before_dict, after_dict):
+        changes = {}
+        for key in before_dict.keys() | after_dict.keys():
+            if (
+                key in before_dict
+                and key in after_dict
+                and before_dict[key] != after_dict[key]
+            ):
+                changes[key] = {"before": before_dict[key], "after": after_dict[key]}
+        self.changes = changes
+
+    def get_changes(self):
+        return self.changes
+
+
 class Cart(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     def total_amount(self):
-        return sum(item.product.price * item.quantity for item in self.cartitem_set.all())
+        return sum(
+            item.product.price * item.quantity for item in self.cartitem_set.all()
+        )
 
     def total_weight(self):
         return sum(item.get_total_weight() for item in self.cartitem_set.all())
+
     def __str__(self):
         return f"Cart {self.id}"
 
     def total_amount(self):
         return sum(item.subtotal() for item in self.cartitem_set.all())
 
+
 class CartItem(models.Model):
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE)
-    product = models.ForeignKey(Product, to_field='item_id', on_delete=models.CASCADE, db_column='product_id')
+    product = models.ForeignKey(
+        Product, to_field="item_id", on_delete=models.CASCADE, db_column="product_id"
+    )
     quantity = models.PositiveIntegerField(default=1)
     weight = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
 
@@ -151,18 +200,18 @@ class CartItem(models.Model):
         return self.product.price * self.quantity
 
     class Meta:
-        unique_together = (('cart', 'product'),)  # Composite key
+        unique_together = (("cart", "product"),)  # Composite key
 
 
 class Order(models.Model):
     STATUS_CHOICES = (
-        ('pending', 'Pending'),
-        ('completed', 'Completed'),
-        ('failed', 'Failed'),
+        ("pending", "Pending"),
+        ("completed", "Completed"),
+        ("failed", "Failed"),
     )
 
     cart = models.OneToOneField(Cart, on_delete=models.CASCADE)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
     total_amount = models.DecimalField(max_digits=10, decimal_places=2)
     square_payment_id = models.CharField(max_length=255, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
