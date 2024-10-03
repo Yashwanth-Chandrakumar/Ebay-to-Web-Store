@@ -34,7 +34,8 @@ from django.views.decorators.http import require_GET
 from django.views.generic.detail import DetailView
 from requests.exceptions import HTTPError, RequestException
 
-from .models import Cart, CartItem, FetchStatus, Order, Product, ProductChangeLog
+from .models import (Cart, CartItem, FetchStatus, Order, Product,
+                     ProductChangeLog)
 
 EBAY_APP_ID = settings.EBAY_APP_ID
 EBAY_AUTH_TOKEN = settings.EBAY_AUTH_TOKEN
@@ -635,7 +636,8 @@ from django.http import JsonResponse
 from django.template import loader
 from django.views.decorators.http import require_GET
 
-from .models import Product  # Ensure this import is correct for your project structure
+from .models import \
+    Product  # Ensure this import is correct for your project structure
 
 logger = logging.getLogger(__name__)
 
@@ -1321,7 +1323,6 @@ def run_daily_update(request):
 
 import datetime
 import io
-
 # Generate report only:
 import json
 import logging
@@ -1341,10 +1342,26 @@ from .models import Product, Report
 logger = logging.getLogger(__name__)
 
 
+import json
+from datetime import datetime
+
+from django.core.serializers.json import DjangoJSONEncoder
+
+
+class CustomJSONEncoder(DjangoJSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, datetime):
+            return obj.strftime('%Y-%m-%d %H:%M:%S')
+        # Add more custom serialization rules as needed
+        return super().default(obj)
+
+
 @shared_task(bind=True)
 def generate_report_async(self):
     logger.info("Starting the report generation task.")
     self.update_state(state="PROGRESS", meta={"progress": 0})
+
+    fetch_status, created = FetchStatus.objects.get_or_create(fetch_type="report")
 
     existing_item_ids = set(Product.objects.values_list("item_id", flat=True))
     updated_item_ids = set()
@@ -1359,9 +1376,30 @@ def generate_report_async(self):
         min_price = max_price + 0.01
         max_price += price_increment
 
-    total_pages = 203  # Total number of pages across all price ranges
-    processed_pages = 0
+    fields_to_check = [
+        "item_id",
+        "title",
+        "global_id",
+        "category_id",
+        "category_name",
+        "gallery_url",
+        "view_item_url",
+        "auto_pay",
+        "postal_code",
+        "location",
+        "country",
+        "shipping_type",
+        "ship_to_locations",
+    ]
+
+    field_mapping = {
+        "description": "short_description",
+        # Add any other mismatched field names here if needed
+    }
+
     reports = []
+    total_pages = 203  # Update this as per your actual total pages count
+    processed_pages = 0
 
     try:
         for min_price, max_price in price_ranges:
@@ -1371,9 +1409,7 @@ def generate_report_async(self):
 
             while current_page <= range_total_pages:
                 try:
-                    logger.info(
-                        f"Fetching data for page {current_page}, price range ${min_price:.2f} - ${max_price:.2f}"
-                    )
+                    logger.info(f"Fetching data for page {current_page}, price range ${min_price:.2f} - ${max_price:.2f}")
                     items, range_total_pages = fetch_finding_api_data(
                         page_number=current_page,
                         min_price=min_price,
@@ -1384,41 +1420,41 @@ def generate_report_async(self):
                         item_id = item["item_id"]
                         updated_item_ids.add(item_id)
 
+                        # Apply field mapping
+                        mapped_item = {field_mapping.get(k, k): v for k, v in item.items()}
+
                         try:
                             product = Product.objects.get(item_id=item_id)
-                            # Check for changes and create update report if necessary
-                            changes = {}
-                            for key, value in item.items():
-                                if getattr(product, key) != value:
-                                    changes[key] = {
-                                        "before": getattr(product, key),
-                                        "after": value,
-                                    }
+                            before_dict = {key: getattr(product, key) for key in fields_to_check if hasattr(product, key)}
+                            after_dict = {key: value for key, value in mapped_item.items() if key in fields_to_check and hasattr(product, key)}
+
+                            changes = {key: value for key, value in after_dict.items() if before_dict.get(key) != value}
 
                             if changes:
+                                for key, value in changes.items():
+                                    setattr(product, key, value)
+                                product.save()
+                                logger.info(f"Updated product: {item_id} - {product.title}")
+
                                 report = Report(
                                     item_id=item_id,
                                     product_name=product.title,
                                     operation="updated",
-                                    changes=json.dumps(changes),
+                                    changes=json.dumps(changes, cls=CustomJSONEncoder),
                                 )
                                 reports.append(report)
 
-                            # Update the product
-                            for key, value in item.items():
-                                setattr(product, key, value)
-                            product.save()
-
                         except Product.DoesNotExist:
                             # Create new product
-                            new_product = Product(**item)
+                            new_product = Product(**mapped_item)
                             new_product.save()
+                            logger.info(f"Created new product: {item_id} - {new_product.title}")
 
                             report = Report(
                                 item_id=item_id,
-                                product_name=item.get("title", "Unknown Title"),
+                                product_name=new_product.title,
                                 operation="created",
-                                changes=json.dumps(item),
+                                changes=json.dumps(mapped_item, cls=CustomJSONEncoder),
                             )
                             reports.append(report)
 
@@ -1428,9 +1464,7 @@ def generate_report_async(self):
                     self.update_state(state="PROGRESS", meta={"progress": progress})
 
                 except Exception as e:
-                    logger.error(
-                        f"Error fetching data for page {current_page}, price range ${min_price:.2f} - ${max_price:.2f}: {e}"
-                    )
+                    logger.error(f"Error fetching data for page {current_page}, price range ${min_price:.2f} - ${max_price:.2f}: {e}")
 
     except Exception as e:
         logger.error(f"Error during report generation: {e}")
@@ -1444,21 +1478,24 @@ def generate_report_async(self):
                 item_id=item_id,
                 product_name=product.title,
                 operation="deleted",
-                changes=json.dumps({"status": "Item no longer available"}),
+                changes=json.dumps({"status": "Item no longer available"}, cls=CustomJSONEncoder),
             )
             reports.append(report)
             product.delete()
+            logger.info(f"Deleted product: {item_id} - {product.title}")
+
         except Product.DoesNotExist:
-            logger.warning(
-                f"Product {item_id} not found in database, skipping deletion"
-            )
+            logger.warning(f"Product {item_id} not found in database, skipping deletion")
 
     # Save all reports to the database
-    Report.objects.bulk_create(reports)
+    if reports:
+        Report.objects.bulk_create(reports)
+
+    fetch_status.last_run = timezone.now()
+    fetch_status.save()
 
     logger.info("Report generation task completed successfully.")
     return {"status": "completed"}
-
 
 def generate_report(request):
     task = generate_report_async.delay()
