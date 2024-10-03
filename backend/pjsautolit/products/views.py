@@ -1341,18 +1341,19 @@ from .models import Product, Report
 
 logger = logging.getLogger(__name__)
 
-
 import json
 from datetime import datetime
 
+from celery import shared_task
 from django.core.serializers.json import DjangoJSONEncoder
+from django.http import StreamingHttpResponse
+from django.utils import timezone
 
 
 class CustomJSONEncoder(DjangoJSONEncoder):
     def default(self, obj):
         if isinstance(obj, datetime):
-            return obj.strftime('%Y-%m-%d %H:%M:%S')
-        # Add more custom serialization rules as needed
+            return obj.strftime("%Y-%m-%d %H:%M:%S")
         return super().default(obj)
 
 
@@ -1394,22 +1395,23 @@ def generate_report_async(self):
 
     field_mapping = {
         "description": "short_description",
-        # Add any other mismatched field names here if needed
     }
 
     reports = []
-    total_pages = 203  # Update this as per your actual total pages count
+    total_pages = 203  # Total number of pages across all price ranges
     processed_pages = 0
 
     try:
         for min_price, max_price in price_ranges:
             logger.info(f"Processing price range: ${min_price:.2f} - ${max_price:.2f}")
             current_page = 1
-            range_total_pages = 1
+            range_total_pages = 1  # Adjust this to set the expected total pages for the current price range
 
             while current_page <= range_total_pages:
                 try:
-                    logger.info(f"Fetching data for page {current_page}, price range ${min_price:.2f} - ${max_price:.2f}")
+                    logger.info(
+                        f"Fetching data for page {current_page}, price range ${min_price:.2f} - ${max_price:.2f}"
+                    )
                     items, range_total_pages = fetch_finding_api_data(
                         page_number=current_page,
                         min_price=min_price,
@@ -1421,20 +1423,36 @@ def generate_report_async(self):
                         updated_item_ids.add(item_id)
 
                         # Apply field mapping
-                        mapped_item = {field_mapping.get(k, k): v for k, v in item.items()}
+                        mapped_item = {
+                            field_mapping.get(k, k): v for k, v in item.items()
+                        }
 
                         try:
                             product = Product.objects.get(item_id=item_id)
-                            before_dict = {key: getattr(product, key) for key in fields_to_check if hasattr(product, key)}
-                            after_dict = {key: value for key, value in mapped_item.items() if key in fields_to_check and hasattr(product, key)}
+                            before_dict = {
+                                key: getattr(product, key)
+                                for key in fields_to_check
+                                if hasattr(product, key)
+                            }
+                            after_dict = {
+                                key: value
+                                for key, value in mapped_item.items()
+                                if key in fields_to_check and hasattr(product, key)
+                            }
 
-                            changes = {key: value for key, value in after_dict.items() if before_dict.get(key) != value}
+                            changes = {
+                                key: value
+                                for key, value in after_dict.items()
+                                if before_dict.get(key) != value
+                            }
 
                             if changes:
                                 for key, value in changes.items():
                                     setattr(product, key, value)
                                 product.save()
-                                logger.info(f"Updated product: {item_id} - {product.title}")
+                                logger.info(
+                                    f"Updated product: {item_id} - {product.title}"
+                                )
 
                                 report = Report(
                                     item_id=item_id,
@@ -1445,10 +1463,11 @@ def generate_report_async(self):
                                 reports.append(report)
 
                         except Product.DoesNotExist:
-                            # Create new product
                             new_product = Product(**mapped_item)
                             new_product.save()
-                            logger.info(f"Created new product: {item_id} - {new_product.title}")
+                            logger.info(
+                                f"Created new product: {item_id} - {new_product.title}"
+                            )
 
                             report = Report(
                                 item_id=item_id,
@@ -1460,11 +1479,15 @@ def generate_report_async(self):
 
                     current_page += 1
                     processed_pages += 1
+
+                    # Update the progress percentage based on processed pages
                     progress = int(processed_pages / total_pages * 100)
                     self.update_state(state="PROGRESS", meta={"progress": progress})
 
                 except Exception as e:
-                    logger.error(f"Error fetching data for page {current_page}, price range ${min_price:.2f} - ${max_price:.2f}: {e}")
+                    logger.error(
+                        f"Error fetching data for page {current_page}, price range ${min_price:.2f} - ${max_price:.2f}: {e}"
+                    )
 
     except Exception as e:
         logger.error(f"Error during report generation: {e}")
@@ -1478,14 +1501,18 @@ def generate_report_async(self):
                 item_id=item_id,
                 product_name=product.title,
                 operation="deleted",
-                changes=json.dumps({"status": "Item no longer available"}, cls=CustomJSONEncoder),
+                changes=json.dumps(
+                    {"status": "Item no longer available"}, cls=CustomJSONEncoder
+                ),
             )
             reports.append(report)
             product.delete()
             logger.info(f"Deleted product: {item_id} - {product.title}")
 
         except Product.DoesNotExist:
-            logger.warning(f"Product {item_id} not found in database, skipping deletion")
+            logger.warning(
+                f"Product {item_id} not found in database, skipping deletion"
+            )
 
     # Save all reports to the database
     if reports:
@@ -1496,6 +1523,7 @@ def generate_report_async(self):
 
     logger.info("Report generation task completed successfully.")
     return {"status": "completed"}
+
 
 def generate_report(request):
     task = generate_report_async.delay()
@@ -1516,12 +1544,19 @@ def generate_report(request):
     return StreamingHttpResponse(event_stream(), content_type="text/event-stream")
 
 
+import datetime
+
+from django.http import JsonResponse
+from django.utils import timezone
+from django.views.decorators.http import require_GET
+
+from .models import Report
+
+
 @require_GET
 def fetch_report_log(request):
     try:
         date_str = request.GET.get("date")
-        page = int(request.GET.get("page", 1))
-        items_per_page = int(request.GET.get("items_per_page", 20))
 
         if date_str:
             try:
@@ -1529,6 +1564,7 @@ def fetch_report_log(request):
             except ValueError:
                 return JsonResponse({"error": "Invalid date format"}, status=400)
         else:
+            # Fetch the latest report date if no date is provided
             latest_log_date = Report.objects.aggregate(Max("date"))["date__max"]
             if latest_log_date is None:
                 return JsonResponse({"error": "No report entries found"}, status=404)
@@ -1541,19 +1577,14 @@ def fetch_report_log(request):
             datetime.datetime.combine(selected_date, datetime.time.max)
         )
 
-        # Fetch reports without filtering out any operation types
-        reports = Report.objects.filter(date__range=(start_date, end_date)).order_by(
-            "-date"
-        )
-
-        paginator = Paginator(reports, items_per_page)
-        page_obj = paginator.get_page(page)
+        # Fetch all reports for the selected date
+        reports = Report.objects.filter(date__range=(start_date, end_date)).order_by("-date")
 
         print("Fetching reports from", start_date, "to", end_date)
         print("Number of reports found:", reports.count())
 
         data = []
-        for report in page_obj:
+        for report in reports:
             try:
                 report_data = {
                     "item_id": report.item_id,
@@ -1570,8 +1601,6 @@ def fetch_report_log(request):
             {
                 "date": selected_date.isoformat(),
                 "data": data,
-                "total_pages": paginator.num_pages,
-                "current_page": page,
             },
             safe=False,
         )
@@ -1579,6 +1608,7 @@ def fetch_report_log(request):
     except Exception as e:
         print(f"Unexpected error in fetch_report_log: {str(e)}", exc_info=True)
         return JsonResponse({"error": "An unexpected error occurred"}, status=500)
+
 
 
 @require_http_methods(["DELETE"])
