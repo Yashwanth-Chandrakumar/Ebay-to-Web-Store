@@ -48,4 +48,12 @@ urlpatterns = [
         views.download_report_excel,
         name="download_report_excel",
     ),
+    path(
+        "cancel-report-task/",
+        views.cancel_report_task,
+        name="cancel_report_task",
+    ),
+    path(
+        "report_progress/<str:task_id>/", views.report_progress, name="report_progress"
+    ),
 ]

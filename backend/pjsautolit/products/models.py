@@ -132,7 +132,7 @@ class Report(models.Model):
     )
     item_id = models.CharField(max_length=100)
     product_name = models.CharField(max_length=255)
-    operation = models.CharField(max_length=10, choices=OPERATIONS)
+    operation = models.CharField(max_length=100, choices=OPERATIONS)
     date = models.DateTimeField(auto_now_add=True)
     changes = models.JSONField(default=dict)
 

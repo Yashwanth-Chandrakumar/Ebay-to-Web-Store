@@ -34,8 +34,7 @@ from django.views.decorators.http import require_GET
 from django.views.generic.detail import DetailView
 from requests.exceptions import HTTPError, RequestException
 
-from .models import (Cart, CartItem, FetchStatus, Order, Product,
-                     ProductChangeLog)
+from .models import Cart, CartItem, FetchStatus, Order, Product, ProductChangeLog
 
 EBAY_APP_ID = settings.EBAY_APP_ID
 EBAY_AUTH_TOKEN = settings.EBAY_AUTH_TOKEN
@@ -636,8 +635,7 @@ from django.http import JsonResponse
 from django.template import loader
 from django.views.decorators.http import require_GET
 
-from .models import \
-    Product  # Ensure this import is correct for your project structure
+from .models import Product  # Ensure this import is correct for your project structure
 
 logger = logging.getLogger(__name__)
 
@@ -1323,34 +1321,22 @@ def run_daily_update(request):
 
 import datetime
 import io
+
 # Generate report only:
 import json
 import logging
-
-from celery import shared_task
-from django.core.paginator import Paginator
-from django.db.models import Max
-from django.http import HttpResponse, JsonResponse, StreamingHttpResponse
-from django.utils import timezone
-from django.views.decorators.http import require_GET, require_http_methods
-from ebaysdk.finding import Connection as Finding
-from ebaysdk.shopping import Connection as Shopping
-from openpyxl import Workbook
-
-from .models import Product, Report
-
-logger = logging.getLogger(__name__)
-
-import json
 from datetime import datetime
 
 from celery import shared_task
-from django.core.serializers.json import DjangoJSONEncoder
 from django.http import StreamingHttpResponse
 from django.utils import timezone
 
+from .models import FetchStatus, Product, Report
 
-class CustomJSONEncoder(DjangoJSONEncoder):
+logger = logging.getLogger(__name__)
+
+
+class CustomJSONEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, datetime):
             return obj.strftime("%Y-%m-%d %H:%M:%S")
@@ -1363,6 +1349,10 @@ def generate_report_async(self):
     self.update_state(state="PROGRESS", meta={"progress": 0})
 
     fetch_status, created = FetchStatus.objects.get_or_create(fetch_type="report")
+
+    # Get total count of existing products for progress calculation
+    total_products = Product.objects.count()
+    processed_items = 0
 
     existing_item_ids = set(Product.objects.values_list("item_id", flat=True))
     updated_item_ids = set()
@@ -1398,14 +1388,12 @@ def generate_report_async(self):
     }
 
     reports = []
-    total_pages = 203  # Total number of pages across all price ranges
-    processed_pages = 0
 
     try:
         for min_price, max_price in price_ranges:
             logger.info(f"Processing price range: ${min_price:.2f} - ${max_price:.2f}")
             current_page = 1
-            range_total_pages = 1  # Adjust this to set the expected total pages for the current price range
+            range_total_pages = 1  # Adjust this if needed
 
             while current_page <= range_total_pages:
                 try:
@@ -1422,13 +1410,13 @@ def generate_report_async(self):
                         item_id = item["item_id"]
                         updated_item_ids.add(item_id)
 
-                        # Apply field mapping
                         mapped_item = {
                             field_mapping.get(k, k): v for k, v in item.items()
                         }
 
-                        try:
-                            product = Product.objects.get(item_id=item_id)
+                        product = Product.objects.filter(item_id=item_id).first()
+                        if product:
+                            # Check for changes without updating the Product
                             before_dict = {
                                 key: getattr(product, key)
                                 for key in fields_to_check
@@ -1447,42 +1435,35 @@ def generate_report_async(self):
                             }
 
                             if changes:
-                                for key, value in changes.items():
-                                    setattr(product, key, value)
-                                product.save()
                                 logger.info(
-                                    f"Updated product: {item_id} - {product.title}"
+                                    f"Changes detected for product: {item_id} - {product.title}"
                                 )
-
                                 report = Report(
                                     item_id=item_id,
                                     product_name=product.title,
-                                    operation="updated",
+                                    operation="changes_detected",
                                     changes=json.dumps(changes, cls=CustomJSONEncoder),
                                 )
                                 reports.append(report)
-
-                        except Product.DoesNotExist:
-                            new_product = Product(**mapped_item)
-                            new_product.save()
+                        else:
+                            # Report new product without creating it
                             logger.info(
-                                f"Created new product: {item_id} - {new_product.title}"
+                                f"New product detected: {item_id} - {mapped_item.get('title')}"
                             )
-
                             report = Report(
                                 item_id=item_id,
-                                product_name=new_product.title,
-                                operation="created",
+                                product_name=mapped_item.get("title"),
+                                operation="new_product_detected",
                                 changes=json.dumps(mapped_item, cls=CustomJSONEncoder),
                             )
                             reports.append(report)
 
-                    current_page += 1
-                    processed_pages += 1
+                        # Update processed item count and calculate progress
+                        processed_items += 1
+                        progress = int(processed_items / total_products * 100)
+                        self.update_state(state="PROGRESS", meta={"progress": progress})
 
-                    # Update the progress percentage based on processed pages
-                    progress = int(processed_pages / total_pages * 100)
-                    self.update_state(state="PROGRESS", meta={"progress": progress})
+                    current_page += 1
 
                 except Exception as e:
                     logger.error(
@@ -1492,27 +1473,22 @@ def generate_report_async(self):
     except Exception as e:
         logger.error(f"Error during report generation: {e}")
 
-    # Deletion process
+    # Check for potentially deleted items
     items_to_delete = existing_item_ids - updated_item_ids
     for item_id in items_to_delete:
-        try:
-            product = Product.objects.get(item_id=item_id)
+        product = Product.objects.filter(item_id=item_id).first()
+        if product:
             report = Report(
                 item_id=item_id,
                 product_name=product.title,
-                operation="deleted",
+                operation="potential_deletion",
                 changes=json.dumps(
-                    {"status": "Item no longer available"}, cls=CustomJSONEncoder
+                    {"status": "Item no longer available in API results"},
+                    cls=CustomJSONEncoder,
                 ),
             )
             reports.append(report)
-            product.delete()
-            logger.info(f"Deleted product: {item_id} - {product.title}")
-
-        except Product.DoesNotExist:
-            logger.warning(
-                f"Product {item_id} not found in database, skipping deletion"
-            )
+            logger.info(f"Potential deletion detected: {item_id} - {product.title}")
 
     # Save all reports to the database
     if reports:
@@ -1522,26 +1498,43 @@ def generate_report_async(self):
     fetch_status.save()
 
     logger.info("Report generation task completed successfully.")
-    return {"status": "completed"}
+    return {"status": "completed", "progress": 100}
 
 
 def generate_report(request):
     task = generate_report_async.delay()
+    return JsonResponse({"task_id": task.id})
 
-    def event_stream():
-        previous_progress = 0
-        while True:
-            current_state = task.result
-            if isinstance(current_state, dict) and "progress" in current_state:
-                progress = current_state["progress"]
-                if progress != previous_progress:
-                    yield f"data: {json.dumps({'progress': progress})}\n\n"
-                    previous_progress = progress
-            if task.ready():
-                yield f"data: {json.dumps({'status': 'completed'})}\n\n"
-                break
 
-    return StreamingHttpResponse(event_stream(), content_type="text/event-stream")
+from django.http import StreamingHttpResponse
+
+
+def report_progress(request, task_id):
+    response = StreamingHttpResponse(
+        event_stream(task_id), content_type="text/event-stream"
+    )
+    response["Cache-Control"] = "no-cache"
+    return response
+
+
+def event_stream(task_id):
+    task = generate_report_async.AsyncResult(task_id)
+    previous_progress = 0
+
+    while not task.ready():
+        # Get the current state
+        current_state = task.info  # task.info holds the meta data from update_state
+        if current_state and isinstance(current_state, dict):
+            progress = current_state.get("progress", 0)
+
+            if progress != previous_progress:
+                yield f"data: {json.dumps({'progress': progress})}\n\n"
+                previous_progress = progress
+
+        time.sleep(1)  # Adjust polling interval
+
+    # Final completion message
+    yield f"data: {json.dumps({'status': 'completed'})}\n\n"
 
 
 import datetime
@@ -1578,7 +1571,9 @@ def fetch_report_log(request):
         )
 
         # Fetch all reports for the selected date
-        reports = Report.objects.filter(date__range=(start_date, end_date)).order_by("-date")
+        reports = Report.objects.filter(date__range=(start_date, end_date)).order_by(
+            "-date"
+        )
 
         print("Fetching reports from", start_date, "to", end_date)
         print("Number of reports found:", reports.count())
@@ -1609,6 +1604,8 @@ def fetch_report_log(request):
         print(f"Unexpected error in fetch_report_log: {str(e)}", exc_info=True)
         return JsonResponse({"error": "An unexpected error occurred"}, status=500)
 
+
+from django.views.decorators.http import require_http_methods
 
 
 @require_http_methods(["DELETE"])
@@ -1651,6 +1648,25 @@ def delete_report(request):
             {"error": "An unexpected error occurred while deleting the report"},
             status=500,
         )
+
+
+from celery.result import AsyncResult
+from django.http import JsonResponse
+
+
+def cancel_report_task(request):
+    task_id = request.GET.get("task_id")
+    if not task_id:
+        return JsonResponse({"error": "Task ID is required"}, status=400)
+
+    try:
+        task = AsyncResult(task_id)
+        task.revoke(terminate=True)
+        return JsonResponse(
+            {"success": True, "message": f"Task {task_id} canceled successfully"}
+        )
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
 
 
 @require_GET
