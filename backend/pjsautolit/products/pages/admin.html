@@ -106,7 +106,6 @@
             showAlert(`An error occurred while fetching the changelog: ${error.message}`, 'danger');
         });
     }
-
     function formatChanges(changes) {
         if (!changes || Object.keys(changes).length === 0) {
             return 'No changes';

@@ -126,9 +126,9 @@ from django.db import models
 
 class Report(models.Model):
     OPERATIONS = (
-        ("created", "Created"),
-        ("updated", "Updated"),
-        ("deleted", "Deleted"),
+        ("changes_detected", "Changes Detected"),
+        ("new_product_detected", "New Product Detected"),
+        ("potential_deletion", "Potential Deletion"),
     )
     item_id = models.CharField(max_length=100)
     product_name = models.CharField(max_length=255)

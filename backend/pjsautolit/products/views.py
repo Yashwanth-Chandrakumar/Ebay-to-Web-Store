@@ -1442,8 +1442,8 @@ def generate_report_async(self):
                                     item_id=item_id,
                                     product_name=product.title,
                                     operation="changes_detected",
-                                    changes=json.dumps(changes, cls=CustomJSONEncoder),
                                 )
+                                report.set_changes(before_dict, after_dict)
                                 reports.append(report)
                         else:
                             # Report new product without creating it
@@ -1454,7 +1454,7 @@ def generate_report_async(self):
                                 item_id=item_id,
                                 product_name=mapped_item.get("title"),
                                 operation="new_product_detected",
-                                changes=json.dumps(mapped_item, cls=CustomJSONEncoder),
+                                changes=mapped_item,  # Direct assignment
                             )
                             reports.append(report)
 
@@ -1482,10 +1482,7 @@ def generate_report_async(self):
                 item_id=item_id,
                 product_name=product.title,
                 operation="potential_deletion",
-                changes=json.dumps(
-                    {"status": "Item no longer available in API results"},
-                    cls=CustomJSONEncoder,
-                ),
+                changes={"status": "Item no longer available in API results"},
             )
             reports.append(report)
             logger.info(f"Potential deletion detected: {item_id} - {product.title}")
@@ -1760,8 +1757,6 @@ def fetch_changelog(request):
     try:
         # Get date from request, default to the latest date if not provided
         date_str = request.GET.get("date")
-        page = int(request.GET.get("page", 1))
-        items_per_page = int(request.GET.get("items_per_page", 20))
 
         if date_str:
             try:
@@ -1787,13 +1782,10 @@ def fetch_changelog(request):
             date__range=(start_date, end_date)
         ).order_by("-date")
 
-        paginator = Paginator(logs, items_per_page)
-        page_obj = paginator.get_page(page)
-
-        logger.info(f"Fetching changelog entries for {selected_date}, page {page}")
+        logger.info(f"Fetching all changelog entries for {selected_date}")
 
         data = []
-        for log in page_obj:
+        for log in logs:
             try:
                 log_data = {
                     "item_id": log.item_id,
@@ -1810,8 +1802,6 @@ def fetch_changelog(request):
             {
                 "date": selected_date.isoformat(),
                 "data": data,
-                "total_pages": paginator.num_pages,
-                "current_page": page,
             },
             safe=False,
             encoder=DjangoJSONEncoder,
