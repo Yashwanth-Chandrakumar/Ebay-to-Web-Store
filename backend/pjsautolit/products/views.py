@@ -672,6 +672,9 @@ def generate_html_pages_async():
                 additional_images = [
                     str(url).strip() for url in additional_images if url
                 ]
+                print(
+                    f"Product {product.item_id} - Additional images: {additional_images}"
+                )  # Add this line
             except Exception as e:
                 logger.error(
                     f"Error parsing additional image URLs for product {product.item_id}: {e}"

@@ -134,7 +134,7 @@ class Report(models.Model):
     product_name = models.CharField(max_length=255)
     operation = models.CharField(max_length=100, choices=OPERATIONS)
     date = models.DateTimeField(auto_now_add=True)
-    changes = models.JSONField(default=dict)
+    changes = models.JSONField(null=True, default=dict)
 
     def __str__(self):
         return f"Report - {self.get_operation_display()} - {self.product_name}"
