@@ -1350,7 +1350,6 @@ def generate_report_async(self):
 
     fetch_status, created = FetchStatus.objects.get_or_create(fetch_type="report")
 
-    # Get total count of existing products for progress calculation
     total_products = Product.objects.count()
     processed_items = 0
 
@@ -1393,7 +1392,7 @@ def generate_report_async(self):
         for min_price, max_price in price_ranges:
             logger.info(f"Processing price range: ${min_price:.2f} - ${max_price:.2f}")
             current_page = 1
-            range_total_pages = 1  # Adjust this if needed
+            range_total_pages = 1
 
             while current_page <= range_total_pages:
                 try:
@@ -1416,7 +1415,6 @@ def generate_report_async(self):
 
                         product = Product.objects.filter(item_id=item_id).first()
                         if product:
-                            # Check for changes without updating the Product
                             before_dict = {
                                 key: getattr(product, key)
                                 for key in fields_to_check
@@ -1446,7 +1444,6 @@ def generate_report_async(self):
                                 report.set_changes(before_dict, after_dict)
                                 reports.append(report)
                         else:
-                            # Report new product without creating it
                             logger.info(
                                 f"New product detected: {item_id} - {mapped_item.get('title')}"
                             )
@@ -1454,11 +1451,10 @@ def generate_report_async(self):
                                 item_id=item_id,
                                 product_name=mapped_item.get("title"),
                                 operation="new_product_detected",
-                                changes=mapped_item,  # Direct assignment
+                                changes=None,  # Set changes to None for new products
                             )
                             reports.append(report)
 
-                        # Update processed item count and calculate progress
                         processed_items += 1
                         progress = int(processed_items / total_products * 100)
                         self.update_state(state="PROGRESS", meta={"progress": progress})
@@ -1482,7 +1478,7 @@ def generate_report_async(self):
                 item_id=item_id,
                 product_name=product.title,
                 operation="potential_deletion",
-                changes={"status": "Item no longer available in API results"},
+                changes=None,  # Set changes to None for deleted products
             )
             reports.append(report)
             logger.info(f"Potential deletion detected: {item_id} - {product.title}")
