@@ -46,7 +46,7 @@
             <button class="btn btn-secondary" id="cancelReport">Cancel Report</button>
         </div>
         <h1 class="col-md-12">
-            <span><strong>Report Progress:</strong></span> <span id="progressText">0%</span>
+            <span><strong id="progressTitle">Report Progress:</strong></span> <span id="progressText">0%</span>
         </h1>
     </div>
 
@@ -167,6 +167,11 @@ function generateReport() {
     showAlert('Generating report...', 'info');
     const progressText = document.getElementById('progressText');
     const progressContainer = document.getElementById('progressContainer');
+    const progressTitle = document.getElementById('progressTitle');
+    
+    const now = new Date();
+    const formattedDateTime = now.toLocaleString();
+    progressTitle.textContent = `Report Progress for ${formattedDateTime}:`;
     
     progressContainer.style.display = 'block';
     progressText.textContent = '0%';

@@ -196,62 +196,68 @@
 }
 
 .features {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    gap: 2rem;
-}
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1rem;
+        }
 
-.feature-item {
-    flex-basis: calc(25% - 2rem);
-    min-width: 250px;
-    background-color: rgba(255, 255, 255, 0.1);
-    padding: 2rem;
-    border-radius: 10px;
-    transition: transform 0.3s ease;
-}
+        .feature-item {
+            flex: 1 1 calc(33.333% - 1rem);
+            min-width: 300px;
+            max-width: calc(33.333% - 1rem);
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 2rem;
+            border-radius: 10px;
+            transition: transform 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
 
-.feature-item:hover {
-    transform: translateY(-10px);
-}
+        .feature-item:hover {
+            transform: translateY(-10px);
+        }
 
-.icon-container {
-    background-color: white;
-    color: #0056b3;
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin: 0 auto 1.5rem;
-}
+        .icon-container {
+            background-color: white;
+            color: #0056b3;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0 auto 1.5rem;
+        }
 
-.feature-item i {
-    font-size: 2.5rem;
-}
+        .feature-item i {
+            font-size: 2.5rem;
+        }
 
-.feature-item h3 {
-    font-size: 1.5rem;
-    margin-bottom: 1rem;
-}
+        .feature-item h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
 
-.feature-item p {
-    font-size: 1rem;
-    line-height: 1.5;
-}
+        .feature-item p {
+            font-size: 1rem;
+            line-height: 1.5;
+            flex-grow: 1;
+        }
 
-@media (max-width: 1200px) {
-    .feature-item {
-        flex-basis: calc(50% - 2rem);
-    }
-}
+        @media (max-width: 992px) {
+            .feature-item {
+                flex: 1 1 calc(50% - 1rem);
+                max-width: calc(50% - 1rem);
+            }
+        }
 
-@media (max-width: 768px) {
-    .feature-item {
-        flex-basis: 100%;
-    }
-}
+        @media (max-width: 768px) {
+            .feature-item {
+                flex: 1 1 100%;
+                max-width: 100%;
+            }
+        }
 .brands {
     background-color: #f0f0f0;
     padding: 4rem 0;
@@ -455,7 +461,7 @@
             <div class="user-actions">
                <div class="cart-icon">
                   <a href="/cart/" class="nav-link"> <i class="fas fa-shopping-cart"></i></a>
-                   <span class="cart-count">{{cart_count}}</span>
+                   <span class="cart-count">0</span>
                </div>
            </div>
          <!-- </div> -->
@@ -468,7 +474,8 @@
             </video>
          </div>
          <div class="hero-content">
-            <h1>Discover the best auto literature for your collection.</h1>
+            <h1>Welcome to PJ's Auto Literature</h1>
+            <h3>Discover the best auto literature for your collection</h3>
             <div class="search-container">
                <input type="text" id="search-input" placeholder="Search for auto literature...">
                 <button class="search-button" onclick="search()">Search</button>
@@ -487,8 +494,7 @@
       </div> -->
       <section class="about-us" id="about-us">
          <div class="container">
-             <h2>How PJ's Auto Literature Works</h2>
-             <p class="subtitle">PJ's Auto Literature makes it easy for collectors and enthusiasts to find and get the auto literature they're seeking.</p>
+             <h2>About Us</h2>
              
              <div class="features">
                  <div class="feature-item">
@@ -496,28 +502,29 @@
                          <i class="fas fa-book"></i>
                      </div>
                      <h3>Vast Collection</h3>
-                     <p>Access our inventory of over 35,000 items in stock and ready to ship.</p>
+                     <p><b>PJ's Auto Literature</b> has over 100,000 items in stock and ready to ship. If you do not see the item you are looking for on the website email us at pjsautolit@aol.com to inquire if we have it in stock, and if we don't have it, we have sources that may be able to fill your specific needs.</p>
                  </div>
-                 <div class="feature-item">
+                 <!-- <div class="feature-item">
                      <div class="icon-container">
                          <i class="fas fa-search"></i>
                      </div>
                      <h3>Find Rare Items</h3>
                      <p>Can't find what you need? Email us, and we'll help locate it through our extensive network.</p>
                  </div>
+                 -->
                  <div class="feature-item">
                      <div class="icon-container">
                          <i class="fas fa-shield-alt"></i>
                      </div>
                      <h3>Trusted Source</h3>
-                     <p>Over 35 years of experience with 99.9% positive feedback on eBay from 136K+ sales.</p>
+                     <p><b>PJ's Auto Literature</b> has been buying, selling and trading automotive sales brochures since 1988. Our eBay store has 99.9% positive feedback with over 136K of total sales.</p>
                  </div>
                  <div class="feature-item">
                      <div class="icon-container">
                          <i class="fas fa-shipping-fast"></i>
                      </div>
-                     <h3>Fast Shipping</h3>
-                     <p>Quick delivery on all purchased literature to get you started on your project.</p>
+                     <h3>History</h3>
+                     <p>Between 1988 and the present time we have added owner's manuals, shop manuals, magazine ads, and color charts. Our inventory includes literature for: cars, trucks, motorcycles, tractors and other motorized vehicles. E-mail your specific requests and we will reply within 48 hours.</p>
                  </div>
              </div>
          </div>
