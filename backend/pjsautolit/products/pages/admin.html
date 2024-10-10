@@ -188,56 +188,63 @@
 
 function fetchChangelog() {
     fetch('/fetch-changelog/', {
-        method: 'GET',  
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-        },
-    })
-    .then(response => response.json())
-    .then(result => {
-        console.log('Received data:', result);
-        if (result.error) {
-            throw new Error(result.error);
-        }
-        const tbody = document.getElementById('changelogBody');
-        tbody.innerHTML = '';
-        if (result.data.length === 0) {
-            showAlert('No changelog entries found', 'info');
-        } else {
-            result.data.forEach(log => {
-                console.log('Processing log:', log);
-                const row = tbody.insertRow();
-                row.insertCell(0).textContent = log.item_id;
-                row.insertCell(1).textContent = log.product_name;
-                row.insertCell(2).textContent = log.operation;
-                row.insertCell(3).textContent = new Date(log.date).toLocaleString();
-                
-                const changesCell = row.insertCell(4);
-                changesCell.className = 'changes-cell';
-                console.log('Changes for this log:', log.changes);
-                changesCell.innerHTML = formatChanges(log.changes);
-            });
-            showAlert(`Changelog fetched successfully for ${result.date}`, 'success');
-            updateLastRunTitle(result.date);
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showAlert(`An error occurred while fetching the changelog: ${error.message}`, 'danger');
-    });
+            method: 'GET',  
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+        })
+        .then(response => response.json())
+        .then(result => {
+            console.log('Received data:', result);
+            if (result.error) {
+                throw new Error(result.error);
+            }
+            const tbody = document.getElementById('changelogBody');
+            tbody.innerHTML = '';
+            if (result.data.length === 0) {
+                showAlert('No changelog entries found', 'info');
+            } else {
+                result.data.forEach(log => {
+                    console.log('Processing log:', log);
+                    const row = tbody.insertRow();
+                    row.insertCell(0).textContent = log.item_id;
+                    row.insertCell(1).textContent = log.product_name;
+                    row.insertCell(2).textContent = log.operation;
+                    row.insertCell(3).textContent = new Date(log.date).toLocaleString();
+                    
+                    const changesCell = row.insertCell(4);
+                    changesCell.className = 'changes-cell';
+                    console.log('Changes for this log:', log.changes);
+                    changesCell.innerHTML = formatChanges(log.changes, log.operation);
+                });
+                showAlert(`Changelog fetched successfully for ${result.date}`, 'success');
+                updateLastRunTitle(result.date);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert(`An error occurred while fetching the changelog: ${error.message}`, 'danger');
+        });
 }
 
-function formatChanges(changes) {
-    if (!changes || Object.keys(changes).length === 0) {
-        return 'No changes';
+function formatChanges(changes, operation) {
+        if (operation === "Deleted on Ebay") {
+            return "Deleted corresponding product page";
+        } else if (operation === "Added on Ebay") {
+            return "Added corresponding product page";
+        }
+
+        if (!changes || Object.keys(changes).length === 0) {
+            return 'No changes';
+        }
+        let formattedChanges = '<ul>';
+        let sstr = "Updated corresponding product:</ul>";
+        for (const [key, value] of Object.entries(changes)) {
+            formattedChanges += `<li><strong>${key}:</strong> ${value.before} → ${value.after}</li>`;
+        }
+        formattedChanges += '</ul>';
+        return sstr+formattedChanges;
     }
-    let formattedChanges = '<ul>';
-    for (const [key, value] of Object.entries(changes)) {
-        formattedChanges += `<li><strong>${key}:</strong> ${value.before} → ${value.after}</li>`;
-    }
-    formattedChanges += '</ul>';
-    return formattedChanges;
-}
 
 function updateLastRunTitle(date) {
     const title = document.getElementById('lastRunTitle');

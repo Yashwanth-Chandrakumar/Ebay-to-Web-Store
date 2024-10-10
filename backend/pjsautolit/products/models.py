@@ -93,9 +93,9 @@ from django.db import models
 
 class ProductChangeLog(models.Model):
     OPERATIONS = (
-        ("created", "Created"),
-        ("updated", "Updated"),
-        ("deleted", "Deleted"),
+        ("created", "Added on Ebay"),
+        ("updated", "Changed on Ebay"),
+        ("deleted", "Deleted on Ebay"),
     )
     item_id = models.CharField(max_length=100)
     product_name = models.CharField(max_length=255)
