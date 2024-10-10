@@ -33,6 +33,9 @@
         </div>
     </div>
 
+    <!-- Add this new element for last update time -->
+    <div id="lastUpdateTime" class="mb-3"></div>
+
     <div id="progressContainer" class="row mb-3">
         <div class="col-md-3">
             <button class="btn btn-secondary" id="cancelUpdate">Cancel Update</button>
@@ -68,7 +71,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-   document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function() {
     let updateInProgress = false;
     let updateTaskId = null;
 
@@ -183,11 +186,8 @@
         }
     });
 
-    fetchChangelog();
-});
-
-function fetchChangelog() {
-    fetch('/fetch-changelog/', {
+    function fetchChangelog() {
+        fetch('/fetch-changelog/', {
             method: 'GET',  
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
@@ -225,9 +225,9 @@ function fetchChangelog() {
             console.error('Error:', error);
             showAlert(`An error occurred while fetching the changelog: ${error.message}`, 'danger');
         });
-}
+    }
 
-function formatChanges(changes, operation) {
+    function formatChanges(changes, operation) {
         if (operation === "Deleted on Ebay") {
             return "Deleted corresponding product page";
         } else if (operation === "Added on Ebay") {
@@ -238,18 +238,28 @@ function formatChanges(changes, operation) {
             return 'No changes';
         }
         let formattedChanges = '<ul>';
-        let sstr = "Updated corresponding product:</ul>";
+        let sstr = "Updated corresponding product:";
         for (const [key, value] of Object.entries(changes)) {
             formattedChanges += `<li><strong>${key}:</strong> ${value.before} → ${value.after}</li>`;
         }
         formattedChanges += '</ul>';
-        return sstr+formattedChanges;
+        return sstr + formattedChanges;
     }
 
-function updateLastRunTitle(date) {
-    const title = document.getElementById('lastRunTitle');
-    title.textContent = `Changes Report for ${new Date(date).toLocaleString()}`;
-}
+    function updateLastRunTitle(date) {
+        const title = document.getElementById('lastRunTitle');
+        title.textContent = `Last updated on ${new Date(date).toLocaleString()}`;
+    }
+
+    // // Add this new function to update the last update time
+    // function updateLastUpdateTime(date) {
+    //     const lastUpdateElement = document.getElementById('lastUpdateTime');
+    //     const lastUpdateDate = new Date(date);
+    //     lastUpdateElement.textContent = `Last updated on ${lastUpdateDate.toLocaleDateString()} ${lastUpdateDate.toLocaleTimeString()}`;
+    // }
+
+    fetchChangelog();
+});
 </script>
 
 </body>
