@@ -94,39 +94,16 @@
     justify-content: center;
     color: white;
     text-align: center;
+}
+
+.video-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
     overflow: hidden;
-}
-
-.image-carousel {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
     z-index: -1;
-}
-
-.carousel-container {
-    position: relative;
-    width: 100%;
-    height: 100%;
-}
-
-.carousel-image {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    opacity: 0;
-    transition: opacity 1s ease-in-out;
-    filter: contrast(1.5) brightness(0.5); /* Increases contrast and darkens the image */
-}
-
-
-.carousel-image.active {
-    opacity: 1;
 }
 
 .hero-content {
@@ -138,15 +115,10 @@
 
 .hero h1 {
     font-size: 4rem;
-    font-weight: 900;
-    margin-bottom: 1rem;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-}
-
-.hero h3 {
-    font-size: 2rem;
+    font-weight: bold;
     margin-bottom: 2rem;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    font-weight: 900;
 }
 
 .search-container {
@@ -187,16 +159,12 @@
         font-size: 3rem;
     }
 
-    .hero h3 {
-        font-size: 1.5rem;
-    }
-
     .search-container {
         flex-direction: column;
         align-items: center;
     }
 
-    #search-input, .search-button {
+    .search-input, .search-button {
         width: 100%;
         max-width: 300px;
     }
@@ -499,23 +467,26 @@
          <!-- </div> -->
       </nav>
       <header class="hero">
-        <div class="image-carousel">
-            <div class="carousel-container">
-                <img src="https://i.ibb.co/rcC29GQ/truck-24.png"  class="carousel-image">
-                <img src="https://i.ibb.co/yBcKJhH/s-l1600.webp"  class="carousel-image">
-                <img src="https://i.ibb.co/pvs0CrV/Full-Booth-Setup-Pic.jpg"  class="carousel-image">
-                <!-- <img src="https://i.ibb.co/wLPMGx1/collage.gif" class="carousel-image"> -->
-            </div>
-        </div>
-        <div class="hero-content">
+         <div class="video-container">
+            <video autoplay muted loop playsinline class="hero-video">
+               <source src="https://videos.pexels.com/video-files/20156193/20156193-uhd_2730_1440_24fps.mp4" type="video/mp4">
+               Your browser does not support the video tag.
+            </video>
+         </div>
+         <div class="hero-content">
             <h1>Welcome to PJ's Auto Literature</h1>
             <h3>Discover the best auto literature for your collection</h3>
             <div class="search-container">
-                <input type="text" id="search-input" placeholder="Search for auto literature...">
+               <input type="text" id="search-input" placeholder="Search for auto literature...">
                 <button class="search-button" onclick="search()">Search</button>
             </div>
         </div>
-    </header>
+         <!-- <div class="hero-content">
+            <h1>Welcome to PJ's Auto Literature</h1>
+            <p>Discover the best auto literature for your collection</p>
+            <a href="/product" class="btn">Products</a>
+         </div> -->
+      </header>
       <!-- <div class="container">
          <div class="search-container">
             <input type="text" id="search-input" placeholder="Search for auto literature...">
@@ -806,38 +777,6 @@
       </script>
       <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
       <script>
-        document.addEventListener('DOMContentLoaded', function() {
-    const images = document.querySelectorAll('.carousel-image');
-    let currentIndex = 0;
-
-    function showNextImage() {
-        images[currentIndex].classList.remove('active');
-        currentIndex = (currentIndex + 1) % images.length;
-        images[currentIndex].classList.add('active');
-    }
-
-    // Show the first image initially
-    images[currentIndex].classList.add('active');
-
-    // Change image every 5 seconds
-    setInterval(showNextImage, 10000);
-
-    // Scroll trigger effect
-    let lastScrollTop = 0;
-    window.addEventListener('scroll', function() {
-        let scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-        if (scrollTop > lastScrollTop) {
-            // Scrolling down
-            showNextImage();
-        } else {
-            // Scrolling up
-            images[currentIndex].classList.remove('active');
-            currentIndex = (currentIndex - 1 + images.length) % images.length;
-            images[currentIndex].classList.add('active');
-        }
-        lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
-    }, false);
-});
          // Handle search input and navigate to the product list page
          $('#search-input').on('keydown', function (e) {
              if (e.key === 'Enter') {

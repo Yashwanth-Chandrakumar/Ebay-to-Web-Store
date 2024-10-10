@@ -56,4 +56,8 @@ urlpatterns = [
     path(
         "report_progress/<str:task_id>/", views.report_progress, name="report_progress"
     ),
+    path(
+        "update_progress/<str:task_id>/", views.update_progress, name="update_progress"
+    ),
+    path("cancel-update/", views.cancel_update, name="cancel_update"),
 ]

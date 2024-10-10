@@ -1045,170 +1045,261 @@ def process_price_range(
     updated_item_ids_queue.put(local_updated_item_ids)
 
 
+import json
+import time
+
+from celery import shared_task
+from celery.exceptions import Ignore
+from django.http import JsonResponse, StreamingHttpResponse
 from django.utils import timezone
-from django.views.decorators.http import require_GET
+
+from .models import FetchStatus, Product, ProductChangeLog
 
 
-@shared_task
-def run_daily_update_async():
+@shared_task(bind=True)
+def run_daily_update_async(self):
     print("Starting daily update...")
-    fetch_status, created = FetchStatus.objects.get_or_create(fetch_type="daily")
+    self.update_state(state="PROGRESS", meta={"progress": 0})
 
-    existing_item_ids = set(Product.objects.values_list("item_id", flat=True))
-    updated_item_ids = set()
-
-    price_ranges = []
-    min_price = 1.00
-    max_price = 10.00
-    price_increment = 10.00
-
-    while min_price <= 4000.00:
-        price_ranges.append((min_price, max_price))
-        min_price = max_price + 0.01
-        max_price += price_increment
-
-    fields_to_check = [
-        "item_id",
-        "title",
-        "global_id",
-        "category_id",
-        "category_name",
-        "gallery_url",
-        "view_item_url",
-        "auto_pay",
-        "postal_code",
-        "location",
-        "country",
-        "shipping_type",
-        "ship_to_locations",
-    ]
-
-    field_mapping = {
-        "description": "short_description",
-        # Add any other mismatched field names here
-    }
+    def is_aborted():
+        return (
+            self.request.called_directly
+            or self.request.id is None
+            or self.AsyncResult(self.request.id).state == "REVOKED"
+        )
 
     try:
-        for min_price, max_price in price_ranges:
-            print(f"Processing price range: ${min_price:.2f} - ${max_price:.2f}")
-            current_page = 1
-            total_pages = 1
+        fetch_status, created = FetchStatus.objects.get_or_create(fetch_type="daily")
 
-            while current_page <= total_pages:
-                try:
-                    items, total_pages = fetch_finding_api_data(
-                        page_number=current_page,
-                        min_price=min_price,
-                        max_price=max_price,
-                    )
-                    print(
-                        f"Fetched page {current_page} of {total_pages} for price range ${min_price:.2f} - ${max_price:.2f}"
-                    )
+        # Get the total number of existing products
+        total_products = Product.objects.count()
+        processed_products = 0
 
-                    for item in items:
-                        item_id = item["item_id"]
-                        updated_item_ids.add(item_id)
+        existing_item_ids = set(Product.objects.values_list("item_id", flat=True))
+        updated_item_ids = set()
 
-                        # Apply field mapping
-                        mapped_item = {
-                            field_mapping.get(k, k): v for k, v in item.items()
-                        }
+        price_ranges = []
+        min_price = 1.00
+        max_price = 10.00
+        price_increment = 10.00
 
-                        try:
-                            product = Product.objects.get(item_id=item_id)
-                            before_dict = {
-                                key: getattr(product, key)
-                                for key in fields_to_check
-                                if hasattr(product, key)
+        while min_price <= 4000.00:
+            price_ranges.append((min_price, max_price))
+            min_price = max_price + 0.01
+            max_price += price_increment
+
+        fields_to_check = [
+            "item_id",
+            "title",
+            "global_id",
+            "category_id",
+            "category_name",
+            "gallery_url",
+            "view_item_url",
+            "auto_pay",
+            "postal_code",
+            "location",
+            "country",
+            "shipping_type",
+            "ship_to_locations",
+        ]
+
+        field_mapping = {
+            "description": "short_description",
+            # Add any other mismatched field names here
+        }
+
+        try:
+            for min_price, max_price in price_ranges:
+                if is_aborted():
+                    print("Task aborted.")
+                    raise Ignore()
+
+                print(f"Processing price range: ${min_price:.2f} - ${max_price:.2f}")
+                current_page = 1
+                total_pages = 1
+
+                while current_page <= total_pages:
+                    if is_aborted():
+                        print("Task aborted.")
+                        raise Ignore()
+
+                    try:
+                        items, total_pages = fetch_finding_api_data(
+                            page_number=current_page,
+                            min_price=min_price,
+                            max_price=max_price,
+                        )
+                        print(
+                            f"Fetched page {current_page} of {total_pages} for price range ${min_price:.2f} - ${max_price:.2f}"
+                        )
+
+                        for item in items:
+                            item_id = item["item_id"]
+                            updated_item_ids.add(item_id)
+
+                            mapped_item = {
+                                field_mapping.get(k, k): v for k, v in item.items()
                             }
-                            after_dict = {
-                                key: value
-                                for key, value in mapped_item.items()
-                                if key in fields_to_check and hasattr(product, key)
-                            }
 
-                            changes = {
-                                key: value
-                                for key, value in after_dict.items()
-                                if before_dict.get(key) != value
-                            }
+                            try:
+                                product = Product.objects.get(item_id=item_id)
+                                before_dict = {
+                                    key: getattr(product, key)
+                                    for key in fields_to_check
+                                    if hasattr(product, key)
+                                }
+                                after_dict = {
+                                    key: value
+                                    for key, value in mapped_item.items()
+                                    if key in fields_to_check and hasattr(product, key)
+                                }
 
-                            if changes:
-                                for key, value in changes.items():
-                                    setattr(product, key, value)
-                                product.save()
-                                print(f"Updated product: {item_id} - {product.title}")
-                                print(f"Changes: {changes}")
+                                changes = {
+                                    key: value
+                                    for key, value in after_dict.items()
+                                    if before_dict.get(key) != value
+                                }
 
-                                change_log = ProductChangeLog.objects.create(
-                                    item_id=item_id,
-                                    product_name=product.title,
-                                    operation="updated",
+                                if changes:
+                                    for key, value in changes.items():
+                                        setattr(product, key, value)
+                                    product.save()
+                                    print(
+                                        f"Updated product: {item_id} - {product.title}"
+                                    )
+                                    print(f"Changes: {changes}")
+
+                                    change_log = ProductChangeLog.objects.create(
+                                        item_id=item_id,
+                                        product_name=product.title,
+                                        operation="updated",
+                                    )
+                                    change_log.set_changes(before_dict, after_dict)
+                                    change_log.save()
+                            except Product.DoesNotExist:
+                                browse_data = fetch_browse_api_data(item_id)
+                                mapped_browse_data = {
+                                    field_mapping.get(k, k): v
+                                    for k, v in browse_data.items()
+                                }
+                                combined_data = {**mapped_item, **mapped_browse_data}
+                                save_product_data(combined_data)
+                                print(
+                                    f"Created new product: {item_id} - {combined_data.get('title', 'Unknown Title')}"
                                 )
-                                change_log.set_changes(before_dict, after_dict)
-                                change_log.save()
-                        except Product.DoesNotExist:
-                            browse_data = fetch_browse_api_data(item_id)
-                            mapped_browse_data = {
-                                field_mapping.get(k, k): v
-                                for k, v in browse_data.items()
-                            }
-                            combined_data = {**mapped_item, **mapped_browse_data}
-                            save_product_data(combined_data)
-                            print(
-                                f"Created new product: {item_id} - {combined_data.get('title', 'Unknown Title')}"
+
+                                ProductChangeLog.objects.create(
+                                    item_id=item_id,
+                                    product_name=combined_data.get(
+                                        "title", "Unknown Title"
+                                    ),
+                                    operation="created",
+                                )
+
+                            processed_products += 1
+                            progress = int((processed_products / total_products) * 100)
+                            self.update_state(
+                                state="PROGRESS", meta={"progress": progress}
                             )
 
-                            ProductChangeLog.objects.create(
-                                item_id=item_id,
-                                product_name=combined_data.get(
-                                    "title", "Unknown Title"
-                                ),
-                                operation="created",
-                            )
+                        current_page += 1
 
-                    current_page += 1
+                    except Exception as e:
+                        print(
+                            f"Error fetching data for page {current_page}, price range ${min_price:.2f} - ${max_price:.2f}: {e}"
+                        )
 
-                except Exception as e:
-                    print(
-                        f"Error fetching data for page {current_page}, price range ${min_price:.2f} - ${max_price:.2f}: {e}"
+        except Exception as e:
+            print(f"Error during daily update: {e}")
+            return {"status": "error", "message": str(e)}
+
+        # Deletion process
+        items_to_delete = existing_item_ids - updated_item_ids
+        for item_id in items_to_delete:
+            if is_aborted():
+                print("Task aborted.")
+                raise Ignore()
+
+            listing_status = get_ebay_listing_status(item_id)
+            if listing_status != "Active":
+                try:
+                    product = Product.objects.get(item_id=item_id)
+                    product_name = product.title
+                    product.delete()
+                    print(f"Deleted inactive product: {item_id} - {product_name}")
+                    ProductChangeLog.objects.create(
+                        item_id=item_id, product_name=product_name, operation="deleted"
                     )
+                except Product.DoesNotExist:
+                    print(f"Product {item_id} not found in database, skipping deletion")
 
+            processed_products += 1
+            progress = int((processed_products / total_products) * 100)
+            self.update_state(state="PROGRESS", meta={"progress": progress})
+
+        fetch_status.last_run = timezone.now()
+        fetch_status.save()
+
+        print("Daily update completed.")
+        return {"status": "completed", "progress": 100}
     except Exception as e:
         print(f"Error during daily update: {e}")
-
-    # Deletion process
-    items_to_delete = existing_item_ids - updated_item_ids
-    for item_id in items_to_delete:
-        listing_status = get_ebay_listing_status(item_id)
-        if listing_status != "Active":
-            try:
-                product = Product.objects.get(item_id=item_id)
-                product_name = product.title
-                product.delete()
-                print(f"Deleted inactive product: {item_id} - {product_name}")
-                ProductChangeLog.objects.create(
-                    item_id=item_id, product_name=product_name, operation="deleted"
-                )
-            except Product.DoesNotExist:
-                print(f"Product {item_id} not found in database, skipping deletion")
-
-    fetch_status.last_run = timezone.now()
-    fetch_status.save()
-    generate_html_pages_async.delay()
-
-    print("Daily update completed.")
+        return {"status": "error", "message": str(e)}
 
 
-@require_GET
 def run_daily_update(request):
     try:
-        run_daily_update_async.delay()
+        task = run_daily_update_async.delay()
         return JsonResponse(
-            {"status": "success", "message": "Daily update task has been scheduled"}
+            {
+                "status": "success",
+                "task_id": task.id,
+                "message": "Daily update task has been scheduled",
+            }
         )
     except Exception as e:
         return JsonResponse({"status": "error", "message": str(e)})
+
+
+def update_progress(request, task_id):
+    def event_stream():
+        task = run_daily_update_async.AsyncResult(task_id)
+        previous_progress = None
+
+        while not task.ready():
+            current_state = task.info
+            if isinstance(current_state, dict):
+                progress = current_state.get("progress", 0)
+                if progress != previous_progress:
+                    yield f"data: {json.dumps({'progress': progress, 'status': 'in_progress'})}\n\n"
+                    previous_progress = progress
+            else:
+                yield f"data: {json.dumps({'progress': 0, 'status': 'pending'})}\n\n"
+            time.sleep(1)  # Send an update every second
+
+        final_state = task.result
+        if isinstance(final_state, dict):
+            yield f"data: {json.dumps({'progress': 100, 'status': final_state.get('status', 'completed')})}\n\n"
+        else:
+            yield f"data: {json.dumps({'progress': 100, 'status': 'completed'})}\n\n"
+
+    return StreamingHttpResponse(event_stream(), content_type="text/event-stream")
+
+
+from celery.result import AsyncResult
+
+
+def cancel_update(request):
+    task_id = request.GET.get("task_id")
+    if task_id:
+        task = AsyncResult(task_id)
+        task.revoke(terminate=True)
+        return JsonResponse(
+            {"success": True, "message": "Update task has been canceled"}
+        )
+    else:
+        return JsonResponse({"success": False, "error": "No task ID provided"})
 
 
 # Add any other view functions here

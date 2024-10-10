@@ -19,6 +19,7 @@
         @keyframes flash {
             50% { opacity: 0; }
         }
+        #progressContainer { display: none; }
     </style>
 </head>
 <body>
@@ -30,6 +31,15 @@
         <div class="col">
             <button class="btn btn-warning btn-action" id="update-listings">Update Listings</button>
         </div>
+    </div>
+
+    <div id="progressContainer" class="row mb-3">
+        <div class="col-md-3">
+            <button class="btn btn-secondary" id="cancelUpdate">Cancel Update</button>
+        </div>
+        <h1 class="col-md-12">
+            <span><strong id="progressTitle">Update Progress:</strong></span> <span id="progressText">0%</span>
+        </h1>
     </div>
 
     <div id="loaderContainer">
@@ -58,6 +68,10 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+   document.addEventListener('DOMContentLoaded', function() {
+    let updateInProgress = false;
+    let updateTaskId = null;
+
     function showAlert(message, type) {
         const alert = document.getElementById('alert');
         alert.className = `alert alert-${type}`;
@@ -66,137 +80,37 @@
         setTimeout(() => alert.style.display = 'none', 5000);
     }
 
-    function fetchChangelog() {
-        fetch('/fetch-changelog/', {
-            method: 'GET',  
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-            },
-        })
-        .then(response => response.json())
-        .then(result => {
-            console.log('Received data:', result);
-            if (result.error) {
-                throw new Error(result.error);
-            }
-            const tbody = document.getElementById('changelogBody');
-            tbody.innerHTML = '';
-            if (result.data.length === 0) {
-                showAlert('No changelog entries found', 'info');
-            } else {
-                result.data.forEach(log => {
-                    console.log('Processing log:', log);
-                    const row = tbody.insertRow();
-                    row.insertCell(0).textContent = log.item_id;
-                    row.insertCell(1).textContent = log.product_name;
-                    row.insertCell(2).textContent = log.operation;
-                    row.insertCell(3).textContent = new Date(log.date).toLocaleString();
-                    
-                    const changesCell = row.insertCell(4);
-                    changesCell.className = 'changes-cell';
-                    console.log('Changes for this log:', log.changes);
-                    changesCell.innerHTML = formatChanges(log.changes);
-                });
-                showAlert(`Changelog fetched successfully for ${result.date}`, 'success');
-                updateLastRunTitle(result.date);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showAlert(`An error occurred while fetching the changelog: ${error.message}`, 'danger');
-        });
-    }
-    function formatChanges(changes) {
-        if (!changes || Object.keys(changes).length === 0) {
-            return 'No changes';
-        }
-        let formattedChanges = '<ul>';
-        for (const [key, value] of Object.entries(changes)) {
-            formattedChanges += `<li><strong>${key}:</strong> ${value.before} → ${value.after}</li>`;
-        }
-        formattedChanges += '</ul>';
-        return formattedChanges;
-    }
-
-    function updateLastRunTitle(date) {
-        const title = document.getElementById('lastRunTitle');
-        title.textContent = `Changes Report for ${new Date(date).toLocaleString()}`;
-    }
-
     function updateProgressBar(percentage) {
-        const progressBar = document.getElementById('generateReportProgressBar');
-        const progressContainer = document.getElementById('generateReportProgress');
+        const progressText = document.getElementById('progressText');
+        const progressContainer = document.getElementById('progressContainer');
         const updatingListings = document.getElementById('updatingListings');
         
-        progressBar.style.width = `${percentage}%`;
-        progressBar.innerText = `${Math.floor(percentage)}%`;
+        progressText.textContent = `${Math.floor(percentage)}%`;
         
-        if (percentage > 0 && percentage < 100) {
-            progressContainer.style.display = 'block';
-            updatingListings.style.display = 'block';
-            document.getElementById('changelogTable').style.display = 'none';
-            document.getElementById('lastRunTitle').style.display = 'none';
-        } else {
-            progressContainer.style.display = 'none';
-            updatingListings.style.display = 'none';
-            document.getElementById('changelogTable').style.display = 'table';
-            document.getElementById('lastRunTitle').style.display = 'block';
-        }
+        progressContainer.style.display = 'block';
+        updatingListings.style.display = 'block';
+        document.getElementById('changelogTable').style.display = 'none';
+        document.getElementById('lastRunTitle').style.display = 'none';
     }
 
-    function saveProgress(timeElapsed, totalDuration) {
-        localStorage.setItem('reportProgress', JSON.stringify({
-            timeElapsed: timeElapsed,
-            totalDuration: totalDuration,
-            timestamp: Date.now()
-        }));
-    }
-
-    function loadProgress() {
-        const savedProgress = JSON.parse(localStorage.getItem('reportProgress'));
-        if (savedProgress) {
-            const elapsedSinceLastSave = (Date.now() - savedProgress.timestamp) / 1000;
-            const updatedTimeElapsed = Math.min(savedProgress.timeElapsed + elapsedSinceLastSave, savedProgress.totalDuration);
-            return {
-                timeElapsed: updatedTimeElapsed,
-                totalDuration: savedProgress.totalDuration
-            };
-        }
-        return null;
-    }
-
-    function clearProgress() {
-        localStorage.removeItem('reportProgress');
-    }
-
-    function startOrResumeProgress() {
-        const totalDuration = 40 * 60; // 40 minutes in seconds
-        const interval = 1000; // Update every second (1000 ms)
-        let progress = loadProgress();
-        let timeElapsed = progress ? progress.timeElapsed : 0;
-
-        function updateProgress() {
-            const percentage = (timeElapsed / totalDuration) * 100;
-            updateProgressBar(percentage);
-            saveProgress(timeElapsed, totalDuration);
-
-            if (timeElapsed >= totalDuration) {
-                clearProgress();
-                showAlert('Listings updated successfully', 'success');
-                fetchChangelog();
-            } else {
-                timeElapsed += 1;
-                setTimeout(updateProgress, interval);
-            }
+    function startUpdate() {
+        if (updateInProgress) {
+            showAlert('An update is already in progress', 'warning');
+            return;
         }
 
-        updateProgress();
-    }
-
-    document.getElementById('update-listings').addEventListener('click', function() {
         if (confirm('Are you sure you want to update listings?')) {
-            clearProgress();
-            startOrResumeProgress();
+            updateInProgress = true;
+            const progressText = document.getElementById('progressText');
+            const progressContainer = document.getElementById('progressContainer');
+            const progressTitle = document.getElementById('progressTitle');
+            
+            const now = new Date();
+            const formattedDateTime = now.toLocaleString();
+            progressTitle.textContent = `Update Progress for ${formattedDateTime}:`;
+            
+            progressContainer.style.display = 'block';
+            progressText.textContent = '0%';
 
             fetch('/sync/', {
                 method: 'GET',
@@ -204,27 +118,131 @@
                     'X-Requested-With': 'XMLHttpRequest',
                 },
             })
-            .then(response => response.text())
+            .then(response => response.json())
             .then(data => {
-                // Optionally handle success state
+                if (data.task_id) {
+                    updateTaskId = data.task_id;
+                    const eventSource = new EventSource(`/update_progress/${updateTaskId}/`);
+                    eventSource.onmessage = function(event) {
+                        const data = JSON.parse(event.data);
+                        if (data.progress !== undefined) {
+                            updateProgressBar(data.progress);
+                        }
+                        if (data.status === 'completed' || data.status === 'aborted') {
+                            eventSource.close();
+                            showAlert(`Update ${data.status}`, 'success');
+                            updateInProgress = false;
+                            fetchChangelog();
+                            progressContainer.style.display = 'none';
+                        }
+                    };
+
+                    eventSource.onerror = function(error) {
+                        console.error('EventSource failed:', error);
+                        eventSource.close();
+                        showAlert('Error updating listings', 'danger');
+                        updateInProgress = false;
+                        progressContainer.style.display = 'none';
+                    };
+                } else {
+                    showAlert('Failed to start update', 'danger');
+                    updateInProgress = false;
+                    progressContainer.style.display = 'none';
+                }
             })
             .catch(error => {
                 console.error('Error:', error);
                 showAlert('An error occurred while updating listings', 'danger');
-                clearProgress();
-                updateProgressBar(0);
+                updateInProgress = false;
+                progressContainer.style.display = 'none';
             });
+        }
+    }
+
+    document.getElementById('update-listings').addEventListener('click', startUpdate);
+
+    document.getElementById('cancelUpdate').addEventListener('click', function() {
+        if (updateTaskId) {
+            fetch(`/cancel-update/?task_id=${updateTaskId}`, {
+                method: 'GET',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert(data.message, 'success');
+                    updateInProgress = false;
+                    document.getElementById('progressContainer').style.display = 'none';
+                } else {
+                    showAlert(data.error || 'Failed to cancel update', 'danger');
+                }
+            })
+            .catch(error => showAlert('Error canceling update', 'danger'));
+        } else {
+            showAlert('No update in progress', 'warning');
         }
     });
 
-    document.addEventListener('DOMContentLoaded', function() {
-        const progress = loadProgress();
-        if (progress) {
-            startOrResumeProgress();
-        } else {
-            fetchChangelog();
+    fetchChangelog();
+});
+
+function fetchChangelog() {
+    fetch('/fetch-changelog/', {
+        method: 'GET',  
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+        },
+    })
+    .then(response => response.json())
+    .then(result => {
+        console.log('Received data:', result);
+        if (result.error) {
+            throw new Error(result.error);
         }
+        const tbody = document.getElementById('changelogBody');
+        tbody.innerHTML = '';
+        if (result.data.length === 0) {
+            showAlert('No changelog entries found', 'info');
+        } else {
+            result.data.forEach(log => {
+                console.log('Processing log:', log);
+                const row = tbody.insertRow();
+                row.insertCell(0).textContent = log.item_id;
+                row.insertCell(1).textContent = log.product_name;
+                row.insertCell(2).textContent = log.operation;
+                row.insertCell(3).textContent = new Date(log.date).toLocaleString();
+                
+                const changesCell = row.insertCell(4);
+                changesCell.className = 'changes-cell';
+                console.log('Changes for this log:', log.changes);
+                changesCell.innerHTML = formatChanges(log.changes);
+            });
+            showAlert(`Changelog fetched successfully for ${result.date}`, 'success');
+            updateLastRunTitle(result.date);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert(`An error occurred while fetching the changelog: ${error.message}`, 'danger');
     });
+}
+
+function formatChanges(changes) {
+    if (!changes || Object.keys(changes).length === 0) {
+        return 'No changes';
+    }
+    let formattedChanges = '<ul>';
+    for (const [key, value] of Object.entries(changes)) {
+        formattedChanges += `<li><strong>${key}:</strong> ${value.before} → ${value.after}</li>`;
+    }
+    formattedChanges += '</ul>';
+    return formattedChanges;
+}
+
+function updateLastRunTitle(date) {
+    const title = document.getElementById('lastRunTitle');
+    title.textContent = `Changes Report for ${new Date(date).toLocaleString()}`;
+}
 </script>
 
 </body>
