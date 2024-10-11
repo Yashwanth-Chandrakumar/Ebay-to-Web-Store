@@ -60,7 +60,7 @@
                 <th>Product Name</th>
                 <th>Difference type</th>
                 <th>Date</th>
-                <th>Changes</th>
+                <th>Details</th>
             </tr>
         </thead>
         <tbody id="changelogBody">
@@ -95,13 +95,13 @@ function showAlert(message, type) {
 }
 
 function formatChanges(changes, operation) {
-    if (operation === "Potential Deletion" || operation === "new_product_detected") {
-        return 'No changes';
+    if (operation === "Added on Ebay" || operation === "Deleted on Ebay") {
+        return 'N/A';
     }
     
-    if (operation === "Changes Detected") {
+    if (operation === "Listing changed on Ebay") {
         if (!changes || Object.keys(changes).length === 0) {
-            return 'No changes';
+            return 'N/A';
         }
         let formattedChanges = '<ul>';
         for (const [key, value] of Object.entries(changes)) {
@@ -113,7 +113,7 @@ function formatChanges(changes, operation) {
         return formattedChanges;
     }
     
-    return 'No changes';
+    return 'N/A';
 }
 
 function fetchChangelog(date) {
