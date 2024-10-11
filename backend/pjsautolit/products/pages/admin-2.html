@@ -8,31 +8,37 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body { padding: 20px; }
-        .btn-action { margin-right: 10px; }
+        
         #alert { margin-top: 20px; }
+        ol { padding-left: 20px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1 class="mb-4">Database Operations</h1>
+    <h1 class="mb-4">Start From Scratch</h1>
 
-    <div class="row mb-3">
-        <div class="col">
+    <ol class="list-unstyled">
+        <li class="mb-3 d-flex  align-items-center">
+            <span class="fs-4 me-2">1.</span>
             <button class="btn btn-primary btn-action" id="fetch-items">Put eBay Listings in Database</button>
+        </li>
+        <li class="mb-3 d-flex align-items-center">
+            <span class="fs-4 me-2">2.</span>
             <button class="btn btn-success btn-action" id="generate-html">Generate Product Listings from Database</button>
-        </div>
-    </div>
+        </li>
+    </ol>
+    
 
     <div id="loaderContainer">
-        <div id="fetchItemsProgress" class="progress" style="margin-top: 20px;display:none">
+        <div id="fetchItemsProgress" class="progress" style="margin-top: 20px; display:none;">
             <div id="fetchItemsProgressBar" class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
         </div>
-        <div id="generateHtmlProgress" class="progress" style="margin-top: 20px;display:none">
+        <div id="generateHtmlProgress" class="progress" style="margin-top: 20px; display:none;">
             <div id="generateHtmlProgressBar" class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
         </div>
     </div>
-    
+
     <div id="alert" class="alert" style="display: none;" role="alert"></div>
 </div>
 
