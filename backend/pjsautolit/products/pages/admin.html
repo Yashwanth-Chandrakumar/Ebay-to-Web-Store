@@ -25,11 +25,11 @@
 <body>
 
 <div class="container">
-    <h1 class="mb-4">Admin Page</h1>
+    <h1 class="mb-4">Update Product Pages</h1>
 
     <div class="row mb-3">
         <div class="col">
-            <button class="btn btn-warning btn-action" id="update-listings">Update Listings</button>
+            <button class="btn btn-warning btn-action" id="update-listings">Do Update</button>
         </div>
     </div>
 
@@ -248,7 +248,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function updateLastRunTitle(date) {
         const title = document.getElementById('lastRunTitle');
-        title.textContent = `Last updated on ${new Date(date).toLocaleString()}`;
+        title.textContent = `Last update was on ${new Date(date).toLocaleString()}:`;
     }
 
     // // Add this new function to update the last update time
