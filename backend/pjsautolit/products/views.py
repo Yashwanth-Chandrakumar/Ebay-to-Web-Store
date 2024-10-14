@@ -135,7 +135,7 @@ def fetch_all_items(request):
 
         # Generate HTML pages after fetching all items
         try:
-            generate_html_pages()
+            generate_html_pages_async.delay()
         except Exception as e:
             print(f"Error generating HTML pages: {e}")
 
@@ -743,7 +743,7 @@ def initiate_html_generation(request):
         cache.set("html_generation_progress", {"progress": 0, "completed": False})
 
         # Start the generation process
-        generate_html_pages()
+        generate_html_pages_async.delay()
         return JsonResponse({"message": "HTML generation started."})
 
 
@@ -1050,6 +1050,7 @@ import time
 
 from celery import shared_task
 from celery.exceptions import Ignore
+from celery.result import AsyncResult
 from django.http import JsonResponse, StreamingHttpResponse
 from django.utils import timezone
 
@@ -1059,7 +1060,7 @@ from .models import FetchStatus, Product, ProductChangeLog
 @shared_task(bind=True)
 def run_daily_update_async(self):
     print("Starting daily update...")
-    self.update_state(state="PROGRESS", meta={"progress": 0})
+    self.update_state(state="PROGRESS", meta={"products_processed": 0})
 
     def is_aborted():
         return (
@@ -1071,9 +1072,7 @@ def run_daily_update_async(self):
     try:
         fetch_status, created = FetchStatus.objects.get_or_create(fetch_type="daily")
 
-        # Get the total number of existing products
-        total_products = Product.objects.count()
-        processed_products = 0
+        products_processed = 0
 
         existing_item_ids = set(Product.objects.values_list("item_id", flat=True))
         updated_item_ids = set()
@@ -1197,10 +1196,10 @@ def run_daily_update_async(self):
                                     operation="created",
                                 )
 
-                            processed_products += 1
-                            progress = int((processed_products / total_products) * 100)
+                            products_processed += 1
                             self.update_state(
-                                state="PROGRESS", meta={"progress": progress}
+                                state="PROGRESS",
+                                meta={"products_processed": products_processed},
                             )
 
                         current_page += 1
@@ -1234,15 +1233,17 @@ def run_daily_update_async(self):
                 except Product.DoesNotExist:
                     print(f"Product {item_id} not found in database, skipping deletion")
 
-            processed_products += 1
-            progress = int((processed_products / total_products) * 100)
-            self.update_state(state="PROGRESS", meta={"progress": progress})
+            products_processed += 1
+            self.update_state(
+                state="PROGRESS", meta={"products_processed": products_processed}
+            )
 
         fetch_status.last_run = timezone.now()
         fetch_status.save()
+        generate_html_pages_async.delay()
 
         print("Daily update completed.")
-        return {"status": "completed", "progress": 100}
+        return {"status": "completed", "products_processed": products_processed}
     except Exception as e:
         print(f"Error during daily update: {e}")
         return {"status": "error", "message": str(e)}
@@ -1265,24 +1266,24 @@ def run_daily_update(request):
 def update_progress(request, task_id):
     def event_stream():
         task = run_daily_update_async.AsyncResult(task_id)
-        previous_progress = None
+        previous_products_processed = None
 
         while not task.ready():
             current_state = task.info
             if isinstance(current_state, dict):
-                progress = current_state.get("progress", 0)
-                if progress != previous_progress:
-                    yield f"data: {json.dumps({'progress': progress, 'status': 'in_progress'})}\n\n"
-                    previous_progress = progress
+                products_processed = current_state.get("products_processed", 0)
+                if products_processed != previous_products_processed:
+                    yield f"data: {json.dumps({'products_processed': products_processed, 'status': 'in_progress'})}\n\n"
+                    previous_products_processed = products_processed
             else:
-                yield f"data: {json.dumps({'progress': 0, 'status': 'pending'})}\n\n"
+                yield f"data: {json.dumps({'products_processed': 0, 'status': 'pending'})}\n\n"
             time.sleep(1)  # Send an update every second
 
         final_state = task.result
         if isinstance(final_state, dict):
-            yield f"data: {json.dumps({'progress': 100, 'status': final_state.get('status', 'completed')})}\n\n"
+            yield f"data: {json.dumps({'products_processed': final_state.get('products_processed', 0), 'status': final_state.get('status', 'completed')})}\n\n"
         else:
-            yield f"data: {json.dumps({'progress': 100, 'status': 'completed'})}\n\n"
+            yield f"data: {json.dumps({'products_processed': 0, 'status': 'completed'})}\n\n"
 
     return StreamingHttpResponse(event_stream(), content_type="text/event-stream")
 

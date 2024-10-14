@@ -88,7 +88,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const progressContainer = document.getElementById('progressContainer');
         const updatingListings = document.getElementById('updatingListings');
         
-        progressText.textContent = `${Math.floor(percentage)}%`;
+        progressText.textContent = `${Math.floor(percentage)} products done`;
         
         progressContainer.style.display = 'block';
         updatingListings.style.display = 'block';
@@ -128,8 +128,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     const eventSource = new EventSource(`/update_progress/${updateTaskId}/`);
                     eventSource.onmessage = function(event) {
                         const data = JSON.parse(event.data);
-                        if (data.progress !== undefined) {
-                            updateProgressBar(data.progress);
+                        if (data.products_processed !== undefined) {
+                            updateProgressBar(data.products_processed);
                         }
                         if (data.status === 'completed' || data.status === 'aborted') {
                             eventSource.close();
