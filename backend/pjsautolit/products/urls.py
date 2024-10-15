@@ -9,6 +9,7 @@ urlpatterns = [
     path("admin-view-1/", views.admin_page, name="admin_page"),
     path("admin-view-2/", views.admin_page2, name="admin_page2"),
     path("admin-view-3/", views.admin_page3, name="admin_page3"),
+    path("admin-view-4/", views.admin_page4, name="admin_page4"),
     path("product/", views.product_list, name="product_list"),
     path("terms/", views.terms_view, name="terms"),
     path("product/<slug:product_slug>/", views.product_detail, name="product_detail"),
@@ -60,4 +61,6 @@ urlpatterns = [
         "update_progress/<str:task_id>/", views.update_progress, name="update_progress"
     ),
     path("cancel-update/", views.cancel_update, name="cancel_update"),
+    path("add-event/", views.add_event, name="add_event"),
+    # path("get-event/<int:event_id>/", views.get_event, name="get_event"),
 ]

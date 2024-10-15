@@ -747,6 +747,15 @@ def initiate_html_generation(request):
         return JsonResponse({"message": "HTML generation started."})
 
 
+import json
+
+from django.core.serializers.json import DjangoJSONEncoder
+from django.shortcuts import render
+from django.utils import timezone
+
+from .models import CalendarEvent, CartItem
+
+
 def landing_page(request):
     cart_count = 0
 
@@ -762,11 +771,30 @@ def landing_page(request):
             # If the cart items don't exist, the cart is empty or invalid
             cart_count = 0
 
+    # Fetch calendar events
+    current_date = timezone.now()
+    events = CalendarEvent.objects.filter(end_date__gte=current_date).order_by(
+        "start_date"
+    )
+
+    # Convert events to a dictionary format suitable for JavaScript
+    events_dict = {}
+    for event in events:
+        date_key = event.start_date.strftime("%Y-%m-%d")
+        events_dict[date_key] = {
+            "title": event.title,
+            "description": event.description,
+            "location": event.location,
+        }
+
+    events_json = json.dumps(events_dict, cls=DjangoJSONEncoder)
+
     return render(
         request,
         "pages/landing.html",
         {
             "cart_count": cart_count,
+            "events_json": events_json,
         },
     )
 
@@ -2459,3 +2487,67 @@ def get_ebay_listing_status(item_id):
                 return None
 
     return None  # If we've exhausted all retries
+
+
+# Calendar
+from datetime import datetime
+
+from django.contrib import messages
+from django.http import JsonResponse
+from django.shortcuts import redirect, render
+from django.utils import timezone
+
+from .models import CalendarEvent
+
+
+def add_event(request):
+    if request.method == "POST":
+        try:
+            # Check if eventId exists to update an event, otherwise create a new one
+            event_id = request.POST.get("eventId")
+            if event_id:
+                event = CalendarEvent.objects.get(id=event_id)
+            else:
+                event = CalendarEvent()
+
+            # Setting event data from form input
+            event.title = request.POST["title"]
+            event.description = request.POST["description"]
+
+            # Parsing and setting start and end dates
+            start_date = datetime.strptime(request.POST["start_date"], "%Y-%m-%dT%H:%M")
+            end_date = datetime.strptime(request.POST["end_date"], "%Y-%m-%dT%H:%M")
+
+            # Storing as timezone-aware datetimes
+            event.start_date = timezone.make_aware(
+                start_date, timezone.get_current_timezone()
+            )
+            event.end_date = timezone.make_aware(
+                end_date, timezone.get_current_timezone()
+            )
+
+            # Storing location
+            event.location = request.POST.get(
+                "location", ""
+            )  # Default to empty string if location not provided
+            event.save()
+
+            # Success message and return JSON response
+            messages.success(request, "Event saved successfully!")
+            return JsonResponse({"message": "Event saved successfully!"}, status=200)
+
+        except Exception as e:
+            # Handle exceptions and return error response
+            messages.error(request, "Failed to save event: " + str(e))
+            return JsonResponse({"message": "Failed to save event."}, status=400)
+
+    # Fetch all events to display them below the form
+    events = CalendarEvent.objects.all().order_by("-start_date")
+    print("Fetched events:", events)
+    return render(request, "pages/admin-4.html", {"events": events})
+
+
+def admin_page4(request):
+    events = CalendarEvent.objects.all().order_by("-start_date")
+    print(events)
+    return render(request, "pages/admin-4.html", {"events": events})

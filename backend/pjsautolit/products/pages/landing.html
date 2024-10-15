@@ -370,43 +370,134 @@
     background-color: #003d82;
 }
 #show-schedule {
-             background-color: #f8f9fa;
-             padding: 4rem 0;
-             text-align: center;
-         }
-         
-         #show-schedule h2 {
-             color: #0056b3;
-             margin-bottom: 2rem;
-         }
-         
-         .calendar {
-             width: 100%;
-             max-width: 600px;
-             margin: 0 auto 2rem;
-             border-collapse: separate;
-             border-spacing: 0;
-             background-color: white;
-             border-radius: 10px;
-             overflow: hidden;
-             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-         }
-         
-         .calendar th {
-             background-color: #0056b3;
-             color: white;
-             padding: 15px;
-             font-weight: bold;
-         }
-         
-         .calendar td {
-             padding: 15px;
-             border: 1px solid #e0e0e0;
-         }
-         
-         .calendar tbody tr:hover {
-             background-color: #f0f0f0;
-         }
+    background-color: #f8f9fa;
+    padding: 4rem 0;
+    font-family: 'Roboto', sans-serif;
+}
+
+#show-schedule h2 {
+    color: #0056b3;
+    text-align: center;
+    margin-bottom: 2rem;
+    font-size: 2.5rem;
+}
+
+.calendar-container {
+    max-width: 800px;
+    margin: 0 auto;
+    background-color: #fff;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #0056b3;
+    color: #fff;
+    padding: 1rem;
+}
+
+.calendar-header button {
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+}
+
+.calendar-header button:hover {
+    transform: scale(1.2);
+}
+
+#currentMonth {
+    font-size: 1.2rem;
+    font-weight: 500;
+}
+
+.calendar {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.calendar th {
+    background-color: #f1f3f5;
+    color: #495057;
+    font-weight: 500;
+    padding: 1rem;
+    text-align: center;
+}
+
+.calendar td {
+    position: relative;
+    height: 100px;
+    vertical-align: top;
+    padding: 0.5rem;
+    border: 1px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.calendar td:hover {
+    background-color: #e9ecef;
+    transform: scale(1.05);
+    z-index: 10;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.calendar td .date {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    font-size: 0.9rem;
+    color: #495057;
+}
+
+.event-dot {
+    width: 8px;
+    height: 8px;
+    background-color: #0056b3;
+    border-radius: 50%;
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    transition: transform 0.3s ease;
+}
+
+.calendar td:hover .event-dot {
+    transform: scale(1.5);
+}
+
+.event-modal {
+    display: none;
+    position: absolute;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    padding: 1rem;
+    z-index: 1000;
+    max-width: 250px;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    opacity: 0;
+    transform: translateY(10px);
+}
+
+.event-modal.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.event-modal-content h4 {
+    color: #0056b3;
+    margin-bottom: 0.5rem;
+}
+
+.event-modal-content p {
+    color: #495057;
+    font-size: 0.9rem;
+}
          
          /* Auto Links Section */
          #auto-links {
@@ -675,74 +766,42 @@
       </div>
   </section>
   <section id="show-schedule">
-   <div class="container">
-       <h2>Show Schedule</h2>
-       <table class="calendar">
-            <thead>
-               <tr>
-                  <th colspan="7">September 2024</th>
-               </tr>
-               <tr>
-                  <th>Sun</th>
-                  <th>Mon</th>
-                  <th>Tue</th>
-                  <th>Wed</th>
-                  <th>Thu</th>
-                  <th>Fri</th>
-                  <th>Sat</th>
-               </tr>
-            </thead>
-            <tbody>
-               <tr>
-                  <td></td>
-                  <td></td>
-                  <td></td>
-                  <td></td>
-                  <td>1</td>
-                  <td>2</td>
-                  <td>3</td>
-               </tr>
-               <tr>
-                  <td>4</td>
-                  <td>5</td>
-                  <td>6</td>
-                  <td>7</td>
-                  <td>8</td>
-                  <td>9</td>
-                  <td>10</td>
-               </tr>
-               <tr>
-                  <td>11</td>
-                  <td>12</td>
-                  <td>13</td>
-                  <td>14</td>
-                  <td>15</td>
-                  <td>16</td>
-                  <td>17</td>
-               </tr>
-               <tr>
-                  <td>18</td>
-                  <td>19</td>
-                  <td>20</td>
-                  <td>21</td>
-                  <td>22</td>
-                  <td>23</td>
-                  <td>24</td>
-               </tr>
-               <tr>
-                  <td>25</td>
-                  <td>26</td>
-                  <td>27</td>
-                  <td>28</td>
-                  <td>29</td>
-                  <td>30</td>
-                  <td></td>
-               </tr>
-            </tbody>
-         </table>
+    <div class="container">
+        <h2>Show Schedule</h2>
+        <div class="calendar-container">
+            <div class="calendar-header">
+                <button id="prevMonth">&lt;</button>
+                <h3 id="currentMonth">September 2024</h3>
+                <button id="nextMonth">&gt;</button>
+            </div>
+            <table class="calendar" id="calendarTable">
+                <thead>
+                    <tr>
+                        <th>Sun</th>
+                        <th>Mon</th>
+                        <th>Tue</th>
+                        <th>Wed</th>
+                        <th>Thu</th>
+                        <th>Fri</th>
+                        <th>Sat</th>
+                    </tr>
+                </thead>
+                <tbody id="calendarBody">
+                    <!-- Calendar days will be inserted here by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+        <div id="eventModal" class="event-modal">
+            <div class="event-modal-content">
+                <h4 id="eventTitle"></h4>
+                <p id="eventDescription"></p>
+                <p id="eventLocation"></p>
+            </div>
+        </div>
+    </div>
          <!-- Google Map embed code goes here -->
          <div style="text-align: center;">
-            <h3>Current Location</h3>
+            <h2>Current Location</h2>
             <iframe src="https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d343373.9476854687!2d-92.6662433950876!3d42.3523392444068!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2sus!4v1726856596737!5m2!1sen!2sus" width="100%" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
          <hr style="margin: 40px 0; border-top: 2px solid #ccc;">
       </section>
@@ -794,6 +853,102 @@
             <p>&copy; 2024 PJ's Auto Literature. All rights reserved.</p>
          </div>
       </footer>
+      
+    
+    
+    
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const calendarBody = document.getElementById('calendarBody');
+        const currentMonthElement = document.getElementById('currentMonth');
+        const prevMonthButton = document.getElementById('prevMonth');
+        const nextMonthButton = document.getElementById('nextMonth');
+        const eventModal = document.getElementById('eventModal');
+        const eventTitle = document.getElementById('eventTitle');
+        const eventDescription = document.getElementById('eventDescription');
+        const eventLocation = document.getElementById('eventLocation');
+    
+        let currentDate = new Date();
+    
+        // Sample events data (replace this with data from your backend)
+        const events = {{ events_json|safe }};
+    
+        function renderCalendar() {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+    
+            currentMonthElement.textContent = `${currentDate.toLocaleString('default', { month: 'long' })} ${year}`;
+    
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const daysInMonth = lastDay.getDate();
+            const startingDay = firstDay.getDay();
+    
+            let dateCounter = 1;
+            let calendarHTML = '';
+    
+            for (let i = 0; i < 6; i++) {
+                let row = '<tr>';
+                for (let j = 0; j < 7; j++) {
+                    if (i === 0 && j < startingDay) {
+                        row += '<td></td>';
+                    } else if (dateCounter > daysInMonth) {
+                        row += '<td></td>';
+                    } else {
+                        const date = `${year}-${String(month + 1).padStart(2, '0')}-${String(dateCounter).padStart(2, '0')}`;
+                        const hasEvent = events[date] ? '<div class="event-dot"></div>' : '';
+                        row += `<td data-date="${date}"><span class="date">${dateCounter}</span>${hasEvent}</td>`;
+                        dateCounter++;
+                    }
+                }
+                row += '</tr>';
+                calendarHTML += row;
+            }
+    
+            calendarBody.innerHTML = calendarHTML;
+    
+            // Add event listeners to cells with events
+            document.querySelectorAll('td[data-date]').forEach(cell => {
+                const date = cell.getAttribute('data-date');
+                if (events[date]) {
+                    cell.addEventListener('mouseenter', (e) => showEventModal(e, date));
+                    cell.addEventListener('mouseleave', hideEventModal);
+                }
+            });
+        }
+    
+        function showEventModal(e, date) {
+        const event = events[date];
+        if (event) {
+            eventTitle.textContent = event.title;
+            eventDescription.textContent = event.description;
+            
+            eventLocation.textContent = `Location: ${event.location}`;
+            
+            eventModal.style.display = 'block';
+            eventModal.style.left = `${e.pageX}px`;
+            eventModal.style.top = `${e.pageY}px`;
+            setTimeout(() => eventModal.classList.add('show'), 10);
+        }
+    }
+        function hideEventModal() {
+            eventModal.classList.remove('show');
+            setTimeout(() => eventModal.style.display = 'none', 300);
+        }
+    
+        prevMonthButton.addEventListener('click', () => {
+            currentDate.setMonth(currentDate.getMonth() - 1);
+            renderCalendar();
+        });
+    
+        nextMonthButton.addEventListener('click', () => {
+            currentDate.setMonth(currentDate.getMonth() + 1);
+            renderCalendar();
+        });
+    
+        renderCalendar();
+    });
+    </script>
       <script>
          document.getElementById('home-link').addEventListener('click', function(event) {
              event.preventDefault(); // Prevent default link behavior
