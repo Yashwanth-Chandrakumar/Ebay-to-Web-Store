@@ -1658,7 +1658,11 @@ def event_stream(task_id):
 
 
 import datetime
+from datetime import datetime
+from datetime import time as time_module  # Importing both datetime and time
 
+# or you can use 'import datetime' and then refer to datetime.datetime below
+from django.db.models import Max
 from django.http import JsonResponse
 from django.utils import timezone
 from django.views.decorators.http import require_GET
@@ -1669,34 +1673,50 @@ from .models import Report
 @require_GET
 def fetch_report_log(request):
     try:
+        print("Starting fetch_report_log")
+
         date_str = request.GET.get("date")
+        print(f"Received date_str: {date_str}")
 
         if date_str:
             try:
-                selected_date = datetime.datetime.strptime(date_str, "%Y-%m-%d").date()
-            except ValueError:
+                selected_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+                print(f"Parsed selected_date: {selected_date}")
+            except ValueError as ve:
+                print(f"Error parsing date: {str(ve)}")
                 return JsonResponse({"error": "Invalid date format"}, status=400)
         else:
             # Fetch the latest report date if no date is provided
             latest_log_date = Report.objects.aggregate(Max("date"))["date__max"]
+            print(f"Latest log date: {latest_log_date}")
             if latest_log_date is None:
+                print("No report entries found")
                 return JsonResponse({"error": "No report entries found"}, status=404)
             selected_date = latest_log_date.date()
+            print(f"Using latest selected_date: {selected_date}")
 
-        start_date = timezone.make_aware(
-            datetime.datetime.combine(selected_date, datetime.time.min)
-        )
-        end_date = timezone.make_aware(
-            datetime.datetime.combine(selected_date, datetime.time.max)
-        )
+        try:
+            # Use time.min and time.max instead of datetime.min and datetime.max
+            start_date = timezone.make_aware(
+                datetime.combine(selected_date, time_module.min)
+            )
+            end_date = timezone.make_aware(
+                datetime.combine(selected_date, time_module.max)
+            )
+            print(f"Start date: {start_date}, End date: {end_date}")
+        except Exception as dt_err:
+            print(f"Error creating start or end date: {str(dt_err)}")
+            return JsonResponse({"error": "Error processing date"}, status=500)
 
         # Fetch all reports for the selected date
-        reports = Report.objects.filter(date__range=(start_date, end_date)).order_by(
-            "-date"
-        )
-
-        print("Fetching reports from", start_date, "to", end_date)
-        print("Number of reports found:", reports.count())
+        try:
+            reports = Report.objects.filter(date__range=(start_date, end_date)).order_by(
+                "-date"
+            )
+            print(f"Number of reports found: {reports.count()}")
+        except Exception as db_err:
+            print(f"Error querying reports: {str(db_err)}")
+            return JsonResponse({"error": "Error fetching reports"}, status=500)
 
         data = []
         for report in reports:
@@ -1712,6 +1732,8 @@ def fetch_report_log(request):
             except Exception as e:
                 print(f"Error processing report entry {report.id}: {str(e)}")
 
+        print(f"Successfully processed {len(data)} reports")
+
         return JsonResponse(
             {
                 "date": selected_date.isoformat(),
@@ -1723,6 +1745,9 @@ def fetch_report_log(request):
     except Exception as e:
         print(f"Unexpected error in fetch_report_log: {str(e)}", exc_info=True)
         return JsonResponse({"error": "An unexpected error occurred"}, status=500)
+
+
+
 
 
 from django.views.decorators.http import require_http_methods
