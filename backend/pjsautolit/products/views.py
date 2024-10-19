@@ -34,7 +34,8 @@ from django.views.decorators.http import require_GET
 from django.views.generic.detail import DetailView
 from requests.exceptions import HTTPError, RequestException
 
-from .models import Cart, CartItem, FetchStatus, Order, Product, ProductChangeLog
+from .models import (Cart, CartItem, FetchStatus, Order, Product,
+                     ProductChangeLog)
 
 EBAY_APP_ID = settings.EBAY_APP_ID
 EBAY_AUTH_TOKEN = settings.EBAY_AUTH_TOKEN
@@ -635,7 +636,8 @@ from django.http import JsonResponse
 from django.template import loader
 from django.views.decorators.http import require_GET
 
-from .models import Product  # Ensure this import is correct for your project structure
+from .models import \
+    Product  # Ensure this import is correct for your project structure
 
 logger = logging.getLogger(__name__)
 
@@ -1444,7 +1446,6 @@ def cancel_update(request):
 
 import datetime
 import io
-
 # Generate report only:
 import json
 import logging
@@ -1857,6 +1858,7 @@ logger = logging.getLogger(__name__)
 import datetime
 import io
 import logging
+from datetime import datetime, time
 
 from django.core.paginator import Paginator
 from django.core.serializers.json import DjangoJSONEncoder
@@ -1879,7 +1881,7 @@ def fetch_changelog(request):
 
         if date_str:
             try:
-                selected_date = datetime.datetime.strptime(date_str, "%Y-%m-%d").date()
+                selected_date = datetime.strptime(date_str, "%Y-%m-%d").date()
             except ValueError:
                 return JsonResponse({"error": "Invalid date format"}, status=400)
         else:
@@ -1891,10 +1893,10 @@ def fetch_changelog(request):
             selected_date = latest_log_date.date()
 
         start_date = timezone.make_aware(
-            datetime.datetime.combine(selected_date, datetime.time.min)
+            datetime.combine(selected_date, time.min)
         )
         end_date = timezone.make_aware(
-            datetime.datetime.combine(selected_date, datetime.time.max)
+            datetime.combine(selected_date, time.max)
         )
 
         logs = ProductChangeLog.objects.filter(

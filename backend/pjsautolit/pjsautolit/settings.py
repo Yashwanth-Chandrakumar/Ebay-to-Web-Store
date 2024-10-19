@@ -95,7 +95,7 @@ WSGI_APPLICATION = "pjsautolit.wsgi.application"
 # Celery settings
 CELERY_BROKER_URL = os.environ.get(
     "CELERY_BROKER_URL",
-    "redis://red-crts7tggph6c73daq840:6379",
+    "redis://localhost:6379/0",
     # "CELERY_BROKER_URL",
     # "rediss://red-crts7tggph6c73daq840:dEPiQFWEmuEz7s6cZdcCA1Te0kuwnTdK@oregon-redis.render.com:6379",
 )
