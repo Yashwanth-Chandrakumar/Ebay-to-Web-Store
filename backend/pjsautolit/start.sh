@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Set Redis URL for Celery broker (update this with your actual Redis URL)
-export CELERY_BROKER_URL="rediss://red-crts7tggph6c73daq840:dEPiQFWEmuEz7s6cZdcCA1Te0kuwnTdK@oregon-redis.render.com:6379"
+export CELERY_BROKER_URL="redis://localhost:6379/0"
 
 # Start Celery worker in the background
 celery -A pjsautolit worker --pool=solo -l info &
