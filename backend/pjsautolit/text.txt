@@ -2,3 +2,4 @@ yash@gmail.com
 abc@yahoo.com
 
 celery -A pjsautolit worker --pool=solo -l info
+celery -A pjsautolit purge 

@@ -1292,6 +1292,8 @@ def run_daily_update(request):
     except Exception as e:
         return JsonResponse({"status": "error", "message": str(e)})
 
+import time
+
 
 def update_progress(request, task_id):
     def event_stream():
@@ -1449,6 +1451,7 @@ import io
 # Generate report only:
 import json
 import logging
+import time
 from datetime import datetime
 
 from celery import shared_task
@@ -1858,7 +1861,9 @@ logger = logging.getLogger(__name__)
 import datetime
 import io
 import logging
-from datetime import datetime, time
+import time
+from datetime import datetime
+from datetime import time as time_module
 
 from django.core.paginator import Paginator
 from django.core.serializers.json import DjangoJSONEncoder
@@ -1893,10 +1898,10 @@ def fetch_changelog(request):
             selected_date = latest_log_date.date()
 
         start_date = timezone.make_aware(
-            datetime.combine(selected_date, time.min)
+            datetime.combine(selected_date, time_module.min)
         )
         end_date = timezone.make_aware(
-            datetime.combine(selected_date, time.max)
+            datetime.combine(selected_date, time_module.max)
         )
 
         logs = ProductChangeLog.objects.filter(
