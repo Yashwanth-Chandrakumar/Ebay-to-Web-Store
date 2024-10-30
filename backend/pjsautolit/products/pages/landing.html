@@ -454,7 +454,20 @@
     font-size: 0.9rem;
     color: #495057;
 }
-
+.event-icon {
+  width: 20px;
+  height: 20px;
+  background-color: #0056b3;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  font-size: 12px;
+  position: absolute;
+    bottom: 40px;
+    right: 50px;
+}
 .event-dot {
     width: 8px;
     height: 8px;
@@ -896,7 +909,7 @@
                         row += '<td></td>';
                     } else {
                         const date = `${year}-${String(month + 1).padStart(2, '0')}-${String(dateCounter).padStart(2, '0')}`;
-                        const hasEvent = events[date] ? '<div class="event-dot"></div>' : '';
+                        const hasEvent = events[date] ? '<div class="event-icon"><i class="fas fa-car"></i></div>' : '';
                         row += `<td data-date="${date}"><span class="date">${dateCounter}</span>${hasEvent}</td>`;
                         dateCounter++;
                     }
