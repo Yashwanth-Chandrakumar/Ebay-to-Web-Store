@@ -94,36 +94,39 @@
         }
     });
 
-    document.getElementById('generate-html').addEventListener('click', function() {
-        if (confirm('Are you sure you want to generate HTML?')) {
-            document.getElementById('generateHtmlProgress').style.display = 'block';
-            document.getElementById('generateHtmlProgressBar').style.width = '0%';
-            document.getElementById('generateHtmlProgressBar').innerText = '0%';
+    // frontend.js
+// frontend.js
+document.getElementById('generate-html').addEventListener('click', function() {
+    if (confirm('Are you sure you want to generate HTML?')) {
+        document.getElementById('generateHtmlProgress').style.display = 'block';
+        document.getElementById('generateHtmlProgressBar').style.width = '0%';
+        document.getElementById('generateHtmlProgressBar').innerText = '0%';
 
-            const interval = setInterval(() => {
-                fetch('/html-generation-progress/')
-                .then(response => response.json())
-                .then(data => {
-                    const progress = data.progress;
-                    const completed = data.completed;
-                    const progressBar = document.getElementById('generateHtmlProgressBar');
+        // Make a single API call to fetch the progress
+        fetch('/html-generation-progress/')
+        .then(response => response.json())
+        .then(data => {
+            const itemsPerSecond = data.items_per_second;
+            const total = data.total;
+            const progressBar = document.getElementById('generateHtmlProgressBar');
+            let processedPages = 0;
 
-                    progressBar.style.width = progress + '%';
-                    progressBar.innerText = progress + '%';
+            // Update the progress every second
+            const progressInterval = setInterval(() => {
+                processedPages += itemsPerSecond;
+                const progress = (processedPages / total) * 100;
 
-                    if (progress >= 100 || completed) {
-                        clearInterval(interval);
-                        showAlert('HTML generated successfully', 'success');
-                        document.getElementById('generateHtmlProgress').style.display = 'none';
-                    }
-                })
-                .catch(error => {
-                    console.error('Error fetching progress:', error);
-                    clearInterval(interval);
-                    showAlert('An error occurred while generating HTML', 'danger');
-                });
+                progressBar.style.width = progress + '%';
+                progressBar.innerText = progress.toFixed(2) + '%';
+
+                if (progress >= 100) {
+                    clearInterval(progressInterval);
+                    showAlert('HTML generated successfully', 'success');
+                    document.getElementById('generateHtmlProgress').style.display = 'none';
+                }
             }, 1000);
 
+            // Initiate the HTML generation
             fetch('/generate-html/', {
                 method: 'GET',
                 headers: {
@@ -138,8 +141,14 @@
                 showAlert('An error occurred while generating HTML', 'danger');
                 document.getElementById('generateHtmlProgress').style.display = 'none';
             });
-        }
-    });
+        })
+        .catch(error => {
+            console.error('Error fetching progress:', error);
+            showAlert('An error occurred while generating HTML', 'danger');
+            document.getElementById('generateHtmlProgress').style.display = 'none';
+        });
+    }
+});
 </script>
 
 </body>

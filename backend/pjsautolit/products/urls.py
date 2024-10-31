@@ -5,6 +5,7 @@ from . import views
 urlpatterns = [
     path("fetch-items/", views.fetch_all_items, name="fetch_items"),
     path("generate-html/", views.run_html_generation, name="generate_html_pages"),
+    path('html-generation-progress/', views.get_html_generation_progress, name='html_generation_progress'),
     path("", views.landing_page, name="landing_page"),
     path("admin-view-1/", views.admin_page, name="admin_page"),
     path("admin-view-2/", views.admin_page2, name="admin_page2"),
@@ -35,7 +36,6 @@ urlpatterns = [
         name="order_confirmation",
     ),
     path("process-payment/", views.process_payment, name="process_payment"),
-    # path('html-generation-progress/', views.get_html_generation_progress, name='html_generation_progress'),
     path(
         "fetch-items-progress/",
         views.get_fetch_items_progress,
@@ -62,5 +62,6 @@ urlpatterns = [
     ),
     path("cancel-update/", views.cancel_update, name="cancel_update"),
     path("add-event/", views.add_event, name="add_event"),
+    path('delete-event/<int:event_id>/', views.delete_event, name='delete_event'),
     # path("get-event/<int:event_id>/", views.get_event, name="get_event"),
 ]

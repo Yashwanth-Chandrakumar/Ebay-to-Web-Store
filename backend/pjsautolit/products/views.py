@@ -645,12 +645,8 @@ logger = logging.getLogger(__name__)
 @shared_task
 def generate_html_pages_async():
     # Check if the generation is already in progress
-    if cache.get("html_generation_in_progress"):
-        logger.warning("HTML generation is already in progress.")
-        return
 
     # Set the in-progress flag
-    cache.set("html_generation_in_progress", True)
 
     output_dir = os.path.join(settings.BASE_DIR, "products", "viewproduct")
     os.makedirs(output_dir, exist_ok=True)
@@ -666,7 +662,7 @@ def generate_html_pages_async():
         logger.error(f"Error loading template: {e}")
         cache.set("html_generation_in_progress", False)
         return
-
+    start_time = time.time()
     for product in products:
         if product.additional_image_urls:
             try:
@@ -674,9 +670,7 @@ def generate_html_pages_async():
                 additional_images = [
                     str(url).strip() for url in additional_images if url
                 ]
-                print(
-                    f"Product {product.item_id} - Additional images: {additional_images}"
-                )  # Add this line
+                
             except Exception as e:
                 logger.error(
                     f"Error parsing additional image URLs for product {product.item_id}: {e}"
@@ -704,16 +698,12 @@ def generate_html_pages_async():
 
         # Update progress
         completed += 1
-        progress = (
-            int((completed / total_products) * 100) if total_products > 0 else 100
-        )
-        cache.set(
-            "html_generation_progress", {"progress": progress, "completed": False}
-        )
+        elapsed_time = time.time() - start_time
+        progress = int((completed / total_products) * 100) if total_products > 0 else 100
+        items_per_second = completed / elapsed_time if elapsed_time > 0 else 0
 
     # Mark as completed
-    cache.set("html_generation_progress", {"progress": 100, "completed": True})
-    cache.set("html_generation_in_progress", False)  # Reset in-progress flag
+    
 
     if errors:
         logger.error(f"Errors encountered while generating HTML pages: {errors}")
@@ -721,32 +711,51 @@ def generate_html_pages_async():
         logger.info("HTML pages generated successfully.")
 
 
+import time
+
+from django.http import JsonResponse
+from django.views.decorators.http import require_GET
+
+from .models import Product
+
+
 @require_GET
 def run_html_generation(request):
     try:
         generate_html_pages_async.delay()
-        return JsonResponse(
-            {"status": "success", "message": "HTML generation task has been scheduled"}
-        )
+        return JsonResponse({"status": "success", "message": "HTML generation task has been scheduled"})
     except Exception as e:
         return JsonResponse({"status": "error", "message": str(e)})
 
+import time
+
+from django.db.models import Count
+
+from .models import Product
+
 
 def get_html_generation_progress(request):
-    progress_info = cache.get(
-        "html_generation_progress", {"progress": 0, "completed": False}
-    )
-    return JsonResponse(progress_info)
+    start_time = time.time()
+    product_count = Product.objects.count()
+    
+    # Fetch the first 100 products to estimate the processing rate
+    initial_products = Product.objects.all()[:100]
+    
+    # Count the number of products processed in the first 5 seconds
+    for i, _ in enumerate(initial_products):
+        if time.time() - start_time >= 5:
+            break
+    
+    # Calculate the items processed per second
+    items_per_second = i    
+    # Get the total number of products
+    total_products = Product.objects.count()
+    
+    return JsonResponse({
+        "items_per_second": items_per_second,
+        "total": total_products
+    })
 
-
-def initiate_html_generation(request):
-    if request.method == "GET":
-        # Reset progress for a new generation
-        cache.set("html_generation_progress", {"progress": 0, "completed": False})
-
-        # Start the generation process
-        generate_html_pages_async.delay()
-        return JsonResponse({"message": "HTML generation started."})
 
 
 import json
@@ -772,12 +781,11 @@ def landing_page(request):
         except CartItem.DoesNotExist:
             # If the cart items don't exist, the cart is empty or invalid
             cart_count = 0
+    
 
     # Fetch calendar events
-    current_date = timezone.now()
-    events = CalendarEvent.objects.filter(end_date__gte=current_date).order_by(
-        "start_date"
-    )
+    # Remove the date filtering if you want to return ALL events
+    events = CalendarEvent.objects.all().order_by("start_date")
 
     # Convert events to a dictionary format suitable for JavaScript
     events_dict = {}
@@ -790,6 +798,7 @@ def landing_page(request):
         }
 
     events_json = json.dumps(events_dict, cls=DjangoJSONEncoder)
+    
 
     return render(
         request,
@@ -1144,7 +1153,7 @@ def run_daily_update_async(self):
                     print("Task aborted.")
                     raise Ignore()
 
-                print(f"Processing price range: ${min_price:.2f} - ${max_price:.2f}")
+                # print(f"Processing price range: ${min_price:.2f} - ${max_price:.2f}")
                 current_page = 1
                 total_pages = 1
 
@@ -1159,9 +1168,9 @@ def run_daily_update_async(self):
                             min_price=min_price,
                             max_price=max_price,
                         )
-                        print(
-                            f"Fetched page {current_page} of {total_pages} for price range ${min_price:.2f} - ${max_price:.2f}"
-                        )
+                        # print(
+                        #     f"Fetched page {current_page} of {total_pages} for price range ${min_price:.2f} - ${max_price:.2f}"
+                        # )
 
                         for item in items:
                             item_id = item["item_id"]
@@ -1194,10 +1203,10 @@ def run_daily_update_async(self):
                                     for key, value in changes.items():
                                         setattr(product, key, value)
                                     product.save()
-                                    print(
-                                        f"Updated product: {item_id} - {product.title}"
-                                    )
-                                    print(f"Changes: {changes}")
+                                    # print(
+                                    #     f"Updated product: {item_id} - {product.title}"
+                                    # )
+                                    # print(f"Changes: {changes}")
 
                                     change_log = ProductChangeLog.objects.create(
                                         item_id=item_id,
@@ -1214,9 +1223,9 @@ def run_daily_update_async(self):
                                 }
                                 combined_data = {**mapped_item, **mapped_browse_data}
                                 save_product_data(combined_data)
-                                print(
-                                    f"Created new product: {item_id} - {combined_data.get('title', 'Unknown Title')}"
-                                )
+                                # print(
+                                #     f"Created new product: {item_id} - {combined_data.get('title', 'Unknown Title')}"
+                                # )
 
                                 ProductChangeLog.objects.create(
                                     item_id=item_id,
@@ -1256,7 +1265,7 @@ def run_daily_update_async(self):
                     product = Product.objects.get(item_id=item_id)
                     product_name = product.title
                     product.delete()
-                    print(f"Deleted inactive product: {item_id} - {product_name}")
+                    # print(f"Deleted inactive product: {item_id} - {product_name}")
                     ProductChangeLog.objects.create(
                         item_id=item_id, product_name=product_name, operation="deleted"
                     )
@@ -2522,12 +2531,15 @@ def get_ebay_listing_status(item_id):
 
 
 # Calendar
+import json
 from datetime import datetime
 
 from django.contrib import messages
 from django.http import JsonResponse
-from django.shortcuts import redirect, render
+from django.middleware.csrf import get_token
+from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.views.decorators.http import require_POST
 
 from .models import CalendarEvent
 
@@ -2538,48 +2550,55 @@ def add_event(request):
             # Check if eventId exists to update an event, otherwise create a new one
             event_id = request.POST.get("eventId")
             if event_id:
-                event = CalendarEvent.objects.get(id=event_id)
+                event = get_object_or_404(CalendarEvent, id=event_id)
             else:
                 event = CalendarEvent()
 
             # Setting event data from form input
             event.title = request.POST["title"]
-            event.description = request.POST["description"]
+            event.description = request.POST.get("description", "")
 
             # Parsing and setting start and end dates
             start_date = datetime.strptime(request.POST["start_date"], "%Y-%m-%dT%H:%M")
             end_date = datetime.strptime(request.POST["end_date"], "%Y-%m-%dT%H:%M")
 
             # Storing as timezone-aware datetimes
-            event.start_date = timezone.make_aware(
-                start_date, timezone.get_current_timezone()
-            )
-            event.end_date = timezone.make_aware(
-                end_date, timezone.get_current_timezone()
-            )
+            event.start_date = timezone.make_aware(start_date, timezone.get_current_timezone())
+            event.end_date = timezone.make_aware(end_date, timezone.get_current_timezone())
 
             # Storing location
-            event.location = request.POST.get(
-                "location", ""
-            )  # Default to empty string if location not provided
+            event.location = request.POST.get("location", "")
             event.save()
 
             # Success message and return JSON response
-            messages.success(request, "Event saved successfully!")
-            return JsonResponse({"message": "Event saved successfully!"}, status=200)
+            return JsonResponse({
+                "message": "Event saved successfully!", 
+                "event": {
+                    "id": event.id,
+                    "title": event.title,
+                    "start_date": event.start_date.strftime("%Y-%m-%d %H:%M"),
+                    "end_date": event.end_date.strftime("%Y-%m-%d %H:%M"),
+                    "location": event.location
+                }
+            }, status=200)
 
         except Exception as e:
             # Handle exceptions and return error response
-            messages.error(request, "Failed to save event: " + str(e))
-            return JsonResponse({"message": "Failed to save event."}, status=400)
+            return JsonResponse({"message": f"Failed to save event: {str(e)}"}, status=400)
 
     # Fetch all events to display them below the form
     events = CalendarEvent.objects.all().order_by("-start_date")
-    print("Fetched events:", events)
     return render(request, "pages/admin-4.html", {"events": events})
 
+@require_POST
+def delete_event(request, event_id):
+    try:
+        event = get_object_or_404(CalendarEvent, id=event_id)
+        event.delete()
+        return JsonResponse({"message": "Event deleted successfully!"}, status=200)
+    except Exception as e:
+        return JsonResponse({"message": f"Failed to delete event: {str(e)}"}, status=400)
 
 def admin_page4(request):
     events = CalendarEvent.objects.all().order_by("-start_date")
-    print(events)
     return render(request, "pages/admin-4.html", {"events": events})
