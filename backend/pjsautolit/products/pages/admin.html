@@ -146,14 +146,18 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('update-listings').addEventListener('click', startUpdate);
 
     document.getElementById('cancelUpdate').addEventListener('click', function() {
-        if (updateInProgress) {
-            clearInterval(updateInterval);
-            showAlert('Update cancelled', 'success');
-            updateInProgress = false;
-        } else {
-            showAlert('No update in progress', 'warning');
-        }
-    });
+  if (updateInProgress) {
+    clearInterval(updateInterval);
+    showAlert('Update cancelled', 'success');
+    updateInProgress = false;
+
+    setTimeout(function() {
+      window.location.reload();
+    }, 5000);
+  } else {
+    showAlert('No update in progress', 'warning');
+  }
+});
 
     function fetchChangelog() {
         fetch('/fetch-changelog/', {
