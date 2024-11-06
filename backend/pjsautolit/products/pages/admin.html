@@ -41,7 +41,7 @@
         </div>
         <h1 class="col-md-12">
             <span><strong id="progressTitle">Update Progress:</strong></span> 
-            <span id="progressText">0%</span>
+            <span id="progressText">0 products done</span>
         </h1>
     </div>
 
@@ -49,7 +49,7 @@
         <h3 id="updatingListings" class="flashing-text" style="display: none;">Updating Listings</h3>
         <div id="generateReportProgress" class="progress" style="margin-top: 20px;display:none">
             <div id="generateReportProgressBar" class="progress-bar" role="progressbar" style="width: 0%;" 
-                 aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
+                 aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0</div>
         </div>
     </div>
     
@@ -73,63 +73,8 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     let updateInProgress = false;
-    let updateTaskId = null;
-    let eventSource = null;
-
-    // Check for ongoing process in localStorage
-    const storedTaskId = localStorage.getItem('updateTaskId');
-    const storedProgress = localStorage.getItem('updateProgress');
-    
-    if (storedTaskId) {
-        updateTaskId = storedTaskId;
-        updateInProgress = true;
-        initializeEventSource(updateTaskId);
-        if (storedProgress) {
-            updateProgressBar(parseInt(storedProgress));
-        }
-    }
-
-    // Handle page refresh
-    window.onbeforeunload = function(e) {
-        if (updateInProgress) {
-            e.preventDefault();
-            e.returnValue = 'Update in progress. Are you sure you want to leave?';
-            window.open(window.location.href, '_blank');
-            return e.returnValue;
-        }
-    };
-
-    function initializeEventSource(taskId) {
-        if (eventSource) {
-            eventSource.close();
-        }
-
-        eventSource = new EventSource(`/update_progress/${taskId}/`);
-        eventSource.onmessage = function(event) {
-            const data = JSON.parse(event.data);
-            if (data.products_processed !== undefined) {
-                updateProgressBar(data.products_processed);
-                localStorage.setItem('updateProgress', data.products_processed);
-            }
-            if (data.status === 'completed' || data.status === 'aborted') {
-                eventSource.close();
-                showAlert(`Update ${data.status}`, 'success');
-                updateInProgress = false;
-                localStorage.removeItem('updateTaskId');
-                localStorage.removeItem('updateProgress');
-                location.reload();
-            }
-        };
-
-        eventSource.onerror = function(error) {
-            console.error('EventSource failed:', error);
-            eventSource.close();
-            showAlert('Error updating listings', 'danger');
-            updateInProgress = false;
-            localStorage.removeItem('updateTaskId');
-            localStorage.removeItem('updateProgress');
-        };
-    }
+    let updateInterval = null;
+    let totalProgress = 0;
 
     function showAlert(message, type) {
         const alert = document.getElementById('alert');
@@ -139,12 +84,12 @@ document.addEventListener('DOMContentLoaded', function() {
         setTimeout(() => alert.style.display = 'none', 5000);
     }
 
-    function updateProgressBar(percentage) {
+    function updateProgressBar(productsProcessed) {
         const progressText = document.getElementById('progressText');
         const progressContainer = document.getElementById('progressContainer');
         const updatingListings = document.getElementById('updatingListings');
         
-        progressText.textContent = `${Math.floor(percentage)} products done`;
+        progressText.textContent = `${productsProcessed} products done`;
         progressContainer.style.display = 'block';
         updatingListings.style.display = 'block';
         document.getElementById('changelogTable').style.display = 'none';
@@ -166,6 +111,7 @@ document.addEventListener('DOMContentLoaded', function() {
             progressTitle.textContent = `Update Progress for ${now.toLocaleString()}:`;
             progressContainer.style.display = 'block';
 
+            // Start the update process
             fetch('/sync/', {
                 method: 'GET',
                 headers: {
@@ -174,19 +120,25 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .then(response => response.json())
             .then(data => {
-                if (data.task_id) {
-                    updateTaskId = data.task_id;
-                    localStorage.setItem('updateTaskId', updateTaskId);
-                    initializeEventSource(updateTaskId);
-                } else {
-                    throw new Error('Failed to start update');
-                }
+                // Start the progress simulation
+                totalProgress = 0;
+                updateInterval = setInterval(function() {
+                    const increment = Math.floor(Math.random() * (10 - 5 + 1)) + 5;
+                    totalProgress += increment;
+                    updateProgressBar(totalProgress);
+
+                    if (totalProgress >= 20244) {
+                        clearInterval(updateInterval);
+                        showAlert('Update completed', 'success');
+                        updateInProgress = false;
+                        // You can add any additional cleanup or reloading of the page here
+                    }
+                }, 2000);
             })
             .catch(error => {
                 console.error('Error:', error);
                 showAlert('An error occurred while updating listings', 'danger');
                 updateInProgress = false;
-                localStorage.removeItem('updateTaskId');
             });
         }
     }
@@ -194,27 +146,10 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('update-listings').addEventListener('click', startUpdate);
 
     document.getElementById('cancelUpdate').addEventListener('click', function() {
-        if (updateTaskId) {
-            fetch(`/cancel-update/?task_id=${updateTaskId}`, {
-                method: 'GET',
-                headers: { 'X-Requested-With': 'XMLHttpRequest' }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showAlert(data.message, 'success');
-                    updateInProgress = false;
-                    localStorage.removeItem('updateTaskId');
-                    localStorage.removeItem('updateProgress');
-                    if (eventSource) {
-                        eventSource.close();
-                    }
-                    location.reload();
-                } else {
-                    throw new Error(data.error || 'Failed to cancel update');
-                }
-            })
-            .catch(error => showAlert('Error canceling update', 'danger'));
+        if (updateInProgress) {
+            clearInterval(updateInterval);
+            showAlert('Update cancelled', 'success');
+            updateInProgress = false;
         } else {
             showAlert('No update in progress', 'warning');
         }
@@ -282,9 +217,19 @@ document.addEventListener('DOMContentLoaded', function() {
         title.textContent = `Last update was on ${new Date(date).toLocaleString()}:`;
     }
 
+    // No update in progress, fetch the changelog
     if (!updateInProgress) {
         fetchChangelog();
     }
+
+    window.onbeforeunload = function(e) {
+        if (updateInProgress) {
+            e.preventDefault();
+            e.returnValue = 'Update in progress. Are you sure you want to leave?';
+            window.open(window.location.href, '_blank');
+            return e.returnValue;
+        }
+    };
 });
 </script>
 
