@@ -1,184 +1,173 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Order Confirmation</title>
-
-    <!-- Fonts and Icons -->
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/5.1.3/css/bootstrap.min.css">
-
-    <!-- CSS Variables and Styles -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary-color: #1abc9c;
-            --secondary-color: #2c3e50;
-            --accent-color: #e74c3c;
-            --light-color: #f7f9f9;
-            --dark-color: #34495e;
-            --text-color: #2d3436;
+            --primary-color: #0056b3;
+            --secondary-color: #f8f9fa;
+            --accent-color: #dc3545;
+            --text-color: #333;
+            --light-gray: #e9ecef;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 700;
         }
 
         body {
-            font-family: 'Poppins', sans-serif;
-            background-color: var(--light-color);
+            font-family: 'Roboto', sans-serif;
+            line-height: 1.6;
             color: var(--text-color);
-            margin: 0;
-            padding-top: 80px;
+            background-color: var(--secondary-color);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
         }
 
-        /* Navbar Styles */
         .navbar {
-            background-color: var(--dark-color);
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             z-index: 1000;
-            padding: 1rem;
-            transition: background-color 0.3s ease;
+            background-color: white;
+            padding: 10px 50px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
 
         .navbar-brand img {
-            height: 60px;
-            transition: transform 0.3s ease;
+            height: 50px;
         }
 
-        .navbar-nav .nav-link {
-            color: var(--light-color);
-            font-weight: 600;
-            padding: 0.8rem 1rem;
-            transition: color 0.3s ease;
+        .navbar-nav {
+            display: flex;
+            gap: 20px;
+            list-style-type: none;
         }
 
-        .navbar-nav .nav-link:hover {
-            color: var(--primary-color);
+        .nav-link {
+            text-decoration: none;
+            color: #333;
+            font-size: 18px;
         }
 
-        /* Body and Containers */
         .container {
-            max-width: 1140px;
+            width: 100%;
+            max-width: 1200px;
             margin: 0 auto;
-            padding: 2rem;
+            padding: 20px;
+            flex-grow: 1;
+        }
+
+        .confirmation-content {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            padding: 40px;
+            margin-top: 100px;
         }
 
         h1 {
-            color: var(--secondary-color);
-            font-weight: 700;
-            margin-bottom: 1.5rem;
+            font-size: 36px;
+            font-weight: 900;
+            margin-bottom: 20px;
+            color: var(--primary-color);
         }
 
-        h3 {
-            color: var(--text-color);
-            font-weight: 600;
-            margin-bottom: 1rem;
+        .alert {
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
         }
 
         .alert-success {
-            background-color: var(--primary-color);
-            color: var(--light-color);
-            border-radius: 0.75rem;
-            padding: 1.2rem;
-            border: none;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
         }
 
-        /* Table Styles */
+        h3 {
+            font-size: 24px;
+            margin-bottom: 15px;
+            color: var(--primary-color);
+        }
+
         .table {
-            background-color: #fff;
-            border-radius: 0.75rem;
-            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
-            overflow: hidden;
-            margin-bottom: 1.5rem;
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
         }
 
-        .table thead th {
-            background-color: var(--primary-color);
-            color: var(--light-color);
-            padding: 1rem;
-            text-transform: uppercase;
-        }
-
-        .table tbody td {
-            padding: 1rem;
-            font-weight: 500;
-            text-align: center;
+        .table th,
+        .table td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid var(--light-gray);
         }
 
         .table tfoot td {
-            font-weight: 700;
-            padding: 1rem;
-            text-align: center;
-            border-top: 2px solid var(--primary-color);
+            font-weight: bold;
         }
 
-        .btn-primary {
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
             background-color: var(--primary-color);
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background-color 0.3s;
             border: none;
-            border-radius: 50px;
-            padding: 0.75rem 1.5rem;
-            font-size: 1rem;
-            font-weight: 600;
-            transition: background-color 0.3s ease, transform 0.2s ease;
+            cursor: pointer;
+            font-size: 16px;
         }
 
-        .btn-primary:hover {
+        .btn:hover {
             background-color: var(--accent-color);
-            transform: translateY(-2px);
         }
 
-        /* Footer Styles */
         footer {
-            background-color: var(--dark-color);
-            color: var(--light-color);
+            background-color: var(--primary-color);
+            color: white;
             text-align: center;
-            padding: 2rem 0;
-            margin-top: 2rem;
-            font-weight: 400;
+            padding: 20px 0;
+            margin-top: auto;
         }
 
-        footer p {
-            margin: 0;
-            font-size: 0.875rem;
-        }
-
-        /* Media Queries */
         @media (max-width: 768px) {
             .navbar {
-                padding: 0.5rem;
+                flex-direction: column;
+                padding: 10px;
             }
-
+            .navbar-nav {
+                margin-top: 10px;
+            }
             .navbar-brand img {
-                height: 50px;
-            }
-
-            .container {
-                padding: 1rem;
-            }
-
-            .table thead th, .table tfoot td {
-                font-size: 0.875rem;
-            }
-
-            .table tbody td {
-                font-size: 0.875rem;
+                height: 40px;
             }
         }
     </style>
 </head>
-
 <body>
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark">
-        <div class="container">
-            <a href="{% url 'landing_page' %}" class="navbar-brand">
-                <img src="https://i.postimg.cc/h47H7Tcf/header-1.gif" alt="Brand Logo">
-            </a>
-            <ul class="navbar-nav ms-auto">
-                <li><a href="{% url 'landing_page' %}" class="nav-link">Home</a></li>
+    <nav class="navbar">
+        <a href="{% url 'landing_page' %}" class="navbar-brand">
+            <img src="https://i.postimg.cc/h47H7Tcf/header-1.gif" alt="Brand Logo">
+        </a>
+        <ul class="navbar-nav">
+            <li><a href="{% url 'landing_page' %}" class="nav-link">Home</a></li>
                 <li><a href="{% url 'landing_page' %}#show-schedule" class="nav-link">Show Schedule</a></li>
                 <li><a href="{% url 'product_list' %}" class="nav-link">Products</a></li>
                 <li><a href="{% url 'landing_page' %}#auto-links" class="nav-link">Auto Links</a></li>
@@ -186,55 +175,48 @@
                 <li><a href="{% url 'view_cart' %}" class="nav-link">Cart</a></li>
                 <li><a href="{% url 'terms' %}" class="nav-link">Terms</a></li>
                 <li><a href="#" class="nav-link">Contact</a></li>
-            </ul>
-        </div>
+        </ul>
     </nav>
 
-    <!-- Order Confirmation Section -->
-    <div class="container mt-5">
-        <h1>Order Confirmation</h1>
-        <div class="alert alert-success" role="alert">
-            Thank you for your order! Your payment has been processed successfully.
+    <div class="container">
+        <div class="confirmation-content">
+            <h1>Order Confirmation</h1>
+            <div class="alert alert-success">
+                Thank you for your order! Your payment has been processed successfully.
+            </div>
+            <h3>Order Details</h3>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Quantity</th>
+                        <th>Price</th>
+                        <th>Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in order_items %}
+                    <tr>
+                        <td>{{ item.product.title }}</td>
+                        <td>{{ item.quantity }}</td>
+                        <td>${{ item.product.price }}</td>
+                        <td>${{ item.subtotal }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="3"><strong>Total:</strong></td>
+                        <td><strong>${{ order_total }}</strong></td>
+                    </tr>
+                </tfoot>
+            </table>
+            <a href="{% url 'product_list' %}" class="btn">Continue Shopping</a>
         </div>
-        <h3 class="mt-4">Order Details</h3>
-        <table class="table mt-4">
-            <thead>
-                <tr>
-                    <th>Product</th>
-                    <th>Quantity</th>
-                    <th>Price</th>
-                    <th>Subtotal</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in order_items %}
-                <tr>
-                    <td>{{ item.product.title }}</td>
-                    <td>{{ item.quantity }}</td>
-                    <td>${{ item.product.price }}</td>
-                    <td>${{ item.subtotal }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-            <tfoot>
-                <tr>
-                    <td colspan="3"><strong>Total:</strong></td>
-                    <td><strong>${{ order_total }}</strong></td>
-                </tr>
-            </tfoot>
-        </table>
-        <p class="mt-4">An email confirmation has been sent to your registered email address.</p>
-        <a href="{% url 'product_list' %}" class="btn btn-primary mt-3">Continue Shopping</a>
     </div>
 
-    <!-- Footer -->
     <footer>
-        <div class="container">
-            <p>&copy; 2024 PJ's Auto Literature. All rights reserved.</p>
-        </div>
+        <p>&copy; 2024 PJ's Auto Literature. All rights reserved.</p>
     </footer>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
-
 </html>
