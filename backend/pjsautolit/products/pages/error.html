@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #0056b3;
+            --secondary-color: #f8f9fa;
+            --accent-color: #dc3545;
+            --text-color: #333;
+            --light-gray: #e9ecef;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 700;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--secondary-color);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            background-color: white;
+            padding: 10px 50px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .navbar-brand img {
+            height: 50px;
+        }
+
+        .navbar-nav {
+            display: flex;
+            gap: 20px;
+            list-style-type: none;
+        }
+
+        .nav-link {
+            text-decoration: none;
+            color: #333;
+            font-size: 18px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .error-content {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            padding: 40px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 36px;
+            font-weight: 900;
+            margin-bottom: 20px;
+            color: var(--accent-color);
+        }
+
+        .error-message {
+            font-size: 18px;
+            margin-bottom: 30px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: var(--primary-color);
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .btn:hover {
+            background-color: var(--accent-color);
+        }
+
+        footer {
+            background-color: var(--primary-color);
+            color: white;
+            text-align: center;
+            padding: 20px 0;
+            margin-top: auto;
+        }
+
+        @media (max-width: 768px) {
+            .navbar {
+                flex-direction: column;
+                padding: 10px;
+            }
+            .navbar-nav {
+                margin-top: 10px;
+            }
+            .navbar-brand img {
+                height: 40px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="{% url 'landing_page' %}" class="navbar-brand">
+            <img src="https://i.postimg.cc/h47H7Tcf/header-1.gif" alt="Brand Logo">
+        </a>
+        <ul class="navbar-nav">
+            <li><a href="{% url 'landing_page' %}" class="nav-link">Home</a></li>
+                <li><a href="{% url 'landing_page' %}#show-schedule" class="nav-link">Show Schedule</a></li>
+                <li><a href="{% url 'product_list' %}" class="nav-link">Products</a></li>
+                <li><a href="{% url 'landing_page' %}#auto-links" class="nav-link">Auto Links</a></li>
+                <li><a href="{% url 'landing_page' %}#wanted" class="nav-link">Wanted</a></li>
+                <li><a href="{% url 'view_cart' %}" class="nav-link">Cart</a></li>
+                <li><a href="{% url 'terms' %}" class="nav-link">Terms</a></li>
+                <li><a href="#" class="nav-link">Contact</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <div class="error-content">
+            <h1>Oops!</h1>
+            <p class="error-message">{{ error }}</p>
+            <a href="{% url 'landing_page' %}" class="btn">Go to Home</a>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2024 PJ's Auto Literature. All rights reserved.</p>
+    </footer>
+</body>
+</html>
