@@ -1287,47 +1287,61 @@ def run_daily_update_async(self):
         print(f"Error during daily update: {e}")
         return {"status": "error", "message": str(e)}
 
+import time
+
+from celery.result import AsyncResult
+# views.py
+from django.http import JsonResponse
+from django.utils import timezone
+
+from .models import Product
+
 
 def run_daily_update(request):
     try:
         task = run_daily_update_async.delay()
-        return JsonResponse(
-            {
-                "status": "success",
-                "task_id": task.id,
-                "message": "Daily update task has been scheduled",
-            }
-        )
+        return JsonResponse({
+            "status": "success",
+            "task_id": task.id,
+            "message": "Daily update task has been scheduled"
+        })
     except Exception as e:
         return JsonResponse({"status": "error", "message": str(e)})
 
-import time
-
-
 def update_progress(request, task_id):
-    def event_stream():
-        task = run_daily_update_async.AsyncResult(task_id)
-        previous_products_processed = None
-
-        while not task.ready():
-            current_state = task.info
-            if isinstance(current_state, dict):
-                products_processed = current_state.get("products_processed", 0)
-                if products_processed != previous_products_processed:
-                    yield f"data: {json.dumps({'products_processed': products_processed, 'status': 'in_progress'})}\n\n"
-                    previous_products_processed = products_processed
-            else:
-                yield f"data: {json.dumps({'products_processed': 0, 'status': 'pending'})}\n\n"
-            time.sleep(1)  # Send an update every second
-
-        final_state = task.result
-        if isinstance(final_state, dict):
-            yield f"data: {json.dumps({'products_processed': final_state.get('products_processed', 0), 'status': final_state.get('status', 'completed')})}\n\n"
+    try:
+        task = AsyncResult(task_id)
+        
+        # Get the start time of the task
+        if not hasattr(task, 'start_time'):
+            task.start_time = time.time()
+        
+        current_time = time.time()
+        elapsed_time = current_time - task.start_time
+        
+        # Get current progress from task
+        if isinstance(task.info, dict):
+            products_processed = task.info.get('products_processed', 0)
         else:
-            yield f"data: {json.dumps({'products_processed': 0, 'status': 'completed'})}\n\n"
-
-    return StreamingHttpResponse(event_stream(), content_type="text/event-stream")
-
+            products_processed = 0
+            
+        # Calculate processing rate (items per second)
+        processing_rate = products_processed / elapsed_time if elapsed_time > 0 else 0
+        
+        # Get total number of products
+        total_products = Product.objects.count()
+        
+        return JsonResponse({
+            'status': 'success',
+            'processing_rate': round(processing_rate, 2),  # items per second
+            'total_products': total_products,
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        })
 
 from celery.result import AsyncResult
 
@@ -2059,7 +2073,7 @@ def process_payment(request):
             # Step 3: Initialize Square Client
             client = Client(
                 access_token=settings.SQUARE_ACCESS_TOKEN,
-                environment="sandbox",  # Change to 'production' for live payments
+                environment="production",  # Change to 'production' for live payments
             )
 
             # Step 4: Create a unique idempotency key
@@ -2267,7 +2281,7 @@ def checkout(request):
             # Step 3: Initialize Square client
             client = Client(
                 access_token=settings.SQUARE_ACCESS_TOKEN,
-                environment="sandbox",  # Ensure this is correct for your setup
+                environment="production",  # Ensure this is correct for your setup
             )
             print("Square client initialized")  # Debugging output
 
