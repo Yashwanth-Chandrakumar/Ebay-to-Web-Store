@@ -144,10 +144,17 @@
             border: none;
             cursor: pointer;
             font-size: 16px;
+            width: 100%;
+            margin-top: 20px;
         }
 
         .btn:hover {
             background-color: var(--accent-color);
+        }
+
+        .btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
         }
 
         #card-container {
@@ -204,6 +211,88 @@
             color: var(--accent-color);
         }
 
+        /* Toast and Loading Styles */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1060;
+        }
+
+        .toast {
+            background-color: #fff;
+            border-radius: 4px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            margin-bottom: 10px;
+            min-width: 300px;
+            max-width: 400px;
+            padding: 15px;
+            transform: translateX(120%);
+            transition: transform 0.3s ease-in-out;
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+        }
+
+        .toast.error {
+            border-left: 4px solid #dc3545;
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        .toast-header {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #dc3545;
+        }
+
+        .toast-body {
+            color: #333;
+            font-size: 14px;
+        }
+
+        .toast-close {
+            background: none;
+            border: none;
+            color: #999;
+            cursor: pointer;
+            font-size: 20px;
+            padding: 0 5px;
+        }
+
+        .toast-close:hover {
+            color: #333;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1050;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #0056b3;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
         footer {
             background-color: var(--primary-color);
             color: white;
@@ -223,9 +312,13 @@
             .logo {
                 margin-left: 0;
             }
+            .toast {
+                width: 90%;
+                margin: 0 auto;
+            }
         }
     </style>
-   <script src="https://web.squarecdn.com/v1/square.js"></script>
+    <script src="https://web.squarecdn.com/v1/square.js"></script>
 </head>
 <body>
     <nav class="navbar">
@@ -234,13 +327,13 @@
         </div>
         <div class="nav-links">
             <a href="{% url 'landing_page' %}" class="nav-link">Home</a>
-                <a href="{% url 'landing_page' %}#show-schedule" class="nav-link">Show Schedule</a>
-                <a href="{% url 'product_list' %}" class="nav-link">Products</a>
-                <a href="{% url 'landing_page' %}#auto-links" class="nav-link">Auto Links</a>
-                <a href="{% url 'landing_page' %}#wanted" class="nav-link">Wanted</a>
-                <a href="{% url 'view_cart' %}" class="nav-link">Cart</a>
-                <a href="{% url 'terms' %}" class="nav-link">Terms</a>
-                <a href="#" class="nav-link">Contact</a>
+            <a href="{% url 'landing_page' %}#show-schedule" class="nav-link">Show Schedule</a>
+            <a href="{% url 'product_list' %}" class="nav-link">Products</a>
+            <a href="{% url 'landing_page' %}#auto-links" class="nav-link">Auto Links</a>
+            <a href="{% url 'landing_page' %}#wanted" class="nav-link">Wanted</a>
+            <a href="{% url 'view_cart' %}" class="nav-link">Cart</a>
+            <a href="{% url 'terms' %}" class="nav-link">Terms</a>
+            <a href="#" class="nav-link">Contact</a>
         </div>
         <div class="user-actions">
             <div class="cart-icon">
@@ -289,6 +382,7 @@
                 </ul>
             </div>
             <form id="payment-form">
+                {% csrf_token %}
                 <div id="card-container"></div>
                 <button id="card-button" type="button" class="btn">Pay ${{ total_including_shipping }}</button>
             </form>
@@ -308,6 +402,11 @@
         </div>
     </div>
 
+    <div class="toast-container" id="toastContainer"></div>
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+    </div>
+
     <footer>
         <div class="container">
             <p>&copy; 2024 PJ's Auto Literature. All rights reserved.</p>
@@ -318,10 +417,12 @@
         const modal = document.getElementById("shippingInfoModal");
         const btn = document.getElementById("shippingInfoBtn");
         const span = document.getElementsByClassName("close")[0];
+        const cardButton = document.getElementById('card-button');
 
         function showModal() {
             modal.style.display = "block";
         }
+        
         function closeModal() {
             modal.style.display = "none";
         }
@@ -331,6 +432,86 @@
                 modal.style.display = "none";
             }
         });
+
+        function showToast(message, title = 'Error', duration = 5000) {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = 'toast error';
+            
+            toast.innerHTML = `
+                <div>
+                    <div class="toast-header">${title}</div>
+                    <div class="toast-body">${message}</div>
+                </div>
+                <button class="toast-close">&times;</button>
+            `;
+
+            container.appendChild(toast);
+            
+            // Trigger reflow
+            toast.offsetHeight;
+            
+            // Show toast
+            setTimeout(() => toast.classList.add('show'), 10);
+
+            // Setup close button
+            const closeButton = toast.querySelector('.toast-close');
+            closeButton.addEventListener('click', () => {
+                toast.classList.remove('show');
+                setTimeout(() => container.removeChild(toast), 300);
+            });
+
+            // Auto close
+            setTimeout(() => {
+                if (container.contains(toast)) {
+                    toast.classList.remove('show');
+                    setTimeout(() => container.removeChild(toast), 300);
+                }
+            }, duration);
+        }
+
+        function showLoading() {
+            document.getElementById('loadingOverlay').style.display = 'flex';
+            cardButton.disabled = true;
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingOverlay').style.display = 'none';
+            cardButton.disabled = false;
+        }
+
+        function parseSquareError(error) {
+            try {
+                // Handle string error messages
+                if (typeof error === 'string') {
+                    return error;
+                }
+
+                // Handle Square API error format
+                if (error.errors && Array.isArray(error.errors)) {
+                    return error.errors.map(err => err.detail || err.message).join('\n');
+                }
+
+                // Handle error object with message property
+                if (error.message) {
+                    return error.message;
+                }
+
+                // Handle JSON string errors
+                if (typeof error === 'string' && error.includes('{')) {
+                    const parsedError = JSON.parse(error);
+                    if (parsedError.error && Array.isArray(parsedError.error)) {
+                        return parsedError.error.map(err => err.detail || err.message).join('\n');
+                    }
+                }
+
+                // Fallback
+                return 'An unexpected error occurred. Please try again.';
+            } catch (e) {
+                console.error('Error parsing Square error:', e);
+                return 'An unexpected error occurred. Please try again.';
+            }
+        }
 
         const appId = '{{ square_application_id }}';
         const locationId = '{{ square_location_id }}';
@@ -342,25 +523,33 @@
         }
 
         async function createPayment(token) {
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
             const body = JSON.stringify({
                 locationId,
                 sourceId: token,
             });
 
-            const paymentResponse = await fetch('{% url "process_payment" %}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body,
-            });
+            try {
+                const paymentResponse = await fetch('{% url "process_payment" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body,
+                });
 
-            if (paymentResponse.ok) {
-                return paymentResponse.json();
+                const responseData = await paymentResponse.json();
+
+                if (paymentResponse.ok) {
+                    return responseData;
+                }
+
+                throw responseData;
+            } catch (err) {
+                console.error('Payment Error:', err);
+                throw err;
             }
-
-            const errorBody = await paymentResponse.text();
-            throw new Error(errorBody);
         }
 
         async function tokenize(paymentMethod) {
@@ -376,34 +565,46 @@
             }
         }
 
+        // Main initialization
         document.addEventListener('DOMContentLoaded', async function () {
             if (!window.Square) {
                 throw new Error('Square.js failed to load properly');
             }
 
-            const payments = window.Square.payments(appId, locationId);
             let card;
             try {
+                const payments = window.Square.payments(appId, locationId);
                 card = await initializeCard(payments);
             } catch (e) {
                 console.error('Initializing Card failed', e);
+                const errorMessage = parseSquareError(e);
+                showToast(errorMessage, 'Card Initialization Error');
                 return;
             }
 
             async function handlePaymentMethodSubmission(event, paymentMethod) {
                 event.preventDefault();
+                showLoading();
 
                 try {
                     const token = await tokenize(paymentMethod);
                     const paymentResults = await createPayment(token);
-                    console.log('Payment Success', paymentResults);
-                    window.location.href = `{% url "order_confirmation" 0 %}`.replace(0, paymentResults.order_id);
+                    
+                    if (paymentResults.error) {
+                        throw paymentResults.error;
+                    }
+                    
+                    // Redirect to confirmation page on success
+                    window.location.href = `{% url "order_confirmation" 0 %}`.replace('0', paymentResults.order_id);
                 } catch (e) {
-                    console.error(e.message);
+                    console.error('Payment Error:', e);
+                    const errorMessage = parseSquareError(e);
+                    showToast(errorMessage, 'Payment Error');
+                    hideLoading();
                 }
             }
 
-            const cardButton = document.getElementById('card-button');
+            // Add event listener to the payment button
             cardButton.addEventListener('click', async function (event) {
                 await handlePaymentMethodSubmission(event, card);
             });
