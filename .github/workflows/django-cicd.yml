@@ -35,16 +35,15 @@ jobs:
         username: ${{ secrets.EC2_USER }}
         key: ${{ secrets.EC2_SSH_KEY }}
         script: |
-          # Log in as root
-          sudo -i
-
+          
           # Navigate to the project directory
-          cd ~/Ebay-to-Web-Store
+          cd Ebay-to-Web-Store
 
           # Pull the latest changes from the Git repository
           git pull
 
           # Build the Docker image
+          
           docker build -t yashwanthsc/pjsauto:latest ./backend/pjsautolit
 
           # Check for a running container and remove it if exists
