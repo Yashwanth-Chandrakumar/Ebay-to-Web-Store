@@ -35,68 +35,23 @@ jobs:
         username: ${{ secrets.EC2_USER }}
         key: ${{ secrets.EC2_SSH_KEY }}
         script: |
-          # Update system
-          sudo dnf update -y
+          # Log in as root
+          sudo -i
 
-          # Install Docker
-          sudo dnf install docker -y
-          sudo systemctl start docker
-          sudo systemctl enable docker
-          sudo usermod -aG docker $USER
+          # Navigate to the project directory
+          cd ~/Ebay-to-Web-Store
 
-          # Install Nginx
-          sudo dnf install nginx -y
-          sudo systemctl start nginx
-          sudo systemctl enable nginx
+          # Pull the latest changes from the Git repository
+          git pull
 
-          # Install OpenSSL for generating a self-signed certificate
-          sudo dnf install openssl -y
+          # Build the Docker image
+          docker build -t yashwanthsc/pjsauto:latest ./backend/pjsautolit
 
-          # Generate a self-signed certificate
-          sudo mkdir -p /etc/nginx/ssl
-          sudo openssl req -newkey rsa:2048 -nodes -keyout /etc/nginx/ssl/nginx.key -x509 -days 365 -out /etc/nginx/ssl/nginx.crt -subj "/CN=localhost"
+          # Check for a running container and remove it if exists
+          if docker ps --format '{{.Names}}' | grep -q pjs; then
+            docker stop pjs
+            docker rm pjs
+          fi
 
-          # Pull the latest Docker image
-          sudo docker pull yashwanthsc/pjsauto:latest
-          
-          # Stop and remove the old container if it exists
-          sudo docker stop pjs || true
-          sudo docker rm pjs || true
-          
-          # Run the new container
-          sudo docker run -d --name pjs -p 8000:8000 yashwanthsc/pjsauto:latest
-
-          # Configure Nginx to proxy to the Docker container
-          # sudo tee /etc/nginx/conf.d/django-app.conf <<EOF
-          # server {
-          #     listen 80;
-          #     server_name 0.0.0.0;
-
-          #     location / {
-          #         proxy_pass http://localhost:8000;
-          #         proxy_set_header Host \$host;
-          #         proxy_set_header X-Real-IP \$remote_addr;
-          #         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-          #         proxy_set_header X-Forwarded-Proto \$scheme;
-          #     }
-          # }
-
-          # server {
-          #     listen 443 ssl;
-          #     server_name 0.0.0.0;
-
-          #     ssl_certificate /etc/nginx/ssl/nginx.crt;
-          #     ssl_certificate_key /etc/nginx/ssl/nginx.key;
-
-          #     location / {
-          #         proxy_pass http://localhost:8000;
-          #         proxy_set_header Host \$host;
-          #         proxy_set_header X-Real-IP \$remote_addr;
-          #         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-          #         proxy_set_header X-Forwarded-Proto \$scheme;
-          #     }
-          # }
-          # EOF
-
-          # Restart Nginx to apply changes
-          sudo systemctl restart nginx
+          # Run the recently built Docker container
+          docker run -d --name pjs -p 8000:8000 yashwanthsc/pjsauto:latest
