@@ -2069,7 +2069,7 @@ def process_payment(request):
         # Initialize Square client
         client = Client(
             access_token=settings.SQUARE_ACCESS_TOKEN,
-            environment='production'
+            environment='sandbox'
         )
         
         # Create payment
