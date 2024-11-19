@@ -387,6 +387,20 @@ form .invalid-feedback.visible {
         min-width: 100%;
     }
 }
+.error-message {
+            color: #dc3545;
+            font-size: 12px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .is-invalid {
+            border-color: #dc3545 !important;
+        }
+
+        .error-message.show {
+            display: block;
+        }
     </style>
     <script src="https://web.squarecdn.com/v1/square.js"></script>
 
@@ -420,60 +434,62 @@ form .invalid-feedback.visible {
         <div class="shipping-info mb-4">
             <h3>Shipping Information</h3>
             <form id="shipping-form" class="needs-validation" novalidate>
-                {% csrf_token %}
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <label for="{{ form.first_name.id_for_label }}">First Name *</label>
-                        {{ form.first_name }}
-                        <div class="invalid-feedback" id="first-name-error"></div>
+                        <label for="first_name">First Name *</label>
+                        <input type="text" class="form-control" id="first_name" name="first_name" required>
+                        <div class="error-message" id="first_name-error"></div>
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label for="{{ form.last_name.id_for_label }}">Last Name *</label>
-                        {{ form.last_name }}
-                        <div class="invalid-feedback" id="last-name-error"></div>
+                        <label for="last_name">Last Name *</label>
+                        <input type="text" class="form-control" id="last_name" name="last_name" required>
+                        <div class="error-message" id="last_name-error"></div>
                     </div>
                 </div>
 
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <label for="{{ form.email.id_for_label }}">Email *</label>
-                        {{ form.email }}
-                        <div class="invalid-feedback" id="email-error"></div>
+                        <label for="email">Email *</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                        <div class="error-message" id="email-error"></div>
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label for="{{ form.phone.id_for_label }}">Phone *</label>
-                        {{ form.phone }}
-                        <div class="invalid-feedback" id="phone-error"></div>
+                        <label for="phone">Phone *</label>
+                        <input type="tel" class="form-control" id="phone" name="phone" required>
+                        <div class="error-message" id="phone-error"></div>
                     </div>
                 </div>
 
                 <div class="mb-3">
-                    <label for="{{ form.address_line1.id_for_label }}">Address Line 1 *</label>
-                    {{ form.address_line1 }}
-                    <div class="invalid-feedback" id="address1-error"></div>
+                    <label for="address_line1">Address Line 1 *</label>
+                    <input type="text" class="form-control" id="address_line1" name="address_line1" required>
+                    <div class="error-message" id="address_line1-error"></div>
                 </div>
 
                 <div class="mb-3">
-                    <label for="{{ form.address_line2.id_for_label }}">Address Line 2</label>
-                    {{ form.address_line2 }}
-                    <div class="invalid-feedback" id="address2-error"></div>
+                    <label for="address_line2">Address Line 2</label>
+                    <input type="text" class="form-control" id="address_line2" name="address_line2">
+                    <div class="error-message" id="address_line2-error"></div>
                 </div>
 
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <label for="{{ form.city.id_for_label }}">City *</label>
-                        {{ form.city }}
-                        <div class="invalid-feedback" id="city-error"></div>
+                        <label for="city">City *</label>
+                        <input type="text" class="form-control" id="city" name="city" required>
+                        <div class="error-message" id="city-error"></div>
                     </div>
                     <div class="col-md-4 mb-3">
-                        <label for="{{ form.state.id_for_label }}">State *</label>
-                        {{ form.state }}
-                        <div class="invalid-feedback" id="state-error"></div>
+                        <label for="state">State *</label>
+                        <select class="form-control" id="state" name="state" required>
+                            <option value="">Select State</option>
+                            <!-- Add state options here -->
+                        </select>
+                        <div class="error-message" id="state-error"></div>
                     </div>
                     <div class="col-md-2 mb-3">
-                        <label for="{{ form.postal_code.id_for_label }}">ZIP *</label>
-                        {{ form.postal_code }}
-                        <div class="invalid-feedback" id="zip-error"></div>
+                        <label for="postal_code">ZIP *</label>
+                        <input type="text" class="form-control" id="postal_code" name="postal_code" required>
+                        <div class="error-message" id="postal_code-error"></div>
                     </div>
                 </div>
             </form>
@@ -643,20 +659,75 @@ form .invalid-feedback.visible {
 
         return await response.json();
     }
+    
+    // Previous Square initialization code remains the same
 
     function validateShippingForm() {
         const form = document.getElementById('shipping-form');
         const requiredFields = form.querySelectorAll('[required]');
         let isValid = true;
 
+        // Reset all error states
+        const errorMessages = document.querySelectorAll('.error-message');
+        errorMessages.forEach(error => {
+            error.classList.remove('show');
+        });
+
+        const inputs = form.querySelectorAll('.form-control');
+        inputs.forEach(input => {
+            input.classList.remove('is-invalid');
+        });
+
+        // Validate each required field
         requiredFields.forEach(field => {
+            const errorElement = document.getElementById(`${field.id}-error`);
+            
             if (!field.value.trim()) {
                 field.classList.add('is-invalid');
-                document.getElementById(`${field.id}-error`).textContent = 'This field is required.';
+                if (errorElement) {
+                    errorElement.textContent = 'This field is required.';
+                    errorElement.classList.add('show');
+                }
                 isValid = false;
-            } else {
-                field.classList.remove('is-invalid');
-                document.getElementById(`${field.id}-error`).textContent = '';
+            }
+            
+            // Email validation
+            if (field.type === 'email' && field.value.trim()) {
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(field.value.trim())) {
+                    field.classList.add('is-invalid');
+                    if (errorElement) {
+                        errorElement.textContent = 'Please enter a valid email address.';
+                        errorElement.classList.add('show');
+                    }
+                    isValid = false;
+                }
+            }
+
+            // Phone validation
+            if (field.type === 'tel' && field.value.trim()) {
+                const phoneRegex = /^\d{10}$/;
+                if (!phoneRegex.test(field.value.replace(/\D/g, ''))) {
+                    field.classList.add('is-invalid');
+                    if (errorElement) {
+                        errorElement.textContent = 'Please enter a valid 10-digit phone number.';
+                        errorElement.classList.add('show');
+                    }
+                    isValid = false;
+                }
+            }
+
+            // ZIP code validation
+            if (field.id === 'postal_code' && field.value.trim()) {
+                const zipRegex = /^\d{5}(-\d{4})?$/;
+                if (!zipRegex.test(field.value.trim())) {
+                    field.classList.add('is-invalid');
+                    if (errorElement) {
+                        errorElement.textContent = 'Please enter a valid ZIP code.';
+                        errorElement.classList.add('show');
+                    }
+                    isValid = false;
+                }
             }
         });
 
