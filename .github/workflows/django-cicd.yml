@@ -34,13 +34,18 @@ jobs:
           pwd
           
           # Navigate to the project directory
-          cd Ebay-to-Web-Store
+          cd /home/${{ secrets.EC2_USER }}/
 
-          # Pull the latest changes from the Git repository
-          git pull
+          # Clone the repository if the directory doesn't exist, else pull the latest changes
+          if [ ! -d "Ebay-to-Web-Store" ]; then
+            git clone https://github.com/Yashwanth-Chandrakumar/Ebay-to-Web-Store.git
+            cd Ebay-to-Web-Store
+          else
+            cd Ebay-to-Web-Store
+            git pull
+          fi
 
           # Build the Docker image
-          
           docker build -t yashwanthsc/pjsauto:latest ./backend/pjsautolit
 
           # Check for a running container and remove it if exists
