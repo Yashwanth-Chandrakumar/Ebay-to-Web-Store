@@ -581,6 +581,59 @@ form .invalid-feedback.visible {
 
 <script src="https://web.squarecdn.com/v1/square.js"></script>
 <script>
+    const US_STATES = [
+    { value: 'AL', label: 'Alabama' },
+    { value: 'AK', label: 'Alaska' },
+    { value: 'AZ', label: 'Arizona' },
+    { value: 'AR', label: 'Arkansas' },
+    { value: 'CA', label: 'California' },
+    { value: 'CO', label: 'Colorado' },
+    { value: 'CT', label: 'Connecticut' },
+    { value: 'DE', label: 'Delaware' },
+    { value: 'DC', label: 'District of Columbia' },
+    { value: 'FL', label: 'Florida' },
+    { value: 'GA', label: 'Georgia' },
+    { value: 'HI', label: 'Hawaii' },
+    { value: 'ID', label: 'Idaho' },
+    { value: 'IL', label: 'Illinois' },
+    { value: 'IN', label: 'Indiana' },
+    { value: 'IA', label: 'Iowa' },
+    { value: 'KS', label: 'Kansas' },
+    { value: 'KY', label: 'Kentucky' },
+    { value: 'LA', label: 'Louisiana' },
+    { value: 'ME', label: 'Maine' },
+    { value: 'MD', label: 'Maryland' },
+    { value: 'MA', label: 'Massachusetts' },
+    { value: 'MI', label: 'Michigan' },
+    { value: 'MN', label: 'Minnesota' },
+    { value: 'MS', label: 'Mississippi' },
+    { value: 'MO', label: 'Missouri' },
+    { value: 'MT', label: 'Montana' },
+    { value: 'NE', label: 'Nebraska' },
+    { value: 'NV', label: 'Nevada' },
+    { value: 'NH', label: 'New Hampshire' },
+    { value: 'NJ', label: 'New Jersey' },
+    { value: 'NM', label: 'New Mexico' },
+    { value: 'NY', label: 'New York' },
+    { value: 'NC', label: 'North Carolina' },
+    { value: 'ND', label: 'North Dakota' },
+    { value: 'OH', label: 'Ohio' },
+    { value: 'OK', label: 'Oklahoma' },
+    { value: 'OR', label: 'Oregon' },
+    { value: 'PA', label: 'Pennsylvania' },
+    { value: 'RI', label: 'Rhode Island' },
+    { value: 'SC', label: 'South Carolina' },
+    { value: 'SD', label: 'South Dakota' },
+    { value: 'TN', label: 'Tennessee' },
+    { value: 'TX', label: 'Texas' },
+    { value: 'UT', label: 'Utah' },
+    { value: 'VT', label: 'Vermont' },
+    { value: 'VA', label: 'Virginia' },
+    { value: 'WA', label: 'Washington' },
+    { value: 'WV', label: 'West Virginia' },
+    { value: 'WI', label: 'Wisconsin' },
+    { value: 'WY', label: 'Wyoming' }
+];
     let payments;
     let card;
     
@@ -663,77 +716,18 @@ form .invalid-feedback.visible {
     // Previous Square initialization code remains the same
 
     function validateShippingForm() {
-        const form = document.getElementById('shipping-form');
-        const requiredFields = form.querySelectorAll('[required]');
-        let isValid = true;
+    const form = document.getElementById('shipping-form');
+    const fields = form.querySelectorAll('input, select');
+    let isValid = true;
 
-        // Reset all error states
-        const errorMessages = document.querySelectorAll('.error-message');
-        errorMessages.forEach(error => {
-            error.classList.remove('show');
-        });
+    fields.forEach(field => {
+        if (!validateField(field)) {
+            isValid = false;
+        }
+    });
 
-        const inputs = form.querySelectorAll('.form-control');
-        inputs.forEach(input => {
-            input.classList.remove('is-invalid');
-        });
-
-        // Validate each required field
-        requiredFields.forEach(field => {
-            const errorElement = document.getElementById(`${field.id}-error`);
-            
-            if (!field.value.trim()) {
-                field.classList.add('is-invalid');
-                if (errorElement) {
-                    errorElement.textContent = 'This field is required.';
-                    errorElement.classList.add('show');
-                }
-                isValid = false;
-            }
-            
-            // Email validation
-            if (field.type === 'email' && field.value.trim()) {
-                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                if (!emailRegex.test(field.value.trim())) {
-                    field.classList.add('is-invalid');
-                    if (errorElement) {
-                        errorElement.textContent = 'Please enter a valid email address.';
-                        errorElement.classList.add('show');
-                    }
-                    isValid = false;
-                }
-            }
-
-            // Phone validation
-            if (field.type === 'tel' && field.value.trim()) {
-                const phoneRegex = /^\d{10}$/;
-                if (!phoneRegex.test(field.value.replace(/\D/g, ''))) {
-                    field.classList.add('is-invalid');
-                    if (errorElement) {
-                        errorElement.textContent = 'Please enter a valid 10-digit phone number.';
-                        errorElement.classList.add('show');
-                    }
-                    isValid = false;
-                }
-            }
-
-            // ZIP code validation
-            if (field.id === 'postal_code' && field.value.trim()) {
-                const zipRegex = /^\d{5}(-\d{4})?$/;
-                if (!zipRegex.test(field.value.trim())) {
-                    field.classList.add('is-invalid');
-                    if (errorElement) {
-                        errorElement.textContent = 'Please enter a valid ZIP code.';
-                        errorElement.classList.add('show');
-                    }
-                    isValid = false;
-                }
-            }
-        });
-
-        return isValid;
-    }
-
+    return isValid;
+}
     function showModal() {
         $('#shippingInfoModal').modal('show');
     }
@@ -745,7 +739,20 @@ form .invalid-feedback.visible {
     function hideLoading() {
         document.getElementById('loadingOverlay').classList.add('d-none');
     }
-
+    async function verifyUSAddress(address) {
+    // This is a placeholder for address verification service integration
+    // You would typically integrate with a service like USPS, SmartyStreets, or similar
+    return {
+        isValid: true,
+        standardized: {
+            address_line1: address.address_line1,
+            address_line2: address.address_line2,
+            city: address.city,
+            state: address.state,
+            postal_code: address.postal_code
+        }
+    };
+}
     function showToast(message, type) {
         const toastContainer = document.getElementById('toastContainer');
         const toast = document.createElement('div');
@@ -769,10 +776,119 @@ form .invalid-feedback.visible {
             toast.remove();
         });
     }
+    function validateField(field) {
+    const errorElement = document.getElementById(`${field.id}-error`);
+    let isValid = true;
+    let errorMessage = '';
 
+    switch (field.id) {
+        case 'phone':
+            const phoneValue = field.value.replace(/\D/g, '');
+            if (phoneValue.length !== 10) {
+                isValid = false;
+                errorMessage = 'Please enter a valid 10-digit phone number';
+            }
+            break;
+
+        case 'postal_code':
+            const zipRegex = /^\d{5}(-\d{4})?$/;
+            if (!zipRegex.test(field.value)) {
+                isValid = false;
+                errorMessage = 'Please enter a valid ZIP code (12345 or 12345-6789)';
+            }
+            break;
+
+        case 'email':
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(field.value)) {
+                isValid = false;
+                errorMessage = 'Please enter a valid email address';
+            }
+            break;
+
+        case 'address_line1':
+            if (field.value.length < 5) {
+                isValid = false;
+                errorMessage = 'Please enter a valid street address';
+            }
+            break;
+
+        case 'city':
+            if (field.value.length < 2) {
+                isValid = false;
+                errorMessage = 'Please enter a valid city name';
+            }
+            break;
+
+        case 'state':
+            if (!field.value) {
+                isValid = false;
+                errorMessage = 'Please select a state';
+            }
+            break;
+
+        default:
+            if (field.required && !field.value.trim()) {
+                isValid = false;
+                errorMessage = 'This field is required';
+            }
+    }
+
+    field.classList.toggle('is-invalid', !isValid);
+    if (errorElement) {
+        errorElement.textContent = errorMessage;
+        errorElement.classList.toggle('show', !isValid);
+    }
+
+    return isValid;
+}
+    function setupInputFormatting() {
+    // Phone number formatting
+    const phoneInput = document.getElementById('phone');
+    phoneInput.addEventListener('input', function(e) {
+        let value = e.target.value.replace(/\D/g, '');
+        if (value.length > 0) {
+            if (value.length <= 3) {
+                value = `(${value}`;
+            } else if (value.length <= 6) {
+                value = `(${value.slice(0, 3)}) ${value.slice(3)}`;
+            } else {
+                value = `(${value.slice(0, 3)}) ${value.slice(3, 6)}-${value.slice(6, 10)}`;
+            }
+        }
+        e.target.value = value;
+    });
+
+    // ZIP code formatting
+    const zipInput = document.getElementById('postal_code');
+    zipInput.addEventListener('input', function(e) {
+        let value = e.target.value.replace(/\D/g, '');
+        if (value.length > 5) {
+            value = value.slice(0, 5) + '-' + value.slice(5, 9);
+        }
+        e.target.value = value;
+    });
+
+    // Add input validation listeners
+    const form = document.getElementById('shipping-form');
+    const inputs = form.querySelectorAll('input, select');
+    inputs.forEach(input => {
+        input.addEventListener('blur', () => validateField(input));
+    });
+}
     document.addEventListener('DOMContentLoaded', function() {
         initializeSquare();
         document.getElementById('card-button').addEventListener('click', handlePayment);
+        const stateSelect = document.getElementById('state');
+    US_STATES.forEach(state => {
+        const option = document.createElement('option');
+        option.value = state.value;
+        option.textContent = state.label;
+        stateSelect.appendChild(option);
+    });
+
+    // Add input formatting
+    setupInputFormatting();
     });
 </script>
 </body>
