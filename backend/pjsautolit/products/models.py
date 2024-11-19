@@ -203,24 +203,82 @@ class CartItem(models.Model):
         unique_together = (("cart", "product"),)  # Composite key
 
 
-class Order(models.Model):
-    STATUS_CHOICES = (
-        ("pending", "Pending"),
-        ("completed", "Completed"),
-        ("failed", "Failed"),
-    )
+from django.core.validators import MinLengthValidator
+from django.db import models
 
-    cart = models.OneToOneField(Cart, on_delete=models.CASCADE)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
-    total_amount = models.DecimalField(max_digits=10, decimal_places=2)
-    square_payment_id = models.CharField(max_length=255, blank=True, null=True)
+
+class ShippingAddress(models.Model):
+    first_name = models.CharField(max_length=100)
+    last_name = models.CharField(max_length=100)
+    email = models.EmailField()
+    phone = models.CharField(max_length=20)
+    address_line1 = models.CharField(max_length=255)
+    address_line2 = models.CharField(max_length=255, blank=True)
+    city = models.CharField(max_length=100)
+    state = models.CharField(max_length=100)
+    postal_code = models.CharField(max_length=10, validators=[MinLengthValidator(5)])
+    country = models.CharField(max_length=100, default='United States')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"Order {self.id} - {self.status}"
+        return f"{self.first_name} {self.last_name} - {self.city}, {self.state}"
 
+class Order(models.Model):
+    STATUS_CHOICES = (
+        ('pending', 'Pending'),
+        ('processing', 'Processing'),
+        ('completed', 'Completed'),
+        ('cancelled', 'Cancelled'),
+        ('failed', 'Failed')
+    )
+    
+    order_number = models.CharField(max_length=20, unique=True, null=True, blank=True)
+    cart = models.OneToOneField('Cart', on_delete=models.CASCADE)
+    shipping_address = models.ForeignKey(
+        ShippingAddress, 
+        on_delete=models.PROTECT,
+        null=True,
+        default=None
+    )
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    subtotal = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    shipping_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    square_payment_id = models.CharField(max_length=255, blank=True, null=True)
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
+    def save(self, *args, **kwargs):
+        if not self.order_number:
+            # Generate order number based on timestamp and random string
+            import random
+            import string
+            import time
+            timestamp = int(time.time())
+            random_str = ''.join(random.choices(string.ascii_uppercase + string.digits, k=4))
+            self.order_number = f"ORD-{timestamp}-{random_str}"
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"Order {self.order_number or 'New'} - {self.status}"
+
+class OrderItem(models.Model):
+    order = models.ForeignKey(Order, related_name='items', on_delete=models.CASCADE)
+    product_id = models.CharField(max_length=100)
+    product_title = models.CharField(max_length=255)
+    quantity = models.PositiveIntegerField(default=1)
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    subtotal = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    
+    def save(self, *args, **kwargs):
+        self.subtotal = self.price * self.quantity
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.quantity}x {self.product_title}"
+    
 from django.db import models
 
 

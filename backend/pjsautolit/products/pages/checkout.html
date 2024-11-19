@@ -317,298 +317,368 @@
                 margin: 0 auto;
             }
         }
+        form input, form select, form textarea {
+    width: 100%;
+    padding: 12px 15px;
+    margin: 10px 0;
+    display: inline-block;
+    border: 1px solid var(--light-gray);
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    font-size: 16px;
+    font-family: 'Roboto', sans-serif;
+    color: var(--text-color);
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+form input:focus, form select:focus, form textarea:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 5px var(--primary-color);
+    outline: none;
+}
+
+form label {
+    font-size: 14px;
+    font-weight: bold;
+    color: var(--text-color);
+    margin-bottom: 5px;
+    display: block;
+}
+
+form .invalid-feedback {
+    font-size: 12px;
+    color: var(--accent-color);
+    margin-top: 5px;
+    display: none;
+}
+
+form .invalid-feedback.visible {
+    display: block;
+}
+
+.row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.col-md-6 {
+    flex: 1;
+    min-width: 48%;
+}
+
+.col-md-4 {
+    flex: 1;
+    min-width: 30%;
+}
+
+.col-md-2 {
+    flex: 1;
+    min-width: 15%;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .row .col-md-6, .row .col-md-4, .row .col-md-2 {
+        min-width: 100%;
+    }
+}
     </style>
     <script src="https://web.squarecdn.com/v1/square.js"></script>
+
 </head>
 <body>
-    <nav class="navbar">
-        <div class="logo">
-            <a href="/" class="navbar-brand"><img src="https://i.postimg.cc/h47H7Tcf/header-1.gif" style="height: 80px;"></a>
-        </div>
-        <div class="nav-links">
-            <a href="{% url 'landing_page' %}" class="nav-link">Home</a>
-            <a href="{% url 'landing_page' %}#show-schedule" class="nav-link">Show Schedule</a>
-            <a href="{% url 'product_list' %}" class="nav-link">Products</a>
-            <a href="{% url 'landing_page' %}#auto-links" class="nav-link">Auto Links</a>
-            <a href="{% url 'landing_page' %}#wanted" class="nav-link">Wanted</a>
-            <a href="{% url 'view_cart' %}" class="nav-link">Cart</a>
-            <a href="{% url 'terms' %}" class="nav-link">Terms</a>
-            <a href="#" class="nav-link">Contact</a>
-        </div>
-        <div class="user-actions">
-            <div class="cart-icon">
-                <a href="/cart/" class="nav-link"> <i class="fas fa-shopping-cart"></i></a>
-                <span class="cart-count">{{cart_count}}</span>
-            </div>
-        </div>
-    </nav>
+<div class="container">
+    <div class="checkout-content">
+        <h1>Checkout</h1>
+        
+        <!-- Shipping Information Form -->
+        <div class="shipping-info mb-4">
+            <h3>Shipping Information</h3>
+            <form id="shipping-form" class="needs-validation" novalidate>
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.first_name.id_for_label }}">First Name *</label>
+                        {{ form.first_name }}
+                        <div class="invalid-feedback" id="first-name-error"></div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.last_name.id_for_label }}">Last Name *</label>
+                        {{ form.last_name }}
+                        <div class="invalid-feedback" id="last-name-error"></div>
+                    </div>
+                </div>
 
-    <div class="container">
-        <div class="checkout-content">
-            <h1>Checkout</h1>
-            <div class="summary">
-                <h3>Order Summary</h3>
-                <ul class="list-group">
-                    {% for item in cart_items %}
-                    <li class="list-group-item">
-                        <div>
-                            <h5>{{ item.product.title }}</h5>
-                            <small>Quantity: {{ item.quantity }}</small>
-                        </div>
-                        <span>${{ item.subtotal }}</span>
-                    </li>
-                    {% endfor %}
-                    <li class="list-group-item">
-                        <span>Total Weight</span>
-                        <strong>{{ total_weight_major }} lb {{ total_weight_minor }} oz</strong>
-                    </li>
-                    <li class="list-group-item">
-                        <span>Total (USD)</span>
-                        <strong>${{ cart_total }}</strong>
-                    </li>
-                    <li class="list-group-item">
-                        <div>
-                            <span>Shipping Cost</span>
-                            <button type="button" class="info-button" onclick="showModal()" id="shippingInfoBtn">
-                                <i class="fas fa-info-circle"></i>
-                            </button>
-                        </div>
-                        <strong>+${{ shipping_cost }}</strong>
-                    </li>
-                    <li class="list-group-item">
-                        <span>Total Cost (Including Shipping)</span>
-                        <strong>${{ total_including_shipping }}</strong>
-                    </li>
-                </ul>
-            </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.email.id_for_label }}">Email *</label>
+                        {{ form.email }}
+                        <div class="invalid-feedback" id="email-error"></div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.phone.id_for_label }}">Phone *</label>
+                        {{ form.phone }}
+                        <div class="invalid-feedback" id="phone-error"></div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="{{ form.address_line1.id_for_label }}">Address Line 1 *</label>
+                    {{ form.address_line1 }}
+                    <div class="invalid-feedback" id="address1-error"></div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="{{ form.address_line2.id_for_label }}">Address Line 2</label>
+                    {{ form.address_line2 }}
+                    <div class="invalid-feedback" id="address2-error"></div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.city.id_for_label }}">City *</label>
+                        {{ form.city }}
+                        <div class="invalid-feedback" id="city-error"></div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="{{ form.state.id_for_label }}">State *</label>
+                        {{ form.state }}
+                        <div class="invalid-feedback" id="state-error"></div>
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label for="{{ form.postal_code.id_for_label }}">ZIP *</label>
+                        {{ form.postal_code }}
+                        <div class="invalid-feedback" id="zip-error"></div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Order Summary -->
+        <div class="order-summary">
+            <h3>Order Summary</h3>
+            <ul class="list-group">
+                {% for item in cart_items %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5>{{ item.product.title }}</h5>
+                        <small class="text-muted">Product ID: {{ item.product.item_id }}</small>
+                        <small class="text-muted d-block">Quantity: {{ item.quantity }}</small>
+                    </div>
+                    <span class="price">${{ item.subtotal }}</span>
+                </li>
+                {% endfor %}
+                <li class="list-group-item d-flex justify-content-between">
+                    <span>Total Weight</span>
+                    <strong>{{ total_weight_major }} lb {{ total_weight_minor }} oz</strong>
+                </li>
+                <li class="list-group-item d-flex justify-content-between">
+                    <span>Subtotal (USD)</span>
+                    <strong>${{ cart_total }}</strong>
+                </li>
+                <li class="list-group-item d-flex justify-content-between">
+                    <div>
+                        <span>Shipping Cost</span>
+                        <button type="button" class="info-button" onclick="showModal()">
+                            <i class="fas fa-info-circle"></i>
+                        </button>
+                    </div>
+                    <strong>+${{ shipping_cost }}</strong>
+                </li>
+                <li class="list-group-item d-flex justify-content-between">
+                    <span>Total (Including Shipping)</span>
+                    <strong>${{ total_including_shipping }}</strong>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Payment Form -->
+        <div class="payment-section mt-4">
+            <h3>Payment Information</h3>
             <form id="payment-form">
                 {% csrf_token %}
-                <div id="card-container"></div>
-                <button id="card-button" type="button" class="btn">Pay ${{ total_including_shipping }}</button>
+                <div id="card-container" class="mb-3"></div>
+                <button id="card-button" type="button" class="btn btn-primary btn-lg w-100">
+                    Pay ${{ total_including_shipping }}
+                </button>
             </form>
         </div>
     </div>
+</div>
 
-    <div id="shippingInfoModal" class="modal">
+<!-- Shipping Info Modal -->
+<div id="shippingInfoModal" class="modal fade">
+    <div class="modal-dialog">
         <div class="modal-content">
-            <span class="close" onclick="closeModal()">&times;</span>
-            <h2>Shipping Cost Calculation</h2>
-            <p>Here's how your shipping cost is calculated:</p>
-            <ul>
-                <li><strong>First pound (1 lb): </strong> $3.65</li>
-                <li><strong>Each additional pound: </strong> $0.70</li>
-                <li><strong>Packaging charges: </strong> $2.00</li>
-            </ul>
+            <div class="modal-header">
+                <h5 class="modal-title">Shipping Cost Calculation</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Here's how your shipping cost is calculated:</p>
+                <ul>
+                    <li><strong>First pound (1 lb): </strong> $3.65</li>
+                    <li><strong>Each additional pound: </strong> $0.70</li>
+                    <li><strong>Packaging charges: </strong> $2.00</li>
+                </ul>
+            </div>
         </div>
     </div>
+</div>
 
-    <div class="toast-container" id="toastContainer"></div>
-    <div class="loading-overlay" id="loadingOverlay">
-        <div class="loading-spinner"></div>
+<!-- Toast Container -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3" id="toastContainer"></div>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay d-none" id="loadingOverlay">
+    <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
     </div>
+</div>
 
-    <footer>
-        <div class="container">
-            <p>&copy; 2024 PJ's Auto Literature. All rights reserved.</p>
-        </div>
-    </footer>
+<script src="https://web.squarecdn.com/v1/square.js"></script>
+<script>
+    let payments;
+    let card;
+    
+    async function initializeSquare() {
+        payments = Square.payments('{{ square_application_id }}', '{{ square_location_id }}');
+        card = await payments.card();
+        await card.attach('#card-container');
+    }
 
-    <script>
-        const modal = document.getElementById("shippingInfoModal");
-        const btn = document.getElementById("shippingInfoBtn");
-        const span = document.getElementsByClassName("close")[0];
-        const cardButton = document.getElementById('card-button');
+    async function handlePayment(event) {
+        event.preventDefault();
+        showLoading();
 
-        function showModal() {
-            modal.style.display = "block";
-        }
-        
-        function closeModal() {
-            modal.style.display = "none";
-        }
-
-        window.addEventListener('click', function(event) {
-            if (event.target == modal) {
-                modal.style.display = "none";
-            }
-        });
-
-        function showToast(message, title = 'Error', duration = 5000) {
-            const container = document.getElementById('toastContainer');
-            const toast = document.createElement('div');
-            toast.className = 'toast error';
-            
-            toast.innerHTML = `
-                <div>
-                    <div class="toast-header">${title}</div>
-                    <div class="toast-body">${message}</div>
-                </div>
-                <button class="toast-close">&times;</button>
-            `;
-
-            container.appendChild(toast);
-            
-            // Trigger reflow
-            toast.offsetHeight;
-            
-            // Show toast
-            setTimeout(() => toast.classList.add('show'), 10);
-
-            // Setup close button
-            const closeButton = toast.querySelector('.toast-close');
-            closeButton.addEventListener('click', () => {
-                toast.classList.remove('show');
-                setTimeout(() => container.removeChild(toast), 300);
-            });
-
-            // Auto close
-            setTimeout(() => {
-                if (container.contains(toast)) {
-                    toast.classList.remove('show');
-                    setTimeout(() => container.removeChild(toast), 300);
-                }
-            }, duration);
-        }
-
-        function showLoading() {
-            document.getElementById('loadingOverlay').style.display = 'flex';
-            cardButton.disabled = true;
-        }
-
-        function hideLoading() {
-            document.getElementById('loadingOverlay').style.display = 'none';
-            cardButton.disabled = false;
-        }
-
-        function parseSquareError(error) {
-            try {
-                // Handle string error messages
-                if (typeof error === 'string') {
-                    return error;
-                }
-
-                // Handle Square API error format
-                if (error.errors && Array.isArray(error.errors)) {
-                    return error.errors.map(err => err.detail || err.message).join('\n');
-                }
-
-                // Handle error object with message property
-                if (error.message) {
-                    return error.message;
-                }
-
-                // Handle JSON string errors
-                if (typeof error === 'string' && error.includes('{')) {
-                    const parsedError = JSON.parse(error);
-                    if (parsedError.error && Array.isArray(parsedError.error)) {
-                        return parsedError.error.map(err => err.detail || err.message).join('\n');
-                    }
-                }
-
-                // Fallback
-                return 'An unexpected error occurred. Please try again.';
-            } catch (e) {
-                console.error('Error parsing Square error:', e);
-                return 'An unexpected error occurred. Please try again.';
-            }
-        }
-
-        const appId = '{{ square_application_id }}';
-        const locationId = '{{ square_location_id }}';
-
-        async function initializeCard(payments) {
-            const card = await payments.card();
-            await card.attach('#card-container');
-            return card;
-        }
-
-        async function createPayment(token) {
-            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-            const body = JSON.stringify({
-                locationId,
-                sourceId: token,
-            });
-
-            try {
-                const paymentResponse = await fetch('{% url "process_payment" %}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': csrfToken
-                    },
-                    body,
-                });
-
-                const responseData = await paymentResponse.json();
-
-                if (paymentResponse.ok) {
-                    return responseData;
-                }
-
-                throw responseData;
-            } catch (err) {
-                console.error('Payment Error:', err);
-                throw err;
-            }
-        }
-
-        async function tokenize(paymentMethod) {
-            const tokenResult = await paymentMethod.tokenize();
-            if (tokenResult.status === 'OK') {
-                return tokenResult.token;
-            } else {
-                let errorMessage = `Tokenization failed with status: ${tokenResult.status}`;
-                if (tokenResult.errors) {
-                    errorMessage += ` and errors: ${JSON.stringify(tokenResult.errors)}`;
-                }
-                throw new Error(errorMessage);
-            }
-        }
-
-        // Main initialization
-        document.addEventListener('DOMContentLoaded', async function () {
-            if (!window.Square) {
-                throw new Error('Square.js failed to load properly');
-            }
-
-            let card;
-            try {
-                const payments = window.Square.payments(appId, locationId);
-                card = await initializeCard(payments);
-            } catch (e) {
-                console.error('Initializing Card failed', e);
-                const errorMessage = parseSquareError(e);
-                showToast(errorMessage, 'Card Initialization Error');
+        try {
+            // Validate shipping form first
+            if (!validateShippingForm()) {
+                hideLoading();
+                showToast('Please fill in all required shipping information.', 'error');
                 return;
             }
 
-            async function handlePaymentMethodSubmission(event, paymentMethod) {
-                event.preventDefault();
-                showLoading();
-
-                try {
-                    const token = await tokenize(paymentMethod);
-                    const paymentResults = await createPayment(token);
-                    
-                    if (paymentResults.error) {
-                        throw paymentResults.error;
-                    }
-                    
-                    // Redirect to confirmation page on success
-                    window.location.href = `{% url "order_confirmation" 0 %}`.replace('0', paymentResults.order_id);
-                } catch (e) {
-                    console.error('Payment Error:', e);
-                    const errorMessage = parseSquareError(e);
-                    showToast(errorMessage, 'Payment Error');
-                    hideLoading();
-                }
+            // Process shipping form
+            const shippingData = await processShippingForm();
+            if (!shippingData.success) {
+                hideLoading();
+                showToast('Error saving shipping information.', 'error');
+                return;
             }
 
-            // Add event listener to the payment button
-            cardButton.addEventListener('click', async function (event) {
-                await handlePaymentMethodSubmission(event, card);
-            });
+            // Get payment token
+            const result = await card.tokenize();
+            if (result.status === 'OK') {
+                // Process payment
+                const response = await fetch('/process-payment/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    },
+                    body: JSON.stringify({
+                        sourceId: result.token
+                    })
+                });
+
+                const paymentResult = await response.json();
+                if (paymentResult.success) {
+                    showToast('Payment successful!', 'success');
+                    setTimeout(() => {
+                        window.location.href = `/order-confirmation/${paymentResult.order_id}/`;
+                    }, 2000);
+                } else {
+                    throw new Error(paymentResult.error);
+                }
+            } else {
+                throw new Error(result.errors[0].message);
+            }
+        } catch (error) {
+            console.error('Payment error:', error);
+            showToast(error.message || 'Payment processing failed.', 'error');
+        } finally {
+            hideLoading();
+        }
+    }
+
+    async function processShippingForm() {
+        const form = document.getElementById('shipping-form');
+        const formData = new FormData(form);
+
+        const response = await fetch('', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
         });
-    </script>
+
+        return await response.json();
+    }
+
+    function validateShippingForm() {
+        const form = document.getElementById('shipping-form');
+        const requiredFields = form.querySelectorAll('[required]');
+        let isValid = true;
+
+        requiredFields.forEach(field => {
+            if (!field.value.trim()) {
+                field.classList.add('is-invalid');
+                document.getElementById(`${field.id}-error`).textContent = 'This field is required.';
+                isValid = false;
+            } else {
+                field.classList.remove('is-invalid');
+                document.getElementById(`${field.id}-error`).textContent = '';
+            }
+        });
+
+        return isValid;
+    }
+
+    function showModal() {
+        $('#shippingInfoModal').modal('show');
+    }
+
+    function showLoading() {
+        document.getElementById('loadingOverlay').classList.remove('d-none');
+    }
+
+    function hideLoading() {
+        document.getElementById('loadingOverlay').classList.add('d-none');
+    }
+
+    function showToast(message, type) {
+        const toastContainer = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = `toast align-items-center text-white bg-${type === 'error' ? 'danger' : 'success'}`;
+        toast.setAttribute('role', 'alert');
+        toast.setAttribute('aria-live', 'assertive');
+        toast.setAttribute('aria-atomic', 'true');
+
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">${message}</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        `;
+
+        toastContainer.appendChild(toast);
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+
+        toast.addEventListener('hidden.bs.toast', () => {
+            toast.remove();
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeSquare();
+        document.getElementById('card-button').addEventListener('click', handlePayment);
+    });
+</script>
 </body>
 </html>
