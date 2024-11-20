@@ -402,7 +402,7 @@ form .invalid-feedback.visible {
             display: block;
         }
     </style>
-    <script src="https://web.squarecdn.com/v1/square.js"></script>
+    <script src="https://sandbox.web.squarecdn.com/v1/square.js"></script>
 
 </head>
 <body>
@@ -491,6 +491,7 @@ form .invalid-feedback.visible {
                         <input type="text" class="form-control" id="postal_code" name="postal_code" required>
                         <div class="error-message" id="postal_code-error"></div>
                     </div>
+                    <input type="hidden" name="country" value="United States">
                 </div>
             </form>
         </div>
@@ -579,7 +580,7 @@ form .invalid-feedback.visible {
     </div>
 </div>
 
-<script src="https://web.squarecdn.com/v1/square.js"></script>
+<script src="https://sandbox.web.squarecdn.com/v1/square.js"></script>
 <script>
     const US_STATES = [
     { value: 'AL', label: 'Alabama' },
@@ -699,20 +700,40 @@ form .invalid-feedback.visible {
     }
 
     async function processShippingForm() {
-        const form = document.getElementById('shipping-form');
-        const formData = new FormData(form);
-
-        const response = await fetch('', {
+    const form = document.getElementById('shipping-form');
+    const formData = new FormData(form);
+    
+    try {
+        const response = await fetch('/checkout/', {
             method: 'POST',
             body: formData,
             headers: {
-                'X-Requested-With': 'XMLHttpRequest'
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
             }
         });
 
-        return await response.json();
+        const data = await response.json();
+        console.log('Shipping form response:', data);
+        
+        if (!data.success && data.errors) {
+            // Display validation errors
+            Object.keys(data.errors).forEach(field => {
+                const errorElement = document.getElementById(`${field}-error`);
+                if (errorElement) {
+                    errorElement.textContent = data.errors[field].join(' ');
+                    errorElement.classList.add('show');
+                }
+            });
+            return { success: false };
+        }
+        
+        return data;
+    } catch (error) {
+        console.error('Error processing shipping form:', error);
+        return { success: false };
     }
-    
+}
     // Previous Square initialization code remains the same
 
     function validateShippingForm() {

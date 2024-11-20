@@ -2047,6 +2047,7 @@ def download_excel(request):
 
 
 from django.core.paginator import Paginator
+from django.db import transaction
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.csrf import csrf_exempt
@@ -2054,65 +2055,157 @@ from square.client import Client
 
 
 @csrf_exempt
+@transaction.atomic
 def process_payment(request):
+    print("Starting payment processing...")
+    
+    def calculate_usps_media_mail_cost(weight):
+        base_rate = 3.65
+        additional_rate = 0.70
+        rounded_weight = int(weight) if weight == int(weight) else int(weight) + 1
+        return base_rate + (rounded_weight - 1) * additional_rate if rounded_weight > 1 else base_rate
+    
     if request.method != 'POST':
+        print("Invalid request method:", request.method)
         return JsonResponse({'error': 'Invalid request method'}, status=400)
     
     try:
         data = json.loads(request.body)
-        order_id = request.session.get('pending_order_id')
-        if not order_id:
-            raise ValueError("No pending order found")
-            
-        order = Order.objects.get(id=order_id)
+        print("Received payment data:", data)
         
-        # Initialize Square client
-        client = Client(
-            access_token=settings.SQUARE_ACCESS_TOKEN,
-            environment='production'
-        )
-        
-        # Create payment
-        result = client.payments.create_payment(
-            source_id=data['sourceId'],
-            amount_money={
-                'amount': int(order.total_amount * 100),  # Convert to cents
-                'currency': 'USD'
-            },
-            idempotency_key=str(uuid.uuid4()),
-            location_id=settings.SQUARE_LOCATION_ID
-        )
-        
-        if result.is_success():
-            # Update order status
-            order.status = 'completed'
-            order.square_payment_id = result.body['payment']['id']
-            order.save()
-            
-            # Clear cart
-            del request.session['cart_id']
-            del request.session['pending_order_id']
-            
+        # Enhanced source_id validation
+        source_id = data.get('sourceId', '').strip()
+        if not source_id:
+            print("ERROR: Empty or missing sourceId")
             return JsonResponse({
-                'success': True,
-                'order_id': order.id
-            })
-        else:
-            order.status = 'failed'
-            order.save()
-            return JsonResponse({
-                'error': 'Payment failed',
-                'details': result.errors
+                'error': 'Invalid payment source',
+                'details': 'Source ID is required and cannot be empty'
             }, status=400)
+        
+        cart_id = request.session.get('cart_id')
+        shipping_data = request.session.get('shipping_data')
+        print(f"Cart ID from session: {cart_id}")
+        print("Shipping data from session:", shipping_data)
+        
+        if not cart_id or not shipping_data:
+            print("Missing required session data")
+            raise ValueError("Missing cart or shipping information")
             
+        cart = Cart.objects.get(id=cart_id)
+        print(f"Found cart: {cart}")
+        
+        # Create shipping address and order within transaction
+        with transaction.atomic():
+            print("Creating shipping address...")
+            shipping_address = ShippingAddress.objects.create(**shipping_data)
+            print(f"Created shipping address: {shipping_address}")
+            
+            # Calculate totals
+            cart_total = cart.total_amount()
+            shipping_cost = calculate_usps_media_mail_cost(cart.total_weight()) + 2.00
+            total_including_shipping = cart_total + Decimal(shipping_cost)
+            print(f"Order totals - Subtotal: ${cart_total}, Shipping: ${shipping_cost}, Total: ${total_including_shipping}")
+            
+            # Create order
+            print("Creating order...")
+            order = Order.objects.create(
+                cart=cart,
+                shipping_address=shipping_address,
+                subtotal=cart_total,
+                shipping_cost=shipping_cost,
+                total_amount=total_including_shipping,
+                status='pending'
+            )
+            print(f"Created order: {order}")
+            
+            # Create order items
+            print("Creating order items...")
+            for item in cart.cartitem_set.all():
+                order_item = OrderItem.objects.create(
+                    order=order,
+                    product_id=item.product.item_id,
+                    product_title=item.product.title,
+                    quantity=item.quantity,
+                    price=item.product.price,
+                )
+                print(f"Created order item: {order_item}")
+            
+            # Process payment with Square
+            print("Processing Square payment...")
+            client = Client(
+                access_token=settings.SQUARE_ACCESS_TOKEN,
+                environment='sandbox'
+            )
+            
+            # Detailed payment data with comprehensive logging
+            payment_body = {
+                'source_id': source_id,
+                'idempotency_key': str(uuid.uuid4()),
+                'amount_money': {
+                    'amount': int(total_including_shipping * 100),
+                    'currency': 'USD'
+                },
+                'autocomplete': True,
+                'location_id': settings.SQUARE_LOCATION_ID
+            }
+            print("Detailed Square payment request body:", json.dumps(payment_body, indent=2))
+            
+            try:
+                # Using the latest Square SDK method for creating payments
+                result = client.payments.create_payment(body=payment_body)
+                
+                # Enhanced result logging
+                print("Full Square API response:", result.body)
+                
+                if result.is_success():
+                    print("Payment successful!")
+                    # Update order status
+                    order.status = 'completed'
+                    order.square_payment_id = result.body.get('payment', {}).get('id')
+                    order.save()
+                    print(f"Updated order status: {order.status}")
+                    
+                    # Clear session data
+                    del request.session['cart_id']
+                    del request.session['shipping_data']
+                    print("Cleared session data")
+                    
+                    return JsonResponse({
+                        'success': True,
+                        'order_id': order.id,
+                        'square_payment_id': order.square_payment_id
+                    })
+                else:
+                    # More detailed error handling
+                    error_details = result.errors if hasattr(result, 'errors') else "Unknown error"
+                    print("Payment failed with details:", error_details)
+                    return JsonResponse({
+                        'error': 'Payment processing failed',
+                        'details': error_details
+                    }, status=400)
+                    
+            except Exception as square_error:
+                print(f"Square API error: {str(square_error)}")
+                # Log the full exception for debugging
+                import traceback
+                traceback.print_exc()
+                
+                return JsonResponse({
+                    'error': 'Square payment processing failed',
+                    'details': str(square_error)
+                }, status=500)
+                
     except Exception as e:
-        logger.error(f"Payment processing error: {str(e)}", exc_info=True)
+        print(f"Payment processing error: {str(e)}")
+        import traceback
+        print("Full traceback:")
+        traceback.print_exc()
         return JsonResponse({
             'error': 'An error occurred processing payment',
             'details': str(e)
         }, status=500)
-
-
+    
+    
 def add_to_cart(request, product_id):
     product = get_object_or_404(Product, item_id=product_id)
     cart, created = Cart.objects.get_or_create(id=request.session.get("cart_id"))
@@ -2217,10 +2310,16 @@ logger = logging.getLogger(__name__)
 
 
 import json
+import uuid
 from decimal import ROUND_HALF_UP, Decimal
 
+from django.conf import settings
 from django.contrib import messages
+from django.db import transaction
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.csrf import csrf_exempt
+from square.client import Client
 
 from .forms import ShippingAddressForm
 from .models import Cart, Order, OrderItem, ShippingAddress
@@ -2228,17 +2327,29 @@ from .models import Cart, Order, OrderItem, ShippingAddress
 
 def checkout(request):
     try:
+        print("Starting checkout process...")
+        
         # Get cart
         cart_id = request.session.get("cart_id")
+        print(f"Cart ID from session: {cart_id}")
+        
         if not cart_id:
+            print("No cart ID found in session")
             return redirect("view_cart")
         
         cart = get_object_or_404(Cart, id=cart_id)
         cart_items = cart.cartitem_set.all()
+        print(f"Found cart with {cart_items.count()} items")
+        
+        if not cart_items.exists():
+            print("Cart is empty")
+            messages.error(request, "Your cart is empty")
+            return redirect("view_cart")
         
         # Calculate totals
         cart_total = cart.total_amount()
         cart_total_weight = cart.total_weight()
+        print(f"Cart total: ${cart_total}, Weight: {cart_total_weight}lbs")
         
         # Calculate weight display
         total_weight_major = int(cart_total_weight)
@@ -2254,51 +2365,39 @@ def checkout(request):
         shipping_cost = calculate_usps_media_mail_cost(cart_total_weight) + 2.00
         total_including_shipping = cart_total + Decimal(shipping_cost)
         total_including_shipping = total_including_shipping.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        print(f"Shipping cost: ${shipping_cost}, Total with shipping: ${total_including_shipping}")
         
-        # Handle form
-        if request.method == 'POST':
+        # Handle shipping form submission
+        if request.method == 'POST' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            print("Processing AJAX shipping form submission")
             form = ShippingAddressForm(request.POST)
+            print("Form data:", request.POST)
+            
             if form.is_valid():
-                shipping_address = form.save()
-                
-                # Create order
-                order = Order.objects.create(
-                    cart=cart,
-                    shipping_address=shipping_address,
-                    subtotal=cart_total,
-                    shipping_cost=shipping_cost,
-                    total_amount=total_including_shipping,
-                    status='pending'
-                )
-                
-                # Create order items
-                for item in cart_items:
-                    OrderItem.objects.create(
-                        order=order,
-                        product_id=item.product.item_id,
-                        product_title=item.product.title,
-                        quantity=item.quantity,
-                        price=item.product.price,
-                    )
-                
-                # Store order ID in session for payment processing
-                request.session['pending_order_id'] = order.id
-                
-                return JsonResponse({
-                    'success': True,
-                    'order_id': order.id
-                })
+                print("Form is valid, storing shipping data in session")
+                shipping_data = {
+                    'first_name': form.cleaned_data['first_name'],
+                    'last_name': form.cleaned_data['last_name'],
+                    'email': form.cleaned_data['email'],
+                    'phone': form.cleaned_data['phone'],
+                    'address_line1': form.cleaned_data['address_line1'],
+                    'address_line2': form.cleaned_data['address_line2'],
+                    'city': form.cleaned_data['city'],
+                    'state': form.cleaned_data['state'],
+                    'postal_code': form.cleaned_data['postal_code'],
+                    'country': 'United States'
+                }
+                request.session['shipping_data'] = shipping_data
+                print("Shipping data stored in session successfully")
+                return JsonResponse({'success': True})
             else:
+                print("Form validation failed:", form.errors)
                 return JsonResponse({
                     'success': False,
                     'errors': form.errors
                 })
         
-        else:
-            form = ShippingAddressForm()
-        
         context = {
-            'form': form,
             'cart_items': cart_items,
             'cart_total': cart_total,
             'total_weight_major': total_weight_major,
@@ -2309,13 +2408,16 @@ def checkout(request):
             'square_location_id': settings.SQUARE_LOCATION_ID,
         }
         
+        print("Rendering checkout page with context")
         return render(request, "pages/checkout.html", context)
         
     except Exception as e:
-        logger.error(f"Checkout error: {str(e)}", exc_info=True)
+        print(f"Checkout error: {str(e)}")
+        import traceback
+        print("Full traceback:")
+        print(traceback.format_exc())
         messages.error(request, "An error occurred during checkout. Please try again.")
         return redirect("view_cart")
-
 
 logger = logging.getLogger(__name__)
 
