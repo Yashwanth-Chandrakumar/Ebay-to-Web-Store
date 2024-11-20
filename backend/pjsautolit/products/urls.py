@@ -1,6 +1,13 @@
+from django.contrib.sitemaps.views import sitemap
 from django.urls import path
 
 from . import views
+from .sitemaps import CustomPageSitemap, ProductSitemap
+
+sitemaps = {
+    'products': ProductSitemap,
+    'static': CustomPageSitemap,
+}
 
 urlpatterns = [
     path("fetch-items/", views.fetch_all_items, name="fetch_items"),
@@ -67,5 +74,6 @@ urlpatterns = [
     
     path('orders/', views.order_list, name='order_list'),
     path('order-details/<int:order_id>/', views.order_details, name='order_details'),
+    path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
 
 ]
