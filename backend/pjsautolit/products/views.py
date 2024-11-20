@@ -2164,15 +2164,29 @@ def process_payment(request):
             
             # Detailed payment data with comprehensive logging
             payment_body = {
-                'source_id': source_id,
-                'idempotency_key': str(uuid.uuid4()),
-                'amount_money': {
-                    'amount': int(total_including_shipping * 100),
-                    'currency': 'USD'
-                },
-                'autocomplete': True,
-                'location_id': settings.SQUARE_LOCATION_ID
-            }
+    'source_id': source_id,
+    'idempotency_key': str(uuid.uuid4()),
+    'amount_money': {
+        'amount': int(total_including_shipping * 100),
+        'currency': 'USD'
+    },
+    'autocomplete': True,
+    'location_id': settings.SQUARE_LOCATION_ID,
+    'customer': {
+        'given_name': shipping_data['first_name'],
+        'family_name': shipping_data['last_name'],
+        'email_address': shipping_data['email'],
+        'address': {
+            'address_line_1': shipping_data['address_line1'],
+            'address_line_2': shipping_data['address_line2'],
+            'locality': shipping_data['city'],
+            'administrative_district_name': shipping_data['state'],
+            'postal_code': shipping_data['postal_code'],
+            'country': 'US'
+        },
+        'phone_number': shipping_data['phone']
+    }
+}
             print("Detailed Square payment request body:", json.dumps(payment_body, indent=2))
             
             try:
