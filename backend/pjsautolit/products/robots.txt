@@ -1,0 +1,7 @@
+User-agent: *
+Disallow: /admin/
+Disallow: /cart/
+Disallow: /checkout/
+Disallow: /order-confirmation/
+
+Sitemap: https://pjsautolit.com/sitemap.xml

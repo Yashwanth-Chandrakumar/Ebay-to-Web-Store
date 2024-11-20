@@ -1,5 +1,6 @@
 from django.contrib.sitemaps.views import sitemap
 from django.urls import path
+from django.views.generic import TemplateView
 
 from . import views
 from .sitemaps import CustomPageSitemap, ProductSitemap
@@ -75,5 +76,6 @@ urlpatterns = [
     path('orders/', views.order_list, name='order_list'),
     path('order-details/<int:order_id>/', views.order_details, name='order_details'),
     path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
+    path('robots.txt', TemplateView.as_view(template_name='robots.txt', content_type='text/plain')),
 
 ]
