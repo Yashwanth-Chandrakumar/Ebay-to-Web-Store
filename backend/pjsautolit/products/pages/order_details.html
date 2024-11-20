@@ -73,6 +73,7 @@
             <th colspan="5" class="p-3 text-left text-xl font-bold">Order Items</th>
         </tr>
         <tr>
+            <th class="p-2 text-left">Product ID</th>
             <th class="p-2 text-left">Product Title</th>
             <th class="p-2 text-right">Quantity</th>
             <th class="p-2 text-right">Price</th>
@@ -82,6 +83,7 @@
     <tbody>
         {% for item in order_items %}
         <tr>
+            <td class="p-2">{{ item.product_id }}</td>
             <td class="p-2">{{ item.product_title }}</td>
             <td class="p-2 text-right">{{ item.quantity }}</td>
             <td class="p-2 text-right">${{ item.price }}</td>
