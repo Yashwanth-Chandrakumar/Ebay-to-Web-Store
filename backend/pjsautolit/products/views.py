@@ -844,6 +844,31 @@ def admin_page2(request):
 def admin_page3(request):
     return render(request, "pages/admin-3.html")
 
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404, render
+from django.template.loader import render_to_string
+
+from .models import Order, OrderItem, ShippingAddress
+
+
+def order_list(request):
+    orders = Order.objects.all().order_by('-created_at')
+    return render(request, 'pages/orders.html', {'orders': orders})
+
+def order_details(request, order_id):
+    order = get_object_or_404(Order, id=order_id)
+    order_items = order.items.all()
+    shipping_address = order.shipping_address
+
+    context = {
+        'order': order,
+        'order_items': order_items,
+        'shipping_address': shipping_address
+    }
+
+    # Render details as an HTML fragment for the modal
+    html = render_to_string('pages/order_details.html', context)
+    return HttpResponse(html)
 
 # views.py
 
@@ -2134,7 +2159,7 @@ def process_payment(request):
             print("Processing Square payment...")
             client = Client(
                 access_token=settings.SQUARE_ACCESS_TOKEN,
-                environment='sandbox'
+                environment='production'
             )
             
             # Detailed payment data with comprehensive logging
@@ -2205,7 +2230,7 @@ def process_payment(request):
             'details': str(e)
         }, status=500)
     
-    
+
 def add_to_cart(request, product_id):
     product = get_object_or_404(Product, item_id=product_id)
     cart, created = Cart.objects.get_or_create(id=request.session.get("cart_id"))

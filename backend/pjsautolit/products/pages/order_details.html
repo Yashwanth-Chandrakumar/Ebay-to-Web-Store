@@ -1,0 +1,92 @@
+<table class="w-full border-collapse">
+    <thead class="bg-blue-200">
+        <tr>
+            <th colspan="2" class="p-3 text-left text-xl font-bold">Order Information</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td class="p-2 font-semibold">Order Number</td>
+            <td class="p-2">{{ order.order_number }}</td>
+        </tr>
+        <tr>
+            <td class="p-2 font-semibold">Square Payment ID</td>
+            <td class="p-2">{{ order.square_payment_id }}</td>
+        </tr>
+        <tr>
+            <td class="p-2 font-semibold">Status</td>
+            <td class="p-2">{{ order.get_status_display }}</td>
+        </tr>
+        <tr>
+            <td class="p-2 font-semibold">Subtotal</td>
+            <td class="p-2">${{ order.subtotal }}</td>
+        </tr>
+        <tr>
+            <td class="p-2 font-semibold">Shipping Cost</td>
+            <td class="p-2">${{ order.shipping_cost }}</td>
+        </tr>
+        <tr>
+            <td class="p-2 font-semibold">Total Amount</td>
+            <td class="p-2">${{ order.total_amount }}</td>
+        </tr>
+    </tbody>
+</table>
+
+{% if shipping_address %}
+<table class="w-full border-collapse mt-4">
+    <thead class="bg-blue-200">
+        <tr>
+            <th colspan="2" class="p-3 text-left text-xl font-bold">Shipping Address</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td class="p-2 font-semibold">Name</td>
+            <td class="p-2">{{ shipping_address.first_name }} {{ shipping_address.last_name }}</td>
+        </tr>
+        <tr>
+            <td class="p-2 font-semibold">Email</td>
+            <td class="p-2">{{ shipping_address.email }}</td>
+        </tr>
+        <tr>
+            <td class="p-2 font-semibold">Phone</td>
+            <td class="p-2">{{ shipping_address.phone }}</td>
+        </tr>
+        <tr>
+            <td class="p-2 font-semibold">Address</td>
+            <td class="p-2">
+                {{ shipping_address.address_line1 }}
+                {% if shipping_address.address_line2 %}
+                    <br>{{ shipping_address.address_line2 }}
+                {% endif %}
+                <br>{{ shipping_address.city }}, {{ shipping_address.state }} {{ shipping_address.postal_code }}
+                <br>{{ shipping_address.country }}
+            </td>
+        </tr>
+    </tbody>
+</table>
+{% endif %}
+
+<table class="w-full border-collapse mt-4">
+    <thead class="bg-blue-200">
+        <tr>
+            <th colspan="5" class="p-3 text-left text-xl font-bold">Order Items</th>
+        </tr>
+        <tr>
+            <th class="p-2 text-left">Product Title</th>
+            <th class="p-2 text-right">Quantity</th>
+            <th class="p-2 text-right">Price</th>
+            <th class="p-2 text-right">Subtotal</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in order_items %}
+        <tr>
+            <td class="p-2">{{ item.product_title }}</td>
+            <td class="p-2 text-right">{{ item.quantity }}</td>
+            <td class="p-2 text-right">${{ item.price }}</td>
+            <td class="p-2 text-right">${{ item.subtotal }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>    

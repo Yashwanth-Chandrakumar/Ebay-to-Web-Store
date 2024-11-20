@@ -37,13 +37,13 @@ TEMPLATES = [
     },
 ]
 
-# Quick-start development settings - unsuitable for sandbox
+# Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in sandbox secret!
+# SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = "django-insecure-ydu@0gbnw*q_q*+^k!&vn!%zcmz(d)%&+%l6&wcsh46!k5c()b"
 
-# SECURITY WARNING: don't run with debug turned on in sandbox!
+# SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
 ALLOWED_HOSTS = ["*"]
@@ -70,14 +70,14 @@ EBAY_AUTH_TOKEN = "v^1.1#i^1#f^0#I^3#p^3#r^0#t^H4sIAAAAAAAAAOVZa4wbxR0/3yNRmgdSg
 # EBAY_AUTH_TOKEN = "v^1.1#i^1#I^3#p^3#r^0#f^0#t^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"
 
 # production
-# SQUARE_APPLICATION_ID = "sq0idp-7LFQTI11K3Jp8QJbrd0oBg"
-# SQUARE_ACCESS_TOKEN = "EAAAlskbGe5jzHDcQawpHkCqx21HqiQeevqv9NvRF1IuGtJ_kZgQzWhkwJzErsoh"
-# SQUARE_LOCATION_ID = "1CYN2MHX8D40J"
+SQUARE_APPLICATION_ID = "sq0idp-7LFQTI11K3Jp8QJbrd0oBg"
+SQUARE_ACCESS_TOKEN = "EAAAlskbGe5jzHDcQawpHkCqx21HqiQeevqv9NvRF1IuGtJ_kZgQzWhkwJzErsoh"
+SQUARE_LOCATION_ID = "1CYN2MHX8D40J"
 
 # sandbox
-SQUARE_APPLICATION_ID = "sandbox-sq0idb-0fuCLASC_zEwmy6QHy3-rA"
-SQUARE_ACCESS_TOKEN = "EAAAlzyKG0eMV2-LTS3JJHqrEN_CtarZm7r-Is11_xozI3_ssAV8We3jueT2-592"
-SQUARE_LOCATION_ID = "LH3QV6GWVA32W"
+# SQUARE_APPLICATION_ID = "production-sq0idb-0fuCLASC_zEwmy6QHy3-rA"
+# SQUARE_ACCESS_TOKEN = "EAAAlzyKG0eMV2-LTS3JJHqrEN_CtarZm7r-Is11_xozI3_ssAV8We3jueT2-592"
+# SQUARE_LOCATION_ID = "LH3QV6GWVA32W"
 
 
 MIDDLEWARE = [

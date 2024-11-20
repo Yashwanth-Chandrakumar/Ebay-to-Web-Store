@@ -237,7 +237,7 @@ class Order(models.Model):
     cart = models.OneToOneField('Cart', on_delete=models.CASCADE)
     shipping_address = models.ForeignKey(
         ShippingAddress, 
-        on_delete=models.PROTECT,
+        on_delete=models.CASCADE,
         null=True,
         default=None
     )

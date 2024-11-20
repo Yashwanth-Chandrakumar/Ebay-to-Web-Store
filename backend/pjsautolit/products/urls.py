@@ -64,4 +64,8 @@ urlpatterns = [
     path("add-event/", views.add_event, name="add_event"),
     path('delete-event/<int:event_id>/', views.delete_event, name='delete_event'),
     # path("get-event/<int:event_id>/", views.get_event, name="get_event"),
+    
+    path('orders/', views.order_list, name='order_list'),
+    path('order-details/<int:order_id>/', views.order_details, name='order_details'),
+
 ]
