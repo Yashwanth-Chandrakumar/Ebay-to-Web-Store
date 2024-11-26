@@ -2074,12 +2074,14 @@ def download_excel(request):
 import json
 import uuid
 from decimal import Decimal
+
 from django.conf import settings
 from django.db import transaction
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from square.client import Client
-from .models import Cart, ShippingAddress, Order, OrderItem
+
+from .models import Cart, Order, OrderItem, ShippingAddress
 
 
 @csrf_exempt
@@ -2198,16 +2200,38 @@ def process_payment(request):
                 }, status=400)
 
             payment_body = {
-                'source_id': source_id,
-                'idempotency_key': str(uuid.uuid4()),
-                'amount_money': {
-                    'amount': int(total_including_shipping * 100),
-                    'currency': 'USD'
-                },
-                'autocomplete': True,
-                'location_id': settings.SQUARE_LOCATION_ID,
-                'customer_id': customer_id
-            }
+    'source_id': source_id,
+    'idempotency_key': str(uuid.uuid4()),
+    'amount_money': {
+        'amount': int(total_including_shipping * 100),
+        'currency': 'USD'
+    },
+    'autocomplete': True,
+    'location_id': settings.SQUARE_LOCATION_ID,
+    'customer_id': customer_id,
+    'line_items': [
+    {
+        'name': item.product.title,  # Use item.product.title instead of item.product_title
+        'quantity': str(item.quantity),
+        'base_price_money': {
+            'amount': str(item.product.price),  # Keep as decimal
+            'currency': 'USD'
+        },
+        'total_money': {
+            'amount': str(item.product.price * item.quantity),  # Keep as decimal
+            'currency': 'USD'
+        }
+    } for item in cart.cartitem_set.all()
+],
+    'shipping_address': {
+        'address_line_1': shipping_data['address_line1'],
+        'address_line_2': shipping_data.get('address_line2', ''),
+        'locality': shipping_data['city'],
+        'administrative_district_level_1': shipping_data['state'],
+        'postal_code': shipping_data['postal_code'],
+        'country': 'US'
+    }
+}
             print("Detailed Square payment request body:", json.dumps(payment_body, indent=2))
 
             try:

@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Checkout</title>
+    <link rel="icon" type="image/png" href="https://i.postimg.cc/VkGmFmx1/Untitled-design-2.png">
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@700;900&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
@@ -217,58 +219,79 @@
 
         /* Toast and Loading Styles */
         .toast-container {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 1060;
-        }
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1060;
+    max-width: 350px;
+}
 
-        .toast {
-            background-color: #fff;
-            border-radius: 4px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            margin-bottom: 10px;
-            min-width: 300px;
-            max-width: 400px;
-            padding: 15px;
-            transform: translateX(120%);
-            transition: transform 0.3s ease-in-out;
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-        }
+.toast {
+    background-color: #FFFFFF;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border: 1px solid #E0E0E0;
+    padding: 12px 16px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    opacity: 0;
+    transform: translateX(100%);
+    transition: all 0.3s ease;
+}
 
-        .toast.error {
-            border-left: 4px solid #dc3545;
-        }
+.toast.show {
+    opacity: 1;
+    transform: translateX(0);
+}
 
-        .toast.show {
-            transform: translateX(0);
-        }
+.toast-icon {
+    margin-right: 12px;
+    display: flex;
+    align-items: center;
+}
 
-        .toast-header {
-            font-weight: bold;
-            margin-bottom: 5px;
-            color: #dc3545;
-        }
+.toast-icon i {
+    font-size: 20px;
+}
 
-        .toast-body {
-            color: #333;
-            font-size: 14px;
-        }
+.toast-content {
+    flex-grow: 1;
+}
 
-        .toast-close {
-            background: none;
-            border: none;
-            color: #999;
-            cursor: pointer;
-            font-size: 20px;
-            padding: 0 5px;
-        }
+.toast-message {
+    color: #333;
+    font-size: 14px;
+    line-height: 1.4;
+}
 
-        .toast-close:hover {
-            color: #333;
-        }
+.toast-close {
+    background: none;
+    border: none;
+    color: #888;
+    cursor: pointer;
+    font-size: 18px;
+    padding: 0;
+    margin-left: 12px;
+    line-height: 1;
+}
+
+.toast-close:hover {
+    color: #333;
+}
+
+/* Specific toast types */
+.toast-error {
+    border-left: 4px solid #FF4D4F;
+}
+
+.toast-success {
+    border-left: 4px solid #52C41A;
+}
+
+.toast-info {
+    border-left: 4px solid #1890FF;
+}
 
         .loading-overlay {
             position: fixed;
@@ -581,6 +604,9 @@ form .invalid-feedback.visible {
 </div>
 
 <script src="https://web.squarecdn.com/v1/square.js"></script>
+
+<!-- <script src="https://sandbox.web.squarecdn.com/v1/square.js"></script> -->
+
 <script>
     const US_STATES = [
     { value: 'AL', label: 'Alabama' },
@@ -635,6 +661,29 @@ form .invalid-feedback.visible {
     { value: 'WI', label: 'Wisconsin' },
     { value: 'WY', label: 'Wyoming' }
 ];
+let paymentClickCount = 0;
+const paymentComments = [
+    "Your passion for PJ's Auto Literature is truly inspiring!",
+    "Exploring the world of automotive knowledge with PJ's collection.",
+    "Another automotive enthusiast expanding their literary horizons!",
+    "Discovering automotive insights through PJ's carefully curated library.",
+    "Fueling your mind with PJ's exceptional automotive literature.",
+    "Navigating the world of auto expertise, one book at a time.",
+    "Expanding automotive knowledge through PJ's comprehensive collection.",
+    "Accelerating your understanding with PJ's unique literary resources.",
+    "Driving deeper into automotive insights with PJ's literature.",
+    "Unlocking automotive wisdom through PJ's exceptional publications.",
+    "Exploring the intersection of automotive technology and storytelling.",
+    "Enriching your automotive knowledge with PJ's carefully selected titles.",
+    "Journeying through automotive history with PJ's remarkable collection.",
+    "Expanding your automotive expertise, page by page.",
+    "Connecting with automotive culture through PJ's literature.",
+    "Transforming automotive passion into knowledge.",
+    "Discovering the stories behind automotive innovation.",
+    "Your commitment to automotive learning is remarkable!",
+    "Exploring automotive excellence through thoughtful literature.",
+    "Bridging automotive passion and intellectual curiosity."
+];
     let payments;
     let card;
     
@@ -645,59 +694,74 @@ form .invalid-feedback.visible {
     }
 
     async function handlePayment(event) {
-        event.preventDefault();
-        showLoading();
-
-        try {
-            // Validate shipping form first
-            if (!validateShippingForm()) {
-                hideLoading();
-                showToast('Please fill in all required shipping information.', 'error');
-                return;
-            }
-
-            // Process shipping form
-            const shippingData = await processShippingForm();
-            if (!shippingData.success) {
-                hideLoading();
-                showToast('Error saving shipping information.', 'error');
-                return;
-            }
-
-            // Get payment token
-            const result = await card.tokenize();
-            if (result.status === 'OK') {
-                // Process payment
-                const response = await fetch('/process-payment/', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                    },
-                    body: JSON.stringify({
-                        sourceId: result.token
-                    })
-                });
-
-                const paymentResult = await response.json();
-                if (paymentResult.success) {
-                    showToast('Payment successful!', 'success');
-                    setTimeout(() => {
-                        window.location.href = `/order-confirmation/${paymentResult.order_id}/`;
-                    }, 2000);
-                } else {
-                    throw new Error(paymentResult.error);
-                }
-            } else {
-                throw new Error(result.errors[0].message);
-            }
-        } catch (error) {
-            console.error('Payment error:', error);
-            showToast(error.message || 'Payment processing failed.', 'error');
-        } finally {
-            hideLoading();
+    event.preventDefault();
+    
+    // Increment click count
+    paymentClickCount++;
+    
+    // Disable the button to prevent multiple submissions
+    const cardButton = document.getElementById('card-button');
+    cardButton.disabled = true;
+    
+    // Select a comment based on click count (cycling through array)
+    const commentIndex = (paymentClickCount - 1) % paymentComments.length;
+    const dynamicComment = paymentComments[commentIndex];
+    
+    // Show toast with dynamic comment and click count
+    showToast(
+        `(${paymentClickCount}x) ${dynamicComment}`, 
+        'info'
+    );
+    
+    try {
+        // Validate shipping form first
+        if (!validateShippingForm()) {
+            cardButton.disabled = false;
+            showToast('Please fill in all required shipping information.', 'error');
+            return;
         }
+
+        // Process shipping form
+        const shippingData = await processShippingForm();
+        if (!shippingData.success) {
+            cardButton.disabled = false;
+            showToast('Error saving shipping information.', 'error');
+            return;
+        }
+
+        // Get payment token
+        const result = await card.tokenize();
+        if (result.status === 'OK') {
+            // Process payment
+            const response = await fetch('/process-payment/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: JSON.stringify({
+                    sourceId: result.token
+                })
+            });
+
+            const paymentResult = await response.json();
+            if (paymentResult.success) {
+                showToast('Payment successful!', 'success');
+                setTimeout(() => {
+                    window.location.href = `/order-confirmation/${paymentResult.order_id}/`;
+                }, 2000);
+            } else {
+                throw new Error(paymentResult.error);
+            }
+        } else {
+            throw new Error(result.errors[0].message);
+        }
+    } catch (error) {
+        console.error('Payment error:', error);
+        showToast(error.message || 'Payment processing failed.', 'error');
+        cardButton.disabled = false;
     }
+}
 
     async function processShippingForm() {
     const form = document.getElementById('shipping-form');
@@ -774,29 +838,50 @@ form .invalid-feedback.visible {
         }
     };
 }
-    function showToast(message, type) {
-        const toastContainer = document.getElementById('toastContainer');
-        const toast = document.createElement('div');
-        toast.className = `toast align-items-center text-white bg-${type === 'error' ? 'danger' : 'success'}`;
-        toast.setAttribute('role', 'alert');
-        toast.setAttribute('aria-live', 'assertive');
-        toast.setAttribute('aria-atomic', 'true');
-
-        toast.innerHTML = `
-            <div class="d-flex">
-                <div class="toast-body">${message}</div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-            </div>
-        `;
-
-        toastContainer.appendChild(toast);
-        const bsToast = new bootstrap.Toast(toast);
-        bsToast.show();
-
-        toast.addEventListener('hidden.bs.toast', () => {
+function showToast(message, type = 'info', duration = 3000) {
+    const toastContainer = document.getElementById('toastContainer');
+    
+    // Create toast element
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    
+    // Determine icon based on type
+    const iconMap = {
+        'error': '<i class="fas fa-exclamation-circle" style="color: #FF4D4F;"></i>',
+        'success': '<i class="fas fa-check-circle" style="color: #52C41A;"></i>',
+        'info': '<i class="fas fa-info-circle" style="color: #1890FF;"></i>'
+    };
+    
+    toast.innerHTML = `
+        <div class="toast-icon">${iconMap[type] || iconMap['info']}</div>
+        <div class="toast-content">
+            <div class="toast-message">${message}</div>
+        </div>
+        <button class="toast-close" onclick="this.closest('.toast').remove()">&times;</button>
+    `;
+    
+    // Add to container
+    toastContainer.appendChild(toast);
+    
+    // Trigger show animation
+    requestAnimationFrame(() => {
+        toast.classList.add('show');
+    });
+    
+    // Auto-remove after duration
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => {
             toast.remove();
-        });
-    }
+        }, 300);
+    }, duration);
+}
+
+// Example usage
+document.addEventListener('DOMContentLoaded', () => {
+    // You can keep the existing initialization code
+    window.showToast = showToast;
+});
     function validateField(field) {
     const errorElement = document.getElementById(`${field.id}-error`);
     let isValid = true;
