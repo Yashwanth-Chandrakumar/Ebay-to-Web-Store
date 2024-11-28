@@ -424,6 +424,36 @@ form .invalid-feedback.visible {
         .error-message.show {
             display: block;
         }
+        .price-details {
+    display: flex;
+    align-items: center;
+}
+
+.original-price {
+    font-size: 0.9em;
+    color: #888;
+    text-decoration: line-through;
+}
+
+.discounted-price {
+    font-weight: bold;
+    color: #007bff;
+    margin-left: 10px;
+}
+
+.discount-details {
+    margin-top: 5px;
+}
+
+.discount-details small {
+    display: block;
+    color: #28a745;
+}
+
+.discount-details .fas.fa-tag {
+    margin-right: 5px;
+    color: #ffc107;
+}
     </style>
     <script src="https://web.squarecdn.com/v1/square.js"></script>
 
@@ -523,16 +553,56 @@ form .invalid-feedback.visible {
         <div class="order-summary">
             <h3>Order Summary</h3>
             <ul class="list-group">
-                {% for item in cart_items %}
+                {% for item in detailed_cart_items %}
                 <li class="list-group-item d-flex justify-content-between align-items-center">
                     <div>
-                        <h5>{{ item.product.title }}</h5>
-                        <small class="text-muted">Product ID: {{ item.product.item_id }}</small>
-                        <small class="text-muted d-block">Quantity: {{ item.quantity }}</small>
+                        <h5>{{ item.item.product.title }}</h5>
+                        <small class="text-muted">Product ID: {{ item.item.product.item_id }}</small>
+                        <small class="text-muted d-block">Quantity: {{ item.item.quantity }}</small>
+                        
+                        <!-- Price and Discount Display -->
+                        <div class="price-details">
+                            <span class="original-price" style="text-decoration: line-through; color: #888;">
+                                ${{ item.original_price|floatformat:2 }}
+                            </span>
+                            <span class="discounted-price" style="color: #007bff; margin-left: 10px;">
+                                ${{ item.per_unit_price|floatformat:2 }}
+                                </span>
+                            
+                            <!-- Discount Details -->
+                            {% if item.discounts %}
+                            <div class="discount-details mt-1">
+                                {% for discount in item.discounts %}
+                                <small class="text-success">
+                                    <i class="fas fa-tag"></i> 
+                                    {{ discount.name }}: 
+                                    {{ discount.value }} off 
+                                    (-${{ discount.amount|floatformat:2 }})
+                                </small>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
                     </div>
-                    <span class="price">${{ item.subtotal }}</span>
+                    <span class="price">
+                        ${{ item.final_subtotal|floatformat:2 }}
+                    </span>
                 </li>
                 {% endfor %}
+                
+                <!-- Discount Summary -->
+                <li class="list-group-item">
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>Product Discounts</span>
+                        <strong class="text-success">-${{ total_product_discount|floatformat:2 }} </strong>
+                    </li>
+                    {% if total_cart_discount > 0 %}
+                    <div class="d-flex justify-content-between mt-2">
+                        <span>Cart Discounts</span>
+                        <strong class="text-success">-${{ total_cart_discount|floatformat:2 }}</strong>
+                    </div>
+                    {% endif %}
+                </li>
                 <li class="list-group-item d-flex justify-content-between">
                     <span>Total Weight</span>
                     <strong>{{ total_weight_major }} lb {{ total_weight_minor }} oz</strong>

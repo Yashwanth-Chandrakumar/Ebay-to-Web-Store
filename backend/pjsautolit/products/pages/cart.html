@@ -347,8 +347,7 @@
                         {% for discount in applicable_discounts %}
                             {% if discount.apply_to == 'PRODUCT_PRICE' %}
                                 <li>
-                                    <i class="fas fa-tag"></i> 
-                                    Product Discount: 
+                                    {{ discount.name }}:
                                     {% if discount.discount_type == 'PERCENTAGE' %}
                                         {{ discount.discount_value }}% off on eligible products
                                     {% else %}
