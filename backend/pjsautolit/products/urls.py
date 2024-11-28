@@ -77,5 +77,8 @@ urlpatterns = [
     path('order-details/<int:order_id>/', views.order_details, name='order_details'),
     path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
     path('robots.txt', TemplateView.as_view(template_name='robots.txt', content_type='text/plain')),
-
+    path('discounts/', views.discount_list, name='discount_list'),
+    path('discounts/create/', views.discount_create, name='discount_create'),
+    path('discounts/<int:pk>/update/', views.discount_update, name='discount_update'),
+    path('discounts/<int:pk>/delete/', views.discount_delete, name='discount_delete'),
 ]

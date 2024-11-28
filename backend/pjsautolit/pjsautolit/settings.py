@@ -60,7 +60,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "products",
     "django_celery_results",
-    "django.contrib.sitemaps"
+    "django.contrib.sitemaps",
 ]
 
 EBAY_APP_ID = "PJsAutoL-keyset-PRD-d2986db2a-865af761"

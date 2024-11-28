@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Discount Management</title>
+    <link rel="icon" type="image/png" href="https://i.postimg.cc/VkGmFmx1/Untitled-design-2.png">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <div class="bg-white shadow-md rounded-lg overflow-hidden">
+            <div class="px-6 py-4 bg-blue-500 text-white flex justify-between items-center">
+                <h2 class="text-2xl font-bold">Discount Management</h2>
+                <a href="{% url 'discount_create' %}" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded">
+                    Create New Discount
+                </a>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="bg-gray-200 text-gray-600 uppercase text-sm leading-normal">
+                            <th class="py-3 px-6 text-left">Name</th>
+                            <th class="py-3 px-6 text-left">Type</th>
+                            <th class="py-3 px-6 text-left">Value</th>
+                            <th class="py-3 px-6 text-left">Apply To</th>
+                            <th class="py-3 px-6 text-left">Start Date</th>
+                            <th class="py-3 px-6 text-left">End Date</th>
+                            <th class="py-3 px-6 text-left">Active</th>
+                            <th class="py-3 px-6 text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-gray-600 text-sm font-light">
+                        {% for discount in discounts %}
+                        <tr class="border-b border-gray-200 hover:bg-gray-100">
+                            <td class="py-3 px-6">{{ discount.name }}</td>
+                            <td class="py-3 px-6">{{ discount.get_discount_type_display }}</td>
+                            <td class="py-3 px-6">{{ discount.discount_value }}</td>
+                            <td class="py-3 px-6">{{ discount.get_apply_to_display }}</td>
+                            <td class="py-3 px-6">{{ discount.start_date|date:"Y-m-d H:i" }}</td>
+                            <td class="py-3 px-6">{{ discount.end_date|default_if_none:"-"|date:"Y-m-d H:i" }}</td>
+                            <td class="py-3 px-6">
+                                <span class="{% if discount.is_active %}text-green-500{% else %}text-red-500{% endif %}">
+                                    {{ discount.is_active|yesno:"Active,Inactive" }}
+                                </span>
+                            </td>
+                            <td class="py-3 px-6 text-center">
+                                <div class="flex justify-center space-x-2">
+                                    <a href="{% url 'discount_update' discount.pk %}" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-1 px-3 rounded text-xs">
+                                        Edit
+                                    </a>
+                                    <a href="{% url 'discount_delete' discount.pk %}" class="bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-3 rounded text-xs">
+                                        Delete
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center py-4 text-gray-500">No discounts found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

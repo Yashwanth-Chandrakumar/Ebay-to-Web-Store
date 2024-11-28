@@ -2307,54 +2307,104 @@ def add_to_cart(request, product_id):
     return redirect("product_list")
 
 
+import math
+import traceback
+from decimal import ROUND_HALF_UP, Decimal
+
+from django.contrib import messages
+from django.db import models
+from django.db.models import Q
 from django.db.models.functions import Cast
+from django.shortcuts import render
+from django.utils import timezone
+
+from .models import Cart, Discount
 
 
 def view_cart(request):
-    cart_id = request.session.get("cart_id")
-    cart_count = 0
-    if cart_id:
-        try:
-            cart = get_object_or_404(Cart, id=cart_id)
-            cart_items = cart.cartitem_set.select_related("product").all()
-            cart_count = sum(item.quantity for item in cart_items)
-            valid_cart_items = []
-            invalid_items = []
-            for item in cart_items:
-                try:
-                    # Use item.product directly since it's now correctly linked by item_id
-                    item.product = Product.objects.get(item_id=item.product.item_id)
-                    valid_cart_items.append(item)
-                except Product.DoesNotExist:
-                    invalid_items.append(item)
+    try:
+        print("Starting to process the cart...")
 
-            # Delete invalid items
-            CartItem.objects.filter(id__in=[item.id for item in invalid_items]).delete()
-
-            # Recalculate cart total using only valid items
-            cart_total = sum(
-                item.product.price * item.quantity for item in valid_cart_items
-            )
-        except Exception as e:
-            # Log the full error traceback
-            print(f"Error processing cart:\n{traceback.format_exc()}")
-            valid_cart_items = []
-            cart_total = 0
-            cart_count = 0
-    else:
-        valid_cart_items = []
-        cart_total = 0
+        cart_id = request.session.get("cart_id")
         cart_count = 0
+        cart_total = Decimal('0.00')
+        cart_items = []
+        applicable_discounts = []
+        total_product_discount = Decimal('0.00')
+        total_cart_discount = Decimal('0.00')
 
-    return render(
-        request,
-        "pages/cart.html",
-        {
-            "cart_items": valid_cart_items,
+        context = {
+            "cart_items": cart_items,
             "cart_total": cart_total,
             "cart_count": cart_count,
-        },
-    )
+            "applicable_discounts": applicable_discounts,
+            "total_product_discount": total_product_discount,
+            "total_cart_discount": total_cart_discount,
+        }
+
+        if cart_id:
+            try:
+                print(f"Cart ID found: {cart_id}")
+                cart = Cart.objects.get(id=cart_id)
+                cart_items = cart.cartitem_set.select_related("product").all()
+                cart_count = sum(item.quantity for item in cart_items)
+                print(f"Cart contains {cart_count} items.")
+
+                product_subtotal = sum(Decimal(str(item.product.price * item.quantity)) for item in cart_items)
+                print(f"Product subtotal: {product_subtotal}")
+
+                now = timezone.now()
+                applicable_discounts = Discount.objects.filter(
+                    Q(is_active=True) &
+                    Q(start_date__lte=now) &
+                    (Q(end_date__isnull=True) | Q(end_date__gte=now)) &
+                    Q(minimum_purchase_amount__lte=product_subtotal)
+                )
+                print(f"Applicable discounts found: {len(applicable_discounts)}")
+
+                for discount in applicable_discounts:
+                    if discount.apply_to == 'PRODUCT_PRICE':
+                        for item in cart_items:
+                            if discount.discount_type == 'PERCENTAGE':
+                                total_product_discount += Decimal(
+                                    str(item.product.price * item.quantity * (discount.discount_value / 100)))
+                            else:
+                                total_product_discount += Decimal(str(discount.discount_value * item.quantity))
+
+                    if discount.apply_to == 'CART':
+                        if discount.discount_type == 'PERCENTAGE':
+                            total_cart_discount += Decimal(str(product_subtotal * (discount.discount_value / 100)))
+                        else:
+                            total_cart_discount += min(Decimal(str(discount.discount_value)), product_subtotal)
+
+                cart_total = product_subtotal - total_product_discount - total_cart_discount
+                cart_total = max(cart_total, Decimal('0.00')).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+                print(f"Final cart total: {cart_total}")
+
+                context.update({
+                    "cart_items": cart_items,
+                    "cart_total": cart_total,
+                    "cart_count": cart_count,
+                    "applicable_discounts": applicable_discounts,
+                    "total_product_discount": total_product_discount,
+                    "total_cart_discount": total_cart_discount,
+                })
+
+                request.session['cart_total'] = float(cart_total)
+
+            except Cart.DoesNotExist:
+                print("Cart not found in database")
+                del request.session['cart_id']
+            except Exception as e:
+                print(traceback.format_exc())
+                messages.error(request, str(e))
+
+        return render(request, "pages/cart.html", context)
+
+    except Exception as e:
+        print(traceback.format_exc())
+        messages.error(request, str(e))
+        return render(request, "pages/cart.html", context)
 
 
 def update_cart(request, item_id):
@@ -2416,8 +2466,15 @@ def checkout(request):
             messages.error(request, "Your cart is empty")
             return redirect("view_cart")
         
-        # Calculate totals
-        cart_total = cart.total_amount()
+        # Use the discounted total from the session
+        cart_total = request.session.get('discounted_cart_total', cart.total_amount())
+        total_product_discount = request.session.get('total_product_discount', 0)
+        total_cart_discount = request.session.get('total_cart_discount', 0)
+        
+        print(f"Cart total after discounts: ${cart_total}")
+        print(f"Product Discount: ${total_product_discount}")
+        print(f"Cart Discount: ${total_cart_discount}")
+        
         cart_total_weight = cart.total_weight()
         print(f"Cart total: ${cart_total}, Weight: {cart_total_weight}lbs")
         
@@ -2433,43 +2490,16 @@ def checkout(request):
             return base_rate + (rounded_weight - 1) * additional_rate if rounded_weight > 1 else base_rate
         
         shipping_cost = calculate_usps_media_mail_cost(cart_total_weight) + 2.00
-        total_including_shipping = cart_total + Decimal(shipping_cost)
+        total_including_shipping = Decimal(cart_total) + Decimal(shipping_cost)
         total_including_shipping = total_including_shipping.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
         print(f"Shipping cost: ${shipping_cost}, Total with shipping: ${total_including_shipping}")
         
-        # Handle shipping form submission
-        if request.method == 'POST' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            print("Processing AJAX shipping form submission")
-            form = ShippingAddressForm(request.POST)
-            print("Form data:", request.POST)
-            
-            if form.is_valid():
-                print("Form is valid, storing shipping data in session")
-                shipping_data = {
-                    'first_name': form.cleaned_data['first_name'],
-                    'last_name': form.cleaned_data['last_name'],
-                    'email': form.cleaned_data['email'],
-                    'phone': form.cleaned_data['phone'],
-                    'address_line1': form.cleaned_data['address_line1'],
-                    'address_line2': form.cleaned_data['address_line2'],
-                    'city': form.cleaned_data['city'],
-                    'state': form.cleaned_data['state'],
-                    'postal_code': form.cleaned_data['postal_code'],
-                    'country': 'United States'
-                }
-                request.session['shipping_data'] = shipping_data
-                print("Shipping data stored in session successfully")
-                return JsonResponse({'success': True})
-            else:
-                print("Form validation failed:", form.errors)
-                return JsonResponse({
-                    'success': False,
-                    'errors': form.errors
-                })
-        
+        # Rest of the function remains the same...
         context = {
             'cart_items': cart_items,
             'cart_total': cart_total,
+            'total_product_discount': total_product_discount,
+            'total_cart_discount': total_cart_discount,
             'total_weight_major': total_weight_major,
             'total_weight_minor': total_weight_minor,
             'shipping_cost': shipping_cost,
@@ -2488,6 +2518,7 @@ def checkout(request):
         print(traceback.format_exc())
         messages.error(request, "An error occurred during checkout. Please try again.")
         return redirect("view_cart")
+
 
 logger = logging.getLogger(__name__)
 
@@ -2764,3 +2795,68 @@ def delete_event(request, event_id):
 def admin_page4(request):
     events = CalendarEvent.objects.all().order_by("-start_date")
     return render(request, "pages/admin-4.html", {"events": events})
+
+
+
+# Discount
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse_lazy
+
+from .forms import DiscountForm
+from .models import Discount
+
+
+def discount_list(request):
+    discounts = Discount.objects.all()
+    return render(request, 'pages/discount_list.html', {'discounts': discounts})
+
+from django.contrib import messages
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse_lazy
+
+from .forms import DiscountForm
+from .models import Discount
+
+
+# views.py
+def discount_create(request):
+    if request.method == 'POST':
+        form = DiscountForm(request.POST)
+        try:
+            if form.is_valid():
+                form.save()
+                return redirect('discount_list')
+            else:
+                # More detailed error printing
+                print("Form is NOT valid")
+                print("Form Errors:", form.errors)
+                print("Form Data:", request.POST)
+                
+                # Optional: Add more context
+                for field, errors in form.errors.items():
+                    print(f"Field {field} has errors: {errors}")
+        except Exception as e:
+            print(f"Unexpected error during form save: {e}")
+    else:
+        form = DiscountForm()
+    
+    return render(request, 'pages/discount_form.html', {'form': form})
+
+
+def discount_update(request, pk):
+    discount = get_object_or_404(Discount, pk=pk)
+    if request.method == 'POST':
+        form = DiscountForm(request.POST, instance=discount)
+        if form.is_valid():
+            form.save()
+            return redirect('discount_list')
+    else:
+        form = DiscountForm(instance=discount)
+    return render(request, 'pages/discount_form.html', {'form': form})
+
+def discount_delete(request, pk):
+    discount = get_object_or_404(Discount, pk=pk)
+    if request.method == 'POST':
+        discount.delete()
+        return redirect('discount_list')
+    return render(request, 'pages/discount_confirm_delete.html', {'object': discount})

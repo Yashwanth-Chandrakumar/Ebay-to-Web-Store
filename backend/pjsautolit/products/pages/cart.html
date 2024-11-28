@@ -56,35 +56,40 @@
             align-items: center;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
+
         .logo {
             display: flex;
             align-items: center;
             margin-left: 40px;
         }
+
         .logo img {
             height: 50px;
         }
+
         .nav-links {
             display: flex;
             gap: 20px;
         }
+
         .nav-links a {
             text-decoration: none;
             color: #333;
             font-size: 18px;
         }
+
         .user-actions {
             display: flex;
             align-items: center;
             gap: 20px;
         }
-        .user-icon, .cart-icon {
+
+        .cart-icon {
+            position: relative;
             font-size: 20px;
             color: #333;
         }
-        .cart-icon {
-            position: relative;
-        }
+
         .cart-count {
             position: absolute;
             top: -10px;
@@ -151,6 +156,30 @@
             background-color: #c82333;
         }
 
+        .discounts-section {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: var(--light-gray);
+            border-radius: 5px;
+        }
+
+        .discounts-section h3 {
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+
+        .discounts-section ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        .discounts-section li {
+            margin-bottom: 10px;
+            padding: 10px;
+            background-color: white;
+            border-radius: 4px;
+        }
+
         footer {
             background-color: var(--primary-color);
             color: white;
@@ -164,13 +193,54 @@
                 flex-direction: column;
                 padding: 10px;
             }
+
             .nav-links {
                 margin-top: 10px;
             }
+
             .logo {
                 margin-left: 0;
             }
         }
+        .discounts-section {
+    background-color: #f4f4f4;
+    border-radius: 8px;
+    padding: 15px;
+    margin: 20px 0;
+}
+
+.discounts-section ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+.discounts-section li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    padding: 10px;
+    background-color: white;
+    border-radius: 5px;
+}
+
+.discount-amount {
+    color: #6c757d;
+    font-size: 0.9em;
+}
+
+.total-savings {
+    text-align: right;
+    margin-top: 15px;
+    font-size: 1.1em;
+    color: var(--primary-color);
+}
+
+.final-total {
+    text-align: right;
+    margin-top: 20px;
+    font-size: 1.2em;
+}
     </style>
 </head>
 <body>
@@ -179,18 +249,14 @@
             <a href="/" class="navbar-brand"><img src="https://i.postimg.cc/h47H7Tcf/header-1.gif" style="height: 80px;"></a>
         </div>
         <div class="nav-links">
-            <a href="{% url 'landing_page' %}" id="home-link">Home</a>
-            <a href="{% url 'landing_page' %}#show-schedule" class="nav-link">Show Schedule</a>
-            <a href="{% url 'product_list' %}" class="nav-link">Products</a>
-            <a href="{% url 'landing_page' %}#auto-links" class="nav-link">Auto Links</a>
-            <a href="{% url 'landing_page' %}#about-us" class="nav-link">About Us</a>
-            <a href="{% url 'terms' %}" class="nav-link">Terms</a>
-            <a href="#" class="nav-link">Contact</a>
+            <a href="{% url 'landing_page' %}">Home</a>
+            <a href="{% url 'product_list' %}">Products</a>
+            <a href="{% url 'terms' %}">Terms</a>
         </div>
         <div class="user-actions">
             <div class="cart-icon">
-                <a href="/cart/" class="nav-link"> <i class="fas fa-shopping-cart"></i></a>
-                <span class="cart-count">{{cart_count}}</span>
+                <a href="/cart/" class="nav-link"><i class="fas fa-shopping-cart"></i></a>
+                <span class="cart-count">{{ cart_count }}</span>
             </div>
         </div>
     </nav>
@@ -198,59 +264,98 @@
     <div class="container">
         <div class="cart-content">
             <h1>Your Shopping Cart</h1>
+
             {% if cart_items %}
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Product ID</th>
-                            <th>Product</th>
-                            <th>Quantity</th>
-                            <th>Price</th>
-                            <th>Subtotal</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for item in cart_items %}
-                        <tr>
-                            <td>{{ item.product.item_id }}</td>
-                            <td>{{ item.product.title }}</td>
-                            <td>
-                                <form method="post" action="{% url 'update_cart' item.id %}" class="update-cart-form">
-                                    {% csrf_token %}
-                                    <input type="number" name="quantity" value="{{ item.quantity }}" min="1" style="width: 50px;">
-                                    <button type="submit" class="btn">Update</button>
-                                </form>
-                            </td>
-                            <td>${{ item.product.price }}</td>
-                            <td>${{ item.subtotal }}</td>
-                            <td>
-                                <form method="post" action="{% url 'remove_from_cart' item.id %}">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn btn-danger">Remove</button>
-                                </form>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                    <tfoot>
-                        <tr>
-                            <td colspan="4"><strong>Total:</strong></td>
-                            <td colspan="2"><strong>${{ cart_total }}</strong></td>
-                        </tr>
-                    </tfoot>
-                </table>
-                <a href="{% url 'checkout' %}" class="btn">Proceed to Checkout</a>
-            {% else %}
-                <p>Your cart is empty.</p>
-            {% endif %}
+    <table>
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th>Quantity</th>
+                <th>Price</th>
+                <th>Subtotal</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in cart_items %}
+            <tr>
+                <td>{{ item.product.title }}</td>
+                <td>
+                    <form method="post" action="{% url 'update_cart' item.id %}">
+                        {% csrf_token %}
+                        <input type="number" name="quantity" value="{{ item.quantity }}" min="1">
+                        <button type="submit" class="btn">Update</button>
+                    </form>
+                </td>
+                <td>${{ item.product.price|floatformat:2 }}</td>
+                <td>${{ item.product.price|mul:item.quantity|sub:total_product_discount|div:item.quantity|floatformat:2 }}</td>
+                <td>
+                    <form method="post" action="{% url 'remove_from_cart' item.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">Remove</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="3"><strong>Total:</strong></td>
+                <td colspan="2"><strong>${{ cart_total|floatformat:2 }}</strong></td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <div class="discounts-section">
+        <h3>Applied Discounts</h3>
+        {% if total_product_discount > 0 or total_cart_discount > 0 %}
+            <ul>
+                {% for discount in applicable_discounts %}
+                    {% if discount.apply_to == 'PRODUCT_PRICE' %}
+                        <li>
+                            <i class="fas fa-tag"></i> 
+                            Product Discount: 
+                            {% if discount.discount_type == 'PERCENTAGE' %}
+                                {{ discount.discount_value }}% off on eligible products
+                            {% else %}
+                                ${{ discount.discount_value }} off per item
+                            {% endif %}
+                            <span class="discount-amount">(Total Savings: ${{ total_product_discount|floatformat:2 }})</span>
+                        </li>
+                    {% endif %}
+                    
+                    {% if discount.apply_to == 'CART' %}
+                        <li>
+                            <i class="fas fa-shopping-cart"></i> 
+                            Cart Discount: 
+                            {% if discount.discount_type == 'PERCENTAGE' %}
+                                {{ discount.discount_value }}% off entire cart
+                            {% else %}
+                                Flat ${{ discount.discount_value }} off
+                            {% endif %}
+                            <span class="discount-amount">(Total Cart Discount: ${{ total_cart_discount|floatformat:2 }})</span>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>No discounts applied.</p>
+        {% endif %}
+    </div>
+
+    <div class="final-total">
+        <h3>Final Total: ${{ cart_total|floatformat:2 }}</h3>
+    </div>
+
+    <a href="{% url 'checkout' %}" class="btn">Proceed to Checkout</a>
+{% else %}
+    <p>Your cart is empty.</p>
+{% endif %}
         </div>
     </div>
 
     <footer>
-        <div class="container">
-            <p>&copy; 2024 PJ's Auto Literature. All rights reserved.</p>
-        </div>
+        <p>&copy; 2024 PJ's Auto Literature. All rights reserved.</p>
     </footer>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/js/all.min.js"></script>

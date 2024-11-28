@@ -293,3 +293,63 @@ class CalendarEvent(models.Model):
 
     def __str__(self):
         return self.title
+    
+
+from django.core.exceptions import ValidationError
+from django.core.validators import MaxValueValidator, MinValueValidator
+from django.db import models
+from django.utils import timezone
+
+
+class Discount(models.Model):
+    DISCOUNT_TYPES = (
+        ('PERCENTAGE', 'Percentage Discount'),
+        ('FIXED', 'Fixed Amount Discount'),
+    )
+    
+    APPLY_TO_CHOICES = (
+        ('CART', 'Entire Cart'),
+        ('PRODUCT_PRICE', 'All Product Prices'),
+    )
+
+    name = models.CharField(max_length=200, unique=True)
+    description = models.TextField(blank=True, null=True)
+    
+    discount_type = models.CharField(max_length=20, choices=DISCOUNT_TYPES)
+    discount_value = models.DecimalField(max_digits=10, decimal_places=2)
+    
+    apply_to = models.CharField(max_length=20, choices=APPLY_TO_CHOICES)
+    
+    start_date = models.DateTimeField(default=timezone.now)
+    end_date = models.DateTimeField(null=True, blank=True)
+    
+    minimum_purchase_amount = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        default=0, 
+        validators=[MinValueValidator(0)]
+    )
+    
+    is_active = models.BooleanField(default=True)
+    
+    def clean(self):
+        if self.end_date and self.start_date > self.end_date:
+            raise ValidationError("End date must be after start date")
+        
+        if self.discount_type == 'PERCENTAGE':
+            if self.discount_value < 0 or self.discount_value > 100:
+                raise ValidationError("Percentage discount must be between 0 and 100")
+        else:
+            if self.discount_value < 0:
+                raise ValidationError("Fixed discount cannot be negative")
+    
+    def is_valid(self):
+        now = timezone.now()
+        return (
+            self.is_active and 
+            self.start_date <= now and 
+            (self.end_date is None or now <= self.end_date)
+        )
+    
+    def __str__(self):
+        return self.name

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% if form.instance.pk %}Edit{% else %}Create{% endif %} Discount</title>
+    <link rel="icon" type="image/png" href="https://i.postimg.cc/VkGmFmx1/Untitled-design-2.png">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+    <div class="w-full max-w-2xl">
+        <form method="post" class="bg-white shadow-md rounded-lg px-8 pt-6 pb-8 mb-4">
+            {% csrf_token %}
+            
+            {% if form.errors %}
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+                <strong class="font-bold">Validation Errors:</strong>
+                <ul>
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                            <li>{{ field.label }}: {{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                    {% for error in form.non_field_errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            <div class="mb-4 text-center">
+                <h2 class="text-2xl font-bold text-blue-600">
+                    {% if form.instance.pk %}Edit{% else %}Create{% endif %} Discount
+                </h2>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4">
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="{{ form.name.id_for_label }}">
+                        Name
+                    </label>
+                    {{ form.name }}
+                    {% if form.name.errors %}
+                        <p class="text-red-500 text-xs italic">{{ form.name.errors }}</p>
+                    {% endif %}
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="{{ form.description.id_for_label }}">
+                        Description
+                    </label>
+                    {{ form.description }}
+                    {% if form.description.errors %}
+                        <p class="text-red-500 text-xs italic">{{ form.description.errors }}</p>
+                    {% endif %}
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="{{ form.discount_type.id_for_label }}">
+                        Discount Type
+                    </label>
+                    {{ form.discount_type }}
+                    {% if form.discount_type.errors %}
+                        <p class="text-red-500 text-xs italic">{{ form.discount_type.errors }}</p>
+                    {% endif %}
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="{{ form.discount_value.id_for_label }}">
+                        Discount Value
+                    </label>
+                    {{ form.discount_value }}
+                    {% if form.discount_value.errors %}
+                        <p class="text-red-500 text-xs italic">{{ form.discount_value.errors }}</p>
+                    {% endif %}
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="{{ form.apply_to.id_for_label }}">
+                        Apply To
+                    </label>
+                    {{ form.apply_to }}
+                    {% if form.apply_to.errors %}
+                        <p class="text-red-500 text-xs italic">{{ form.apply_to.errors }}</p>
+                    {% endif %}
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="{{ form.start_date.id_for_label }}">
+                        Start Date
+                    </label>
+                    {{ form.start_date }}
+                    {% if form.start_date.errors %}
+                        <p class="text-red-500 text-xs italic">{{ form.start_date.errors }}</p>
+                    {% endif %}
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="{{ form.end_date.id_for_label }}">
+                        End Date (Optional)
+                    </label>
+                    {{ form.end_date }}
+                    {% if form.end_date.errors %}
+                        <p class="text-red-500 text-xs italic">{{ form.end_date.errors }}</p>
+                    {% endif %}
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="{{ form.minimum_purchase_amount.id_for_label }}">
+                        Minimum Purchase Amount
+                    </label>
+                    {{ form.minimum_purchase_amount }}
+                    {% if form.minimum_purchase_amount.errors %}
+                        <p class="text-red-500 text-xs italic">{{ form.minimum_purchase_amount.errors }}</p>
+                    {% endif %}
+                </div>
+                
+                <div class="mb-4 col-span-2 flex items-center">
+                    {{ form.is_active }}
+                    <label class="ml-2 text-gray-700 text-sm font-bold" for="{{ form.is_active.id_for_label }}">
+                        Active
+                    </label>
+                </div>
+            </div>
+            
+            <div class="flex items-center justify-center">
+                <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                    Save Discount
+                </button>
+            </div>
+        </form>
+    </div>
+</body>
+</html>
