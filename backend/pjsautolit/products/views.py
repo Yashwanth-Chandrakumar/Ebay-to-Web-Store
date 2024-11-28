@@ -2346,52 +2346,82 @@ def view_cart(request):
             try:
                 print(f"Cart ID found: {cart_id}")
                 cart = Cart.objects.get(id=cart_id)
-                cart_items = cart.cartitem_set.select_related("product").all()
-                cart_count = sum(item.quantity for item in cart_items)
-                print(f"Cart contains {cart_count} items.")
+                
+                # Pre-calculate subtotals and apply discounts
+                cart_items = []
+                for item in cart.cartitem_set.select_related("product").all():
+                    # Calculate base subtotal
+                    base_subtotal = Decimal(str(item.product.price * item.quantity))
+                    
+                    # Track item-specific discount
+                    item_product_discount = Decimal('0.00')
 
-                product_subtotal = sum(Decimal(str(item.product.price * item.quantity)) for item in cart_items)
-                print(f"Product subtotal: {product_subtotal}")
+                    # Collect applicable discounts
+                    now = timezone.now()
+                    item_applicable_discounts = Discount.objects.filter(
+                        Q(is_active=True) &
+                        Q(start_date__lte=now) &
+                        (Q(end_date__isnull=True) | Q(end_date__gte=now))
+                    )
 
-                now = timezone.now()
-                applicable_discounts = Discount.objects.filter(
-                    Q(is_active=True) &
-                    Q(start_date__lte=now) &
-                    (Q(end_date__isnull=True) | Q(end_date__gte=now)) &
-                    Q(minimum_purchase_amount__lte=product_subtotal)
-                )
-                print(f"Applicable discounts found: {len(applicable_discounts)}")
-
-                for discount in applicable_discounts:
-                    if discount.apply_to == 'PRODUCT_PRICE':
-                        for item in cart_items:
+                    # Apply product-specific discounts
+                    for discount in item_applicable_discounts:
+                        if discount.apply_to == 'PRODUCT_PRICE':
                             if discount.discount_type == 'PERCENTAGE':
-                                total_product_discount += Decimal(
-                                    str(item.product.price * item.quantity * (discount.discount_value / 100)))
+                                item_product_discount += Decimal(
+                                    str(item.product.price * item.quantity * (discount.discount_value / 100))
+                                )
                             else:
-                                total_product_discount += Decimal(str(discount.discount_value * item.quantity))
+                                item_product_discount += Decimal(str(discount.discount_value * item.quantity))
 
+                    # Calculate final item subtotal after product discounts
+                    item_subtotal = base_subtotal - item_product_discount
+                    
+                    # Create an enhanced cart item with additional calculation details
+                    enhanced_item = {
+                        'id': item.id,
+                        'product': item.product,
+                        'quantity': item.quantity,
+                        'base_subtotal': base_subtotal,
+                        'product_discount': item_product_discount,
+                        'final_subtotal': item_subtotal
+                    }
+                    
+                    cart_items.append(enhanced_item)
+
+                # Calculate overall cart totals (similar to previous implementation)
+                product_subtotal = sum(Decimal(str(item['base_subtotal'])) for item in cart_items)
+                total_product_discount = sum(Decimal(str(item['product_discount'])) for item in cart_items)
+
+                # Calculate cart-level discounts
+                total_cart_discount = Decimal('0.00')
+                for discount in item_applicable_discounts:
                     if discount.apply_to == 'CART':
                         if discount.discount_type == 'PERCENTAGE':
                             total_cart_discount += Decimal(str(product_subtotal * (discount.discount_value / 100)))
                         else:
                             total_cart_discount += min(Decimal(str(discount.discount_value)), product_subtotal)
 
+                # Calculate final cart total
                 cart_total = product_subtotal - total_product_discount - total_cart_discount
                 cart_total = max(cart_total, Decimal('0.00')).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
-                print(f"Final cart total: {cart_total}")
 
                 context.update({
                     "cart_items": cart_items,
                     "cart_total": cart_total,
-                    "cart_count": cart_count,
-                    "applicable_discounts": applicable_discounts,
+                    "cart_count": len(cart_items),
+                    "applicable_discounts": item_applicable_discounts,
                     "total_product_discount": total_product_discount,
                     "total_cart_discount": total_cart_discount,
                 })
 
                 request.session['cart_total'] = float(cart_total)
-
+                request.session['discounted_cart_total'] = float(cart_total)
+                request.session['total_product_discount'] = float(total_product_discount)
+                request.session['total_cart_discount'] = float(total_cart_discount)
+                print(f"Saving to session - Cart Total: {cart_total}")
+                print(f"Total Product Discount: {total_product_discount}")
+                print(f"Total Cart Discount: {total_cart_discount}")
             except Cart.DoesNotExist:
                 print("Cart not found in database")
                 del request.session['cart_id']
@@ -2431,7 +2461,7 @@ logger = logging.getLogger(__name__)
 
 import json
 import uuid
-from decimal import ROUND_HALF_UP, Decimal
+from decimal import ROUND_CEILING, ROUND_HALF_UP, Decimal
 
 from django.conf import settings
 from django.contrib import messages
@@ -2466,12 +2496,12 @@ def checkout(request):
             messages.error(request, "Your cart is empty")
             return redirect("view_cart")
         
-        # Use the discounted total from the session
-        cart_total = request.session.get('discounted_cart_total', cart.total_amount())
-        total_product_discount = request.session.get('total_product_discount', 0)
-        total_cart_discount = request.session.get('total_cart_discount', 0)
-        
-        print(f"Cart total after discounts: ${cart_total}")
+        # Robust retrieval of cart total and discounts
+        cart_total = Decimal(request.session.get('discounted_cart_total', str(cart.total_amount()))).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+        total_product_discount = Decimal(request.session.get('total_product_discount', '0.00')).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+        total_cart_discount = Decimal(request.session.get('total_cart_discount', '0.00')).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+        # Detailed logging
+        print(f"Cart total from session: ${cart_total}")
         print(f"Product Discount: ${total_product_discount}")
         print(f"Cart Discount: ${total_cart_discount}")
         
@@ -2482,19 +2512,19 @@ def checkout(request):
         total_weight_major = int(cart_total_weight)
         total_weight_minor = int((cart_total_weight - total_weight_major) * 16)
         
-        # Calculate shipping
+        # Calculate shipping with Decimal
         def calculate_usps_media_mail_cost(weight):
-            base_rate = 3.65
-            additional_rate = 0.70
+            base_rate = Decimal('3.65')
+            additional_rate = Decimal('0.70')
             rounded_weight = int(weight) if weight == int(weight) else int(weight) + 1
             return base_rate + (rounded_weight - 1) * additional_rate if rounded_weight > 1 else base_rate
         
-        shipping_cost = calculate_usps_media_mail_cost(cart_total_weight) + 2.00
-        total_including_shipping = Decimal(cart_total) + Decimal(shipping_cost)
+        shipping_cost = calculate_usps_media_mail_cost(cart_total_weight) + Decimal('2.00')
+        total_including_shipping = cart_total + shipping_cost
         total_including_shipping = total_including_shipping.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        
         print(f"Shipping cost: ${shipping_cost}, Total with shipping: ${total_including_shipping}")
         
-        # Rest of the function remains the same...
         context = {
             'cart_items': cart_items,
             'cart_total': cart_total,

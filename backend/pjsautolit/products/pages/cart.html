@@ -155,7 +155,35 @@
         .btn-danger:hover {
             background-color: #c82333;
         }
+        .quantity-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 
+.quantity-input {
+  width: 60px;
+  padding: 6px 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+  text-align: center;
+}
+
+.quantity-update-btn {
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.quantity-update-btn:hover {
+  background-color: #0056b3;
+}
         .discounts-section {
             margin-top: 20px;
             padding: 15px;
@@ -249,14 +277,18 @@
             <a href="/" class="navbar-brand"><img src="https://i.postimg.cc/h47H7Tcf/header-1.gif" style="height: 80px;"></a>
         </div>
         <div class="nav-links">
-            <a href="{% url 'landing_page' %}">Home</a>
-            <a href="{% url 'product_list' %}">Products</a>
-            <a href="{% url 'terms' %}">Terms</a>
+            <a href="{% url 'landing_page' %}" id="home-link">Home</a>
+            <a href="{% url 'landing_page' %}#show-schedule" class="nav-link">Show Schedule</a>
+            <a href="{% url 'product_list' %}" class="nav-link">Products</a>
+            <a href="{% url 'landing_page' %}#auto-links" class="nav-link">Auto Links</a>
+            <a href="{% url 'landing_page' %}#about-us" class="nav-link">About Us</a>
+            <a href="{% url 'terms' %}" class="nav-link">Terms</a>
+            <a href="#" class="nav-link">Contact</a>
         </div>
         <div class="user-actions">
             <div class="cart-icon">
-                <a href="/cart/" class="nav-link"><i class="fas fa-shopping-cart"></i></a>
-                <span class="cart-count">{{ cart_count }}</span>
+                <a href="/cart/" class="nav-link"> <i class="fas fa-shopping-cart"></i></a>
+                
             </div>
         </div>
     </nav>
@@ -266,91 +298,93 @@
             <h1>Your Shopping Cart</h1>
 
             {% if cart_items %}
-    <table>
-        <thead>
-            <tr>
-                <th>Product</th>
-                <th>Quantity</th>
-                <th>Price</th>
-                <th>Subtotal</th>
-                <th>Action</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for item in cart_items %}
-            <tr>
-                <td>{{ item.product.title }}</td>
-                <td>
-                    <form method="post" action="{% url 'update_cart' item.id %}">
-                        {% csrf_token %}
-                        <input type="number" name="quantity" value="{{ item.quantity }}" min="1">
-                        <button type="submit" class="btn">Update</button>
-                    </form>
-                </td>
-                <td>${{ item.product.price|floatformat:2 }}</td>
-                <td>${{ item.product.price|mul:item.quantity|sub:total_product_discount|div:item.quantity|floatformat:2 }}</td>
-                <td>
-                    <form method="post" action="{% url 'remove_from_cart' item.id %}">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-danger">Remove</button>
-                    </form>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-        <tfoot>
-            <tr>
-                <td colspan="3"><strong>Total:</strong></td>
-                <td colspan="2"><strong>${{ cart_total|floatformat:2 }}</strong></td>
-            </tr>
-        </tfoot>
-    </table>
-
-    <div class="discounts-section">
-        <h3>Applied Discounts</h3>
-        {% if total_product_discount > 0 or total_cart_discount > 0 %}
-            <ul>
-                {% for discount in applicable_discounts %}
-                    {% if discount.apply_to == 'PRODUCT_PRICE' %}
-                        <li>
-                            <i class="fas fa-tag"></i> 
-                            Product Discount: 
-                            {% if discount.discount_type == 'PERCENTAGE' %}
-                                {{ discount.discount_value }}% off on eligible products
-                            {% else %}
-                                ${{ discount.discount_value }} off per item
+            <table>
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Quantity</th>
+                        <th>Price</th>
+                        <th>Subtotal</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in cart_items %}
+                    <tr>
+                        <td>{{ item.product.title }}</td>
+                        <td>
+                            <form method="post" action="{% url 'update_cart' item.id %}">
+                                {% csrf_token %}
+                                <div class="quantity-wrapper">
+                                    <input type="number" class="quantity-input" value="1" min="1">
+                                    <button class="quantity-update-btn">Update</button>
+                                  </div>
+                            </form>
+                        </td>
+                        <td>${{ item.product.price|floatformat:2 }}</td>
+                        <td>${{ item.final_subtotal|floatformat:2 }}</td>
+                        <td>
+                            <form method="post" action="{% url 'remove_from_cart' item.id %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger">Remove</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="3"><strong>Total:</strong></td>
+                        <td colspan="2"><strong>${{ cart_total|floatformat:2 }}</strong></td>
+                    </tr>
+                </tfoot>
+            </table>
+        
+            <div class="discounts-section">
+                <h3>Applied Discounts</h3>
+                {% if total_product_discount > 0 or total_cart_discount > 0 %}
+                    <ul>
+                        {% for discount in applicable_discounts %}
+                            {% if discount.apply_to == 'PRODUCT_PRICE' %}
+                                <li>
+                                    <i class="fas fa-tag"></i> 
+                                    Product Discount: 
+                                    {% if discount.discount_type == 'PERCENTAGE' %}
+                                        {{ discount.discount_value }}% off on eligible products
+                                    {% else %}
+                                        ${{ discount.discount_value }} off per item
+                                    {% endif %}
+                                    <span class="discount-amount">(Total Savings: ${{ total_product_discount|floatformat:2 }})</span>
+                                </li>
                             {% endif %}
-                            <span class="discount-amount">(Total Savings: ${{ total_product_discount|floatformat:2 }})</span>
-                        </li>
-                    {% endif %}
-                    
-                    {% if discount.apply_to == 'CART' %}
-                        <li>
-                            <i class="fas fa-shopping-cart"></i> 
-                            Cart Discount: 
-                            {% if discount.discount_type == 'PERCENTAGE' %}
-                                {{ discount.discount_value }}% off entire cart
-                            {% else %}
-                                Flat ${{ discount.discount_value }} off
+                            
+                            {% if discount.apply_to == 'CART' %}
+                                <li>
+                                    <i class="fas fa-shopping-cart"></i> 
+                                    Cart Discount: 
+                                    {% if discount.discount_type == 'PERCENTAGE' %}
+                                        {{ discount.discount_value }}% off entire cart
+                                    {% else %}
+                                        Flat ${{ discount.discount_value }} off
+                                    {% endif %}
+                                    <span class="discount-amount">(Total Cart Discount: ${{ total_cart_discount|floatformat:2 }})</span>
+                                </li>
                             {% endif %}
-                            <span class="discount-amount">(Total Cart Discount: ${{ total_cart_discount|floatformat:2 }})</span>
-                        </li>
-                    {% endif %}
-                {% endfor %}
-            </ul>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p>No discounts applied.</p>
+                {% endif %}
+            </div>
+        
+            <div class="final-total">
+                <h3>Final Total: ${{ cart_total|floatformat:2 }}</h3>
+            </div>
+        
+            <a href="{% url 'checkout' %}" class="btn">Proceed to Checkout</a>
         {% else %}
-            <p>No discounts applied.</p>
+            <p>Your cart is empty.</p>
         {% endif %}
-    </div>
-
-    <div class="final-total">
-        <h3>Final Total: ${{ cart_total|floatformat:2 }}</h3>
-    </div>
-
-    <a href="{% url 'checkout' %}" class="btn">Proceed to Checkout</a>
-{% else %}
-    <p>Your cart is empty.</p>
-{% endif %}
         </div>
     </div>
 
