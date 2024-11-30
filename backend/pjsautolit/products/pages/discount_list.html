@@ -34,7 +34,13 @@
                         <tr class="border-b border-gray-200 hover:bg-gray-100">
                             <td class="py-3 px-6">{{ discount.name }}</td>
                             <td class="py-3 px-6">{{ discount.get_discount_type_display }}</td>
-                            <td class="py-3 px-6">{{ discount.discount_value }}</td>
+                            <td>
+                                {% if discount.discount_type == 'PERCENTAGE' %}
+                                    {{ discount.discount_value }}%
+                                {% else %}
+                                    ${{ discount.discount_value }}
+                                {% endif %}
+                            </td>
                             <td class="py-3 px-6">{{ discount.get_apply_to_display }}</td>
                             <td class="py-3 px-6">{{ discount.start_date|date:"Y-m-d H:i" }}</td>
                             <td class="py-3 px-6">{{ discount.end_date|default_if_none:"-"|date:"Y-m-d H:i" }}</td>
