@@ -2367,26 +2367,67 @@ def view_cart(request):
                     # Apply product-specific discounts
                     applied_product_discounts = []
                     for discount in item_applicable_discounts:
+                        # Discount for all product prices
                         if discount.apply_to == 'PRODUCT_PRICE':
                             if discount.discount_type == 'PERCENTAGE':
+                                # Calculate percentage discount
                                 discount_amount = Decimal(
                                     str(item.product.price * item.quantity * (discount.discount_value / 100))
                                 )
+                                # Ensure discount doesn't make price negative
+                                discount_amount = min(discount_amount, base_subtotal)
                                 item_product_discount += discount_amount
                                 applied_product_discounts.append({
                                     'name': discount.name,
-                                    'amount': discount_amount
+                                    'amount': discount_amount,
+                                    'type': 'PRODUCT_PRICE'
                                 })
                             else:
+                                # Calculate fixed amount discount
                                 discount_amount = Decimal(str(discount.discount_value * item.quantity))
+                                # Ensure discount doesn't make price negative
+                                discount_amount = min(discount_amount, base_subtotal)
                                 item_product_discount += discount_amount
                                 applied_product_discounts.append({
                                     'name': discount.name,
-                                    'amount': discount_amount
+                                    'amount': discount_amount,
+                                    'type': 'PRODUCT_PRICE'
                                 })
+                        
+                        # Discount for specific products
+                        elif discount.apply_to == 'SPECIFIC_PRODUCTS':
+                            product_tags = discount.get_product_tags()
+                            # Check if any of the tags match the product title
+                            if any(tag.lower() in item.product.title.lower() for tag in product_tags):
+                                if discount.discount_type == 'PERCENTAGE':
+                                    # Calculate percentage discount
+                                    discount_amount = Decimal(
+                                        str(item.product.price * item.quantity * (discount.discount_value / 100))
+                                    )
+                                    # Ensure discount doesn't make price negative
+                                    discount_amount = min(discount_amount, base_subtotal)
+                                    item_product_discount += discount_amount
+                                    applied_product_discounts.append({
+                                        'name': discount.name,
+                                        'amount': discount_amount,
+                                        'type': 'SPECIFIC_PRODUCTS',
+                                        'tags': product_tags
+                                    })
+                                else:
+                                    # Calculate fixed amount discount
+                                    discount_amount = Decimal(str(discount.discount_value * item.quantity))
+                                    # Ensure discount doesn't make price negative
+                                    discount_amount = min(discount_amount, base_subtotal)
+                                    item_product_discount += discount_amount
+                                    applied_product_discounts.append({
+                                        'name': discount.name,
+                                        'amount': discount_amount,
+                                        'type': 'SPECIFIC_PRODUCTS',
+                                        'tags': product_tags
+                                    })
 
                     # Calculate final item subtotal after product discounts
-                    item_subtotal = base_subtotal - item_product_discount
+                    item_subtotal = max(base_subtotal - item_product_discount, Decimal('0.00'))
                     
                     # Create an enhanced cart item with additional calculation details
                     enhanced_item = {
@@ -2440,25 +2481,33 @@ def view_cart(request):
                     "applied_cart_discounts": applied_cart_discounts,
                 })
 
+                # Update session with cart details
                 request.session['cart_total'] = float(cart_total)
                 request.session['discounted_cart_total'] = float(cart_total)
                 request.session['total_product_discount'] = float(total_product_discount)
                 request.session['total_cart_discount'] = float(total_cart_discount)
+
+                # Logging for debugging
                 print(f"Saving to session - Cart Total: {cart_total}")
                 print(f"Total Product Discount: {total_product_discount}")
                 print(f"Total Cart Discount: {total_cart_discount}")
+
             except Cart.DoesNotExist:
                 print("Cart not found in database")
                 del request.session['cart_id']
             except Exception as e:
+                # Comprehensive error logging
+                print("Error processing cart:")
                 print(traceback.format_exc())
-                messages.error(request, str(e))
+                messages.error(request, f"An error occurred while processing your cart: {str(e)}")
 
         return render(request, "pages/cart.html", context)
 
     except Exception as e:
+        # Top-level error handling
+        print("Unexpected error in view_cart:")
         print(traceback.format_exc())
-        messages.error(request, str(e))
+        messages.error(request, f"An unexpected error occurred: {str(e)}")
         return render(request, "pages/cart.html", context)
     
 
@@ -2529,41 +2578,71 @@ def checkout(request):
         
         # Prepare detailed cart items with discount information
         detailed_cart_items = []
+        now = timezone.now()
+        
+        # Get all applicable discounts
+        applicable_discounts = Discount.objects.filter(
+            Q(is_active=True) &
+            Q(start_date__lte=now) &
+            (Q(end_date__isnull=True) | Q(end_date__gte=now))
+        )
+        
         for item in cart_items:
             # Calculate original subtotal before discounts
             original_subtotal = item.product.price * item.quantity
             
             # Find applicable discounts for this item
             item_discounts = []
-            now = timezone.now()
-            applicable_discounts = Discount.objects.filter(
-                Q(is_active=True) &
-                Q(start_date__lte=now) &
-                (Q(end_date__isnull=True) | Q(end_date__gte=now))
-            )
             
             for discount in applicable_discounts:
+                # Check for PRODUCT_PRICE and SPECIFIC_PRODUCTS discounts
+                is_applicable = False
+                
+                # Check for product-wide discounts
                 if discount.apply_to == 'PRODUCT_PRICE':
+                    is_applicable = True
+                
+                # Check for specific product discounts
+                elif discount.apply_to == 'SPECIFIC_PRODUCTS':
+                    # Get product tags for the current discount
+                    product_tags = discount.get_product_tags()
+                    
+                    # Check if any of the tags match the product title
+                    is_applicable = any(
+                        tag.lower() in item.product.title.lower() 
+                        for tag in product_tags
+                    )
+                
+                # Apply discount if applicable
+                if is_applicable:
                     if discount.discount_type == 'PERCENTAGE':
                         discount_amount = original_subtotal * (discount.discount_value / 100)
                         item_discounts.append({
                             'name': discount.name,
                             'type': 'Percentage',
                             'value': f"{discount.discount_value}%",
-                            'amount': discount_amount
+                            'amount': discount_amount,
+                            'tags': discount.get_product_tags() if discount.apply_to == 'SPECIFIC_PRODUCTS' else []
                         })
                     else:
                         # Fixed amount discount
-                        discount_amount = min(discount.discount_value * item.quantity, original_subtotal)
+                        discount_amount = min(
+                            Decimal(str(discount.discount_value * item.quantity)), 
+                            original_subtotal
+                        )
                         item_discounts.append({
                             'name': discount.name,
                             'type': 'Fixed',
                             'value': f"${discount.discount_value}",
-                            'amount': discount_amount
+                            'amount': discount_amount,
+                            'tags': discount.get_product_tags() if discount.apply_to == 'SPECIFIC_PRODUCTS' else []
                         })
             
+            # Calculate total discount
+            total_item_discount = sum(d['amount'] for d in item_discounts)
+            
             # Calculate per-unit price after discounts
-            final_subtotal = original_subtotal - sum(d['amount'] for d in item_discounts)
+            final_subtotal = original_subtotal - total_item_discount
             per_unit_price = final_subtotal / item.quantity if item.quantity > 0 else Decimal('0')
             
             detailed_cart_items.append({
@@ -2571,11 +2650,19 @@ def checkout(request):
                 'original_price': item.product.price,
                 'original_subtotal': original_subtotal,
                 'discounts': item_discounts,
+                'total_discount': total_item_discount,
                 'final_subtotal': final_subtotal,
-                'per_unit_price': per_unit_price  # Add per-unit price calculation
+                'per_unit_price': per_unit_price
             })
         
-        # Rest of the function remains the same...
+        # Recalculate total discounts
+        total_product_discount = sum(item['total_discount'] for item in detailed_cart_items)
+        
+        # Calculate cart total after discounts
+        cart_total = sum(item['original_subtotal'] for item in detailed_cart_items) - total_product_discount
+        cart_total = max(cart_total, Decimal('0.00')).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+        
+        # Calculate shipping and final total
         cart_total_weight = cart.total_weight()
         total_weight_major = int(cart_total_weight)
         total_weight_minor = int((cart_total_weight - total_weight_major) * 16)

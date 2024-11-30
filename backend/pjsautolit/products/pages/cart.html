@@ -340,41 +340,61 @@
                 </tfoot>
             </table>
         
-            <div class="discounts-section">
-                <h3>Applied Discounts</h3>
-                {% if total_product_discount > 0 or total_cart_discount > 0 %}
-                    <ul>
-                        {% for discount in applicable_discounts %}
-                            {% if discount.apply_to == 'PRODUCT_PRICE' %}
-                                <li>
-                                    {{ discount.name }}:
-                                    {% if discount.discount_type == 'PERCENTAGE' %}
-                                        {{ discount.discount_value }}% off on eligible products
+            <!-- Inside the discounts-section -->
+<div class="discounts-section">
+    <h3>Applied Discounts</h3>
+    {% if total_product_discount > 0 or total_cart_discount > 0 %}
+        <ul>
+            {% for item in cart_items %}
+                {% if item.applied_product_discounts %}
+                    {% for discount in item.applied_product_discounts %}
+                        <li>
+                            {% if discount.type == 'PRODUCT_PRICE' %}
+                                {{ discount.name }}: 
+                                {% if discount.amount > 0 %}
+                                    {% if discount.amount|floatformat:2 == "0.00" %}
+                                        {{ discount.name }} (No applicable discount)
                                     {% else %}
-                                        ${{ discount.discount_value }} off per item
+                                        {% if 'Percentage' in discount.name %}
+                                            {{ discount.amount|floatformat:2 }} off on eligible products
+                                        {% else %}
+                                            ${{ discount.amount|floatformat:2 }} off per item
+                                        {% endif %}
                                     {% endif %}
-                                    <span class="discount-amount">(Total Savings: ${{ total_product_discount|floatformat:2 }})</span>
-                                </li>
-                            {% endif %}
-                            
-                            {% if discount.apply_to == 'CART' %}
-                                <li>
-                                    <i class="fas fa-shopping-cart"></i> 
-                                    Cart Discount: 
-                                    {% if discount.discount_type == 'PERCENTAGE' %}
-                                        {{ discount.discount_value }}% off entire cart
+                                {% endif %}
+                            {% elif discount.type == 'SPECIFIC_PRODUCTS' %}
+                                {{ discount.name }}: 
+                                {% if discount.amount > 0 %}
+                                    {% if 'Percentage' in discount.name %}
+                                        {{ discount.amount|floatformat:2 }} off on products with tags: {{ discount.tags|join:", " }}
                                     {% else %}
-                                        Flat ${{ discount.discount_value }} off
+                                        ${{ discount.amount|floatformat:2 }} off for products with tags: {{ discount.tags|join:", " }}
                                     {% endif %}
-                                    <span class="discount-amount">(Total Cart Discount: ${{ total_cart_discount|floatformat:2 }})</span>
-                                </li>
+                                {% endif %}
                             {% endif %}
-                        {% endfor %}
-                    </ul>
-                {% else %}
-                    <p>No discounts applied.</p>
+                        </li>
+                    {% endfor %}
                 {% endif %}
-            </div>
+            {% endfor %}
+
+            {% for discount in applicable_discounts %}
+                {% if discount.apply_to == 'CART' %}
+                    <li>
+                        <i class="fas fa-shopping-cart"></i>Cart Discount:
+                        {% if discount.discount_type == 'PERCENTAGE' %}
+                            {{ discount.discount_value }}% off entire cart
+                        {% else %}
+                            Flat ${{ discount.discount_value }} off
+                        {% endif %}
+                        <span class="discount-amount">(Total Cart Discount: ${{ total_cart_discount|floatformat:2 }})</span>
+                    </li>
+                {% endif %}
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No discounts applied.</p>
+    {% endif %}
+</div>
         
             <div class="final-total">
                 <h3>Final Total: ${{ cart_total|floatformat:2 }}</h3>

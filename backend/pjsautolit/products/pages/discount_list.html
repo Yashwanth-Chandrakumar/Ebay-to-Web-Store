@@ -41,7 +41,22 @@
                                     ${{ discount.discount_value }}
                                 {% endif %}
                             </td>
-                            <td class="py-3 px-6">{{ discount.get_apply_to_display }}</td>
+                            <td class="py-3 px-6">
+                                {% if discount.apply_to == 'SPECIFIC_PRODUCTS' and discount.product_tags %}
+                                    <div class="flex flex-col">
+                                        <span>{{ discount.get_apply_to_display }}</span>
+                                        <div class="flex flex-wrap gap-1 mt-1">
+                                            {% for tag in discount.get_product_tags %}
+                                                <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded">
+                                                    {{ tag }}
+                                                </span>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    {{ discount.get_apply_to_display }}
+                                {% endif %}
+                            </td>
                             <td class="py-3 px-6">{{ discount.start_date|date:"Y-m-d H:i" }}</td>
                             <td class="py-3 px-6">{{ discount.end_date|default_if_none:"-"|date:"Y-m-d H:i" }}</td>
                             <td class="py-3 px-6">

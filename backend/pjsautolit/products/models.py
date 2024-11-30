@@ -294,7 +294,6 @@ class CalendarEvent(models.Model):
     def __str__(self):
         return self.title
     
-
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
@@ -310,6 +309,7 @@ class Discount(models.Model):
     APPLY_TO_CHOICES = (
         ('CART', 'Entire Cart'),
         ('PRODUCT_PRICE', 'All Product Prices'),
+        ('SPECIFIC_PRODUCTS', 'Specific Products'),
     )
 
     name = models.CharField(max_length=200, unique=True)
@@ -319,6 +319,13 @@ class Discount(models.Model):
     discount_value = models.DecimalField(max_digits=10, decimal_places=2)
     
     apply_to = models.CharField(max_length=20, choices=APPLY_TO_CHOICES)
+    
+    # New field for product tags
+    product_tags = models.TextField(
+        blank=True, 
+        null=True, 
+        help_text="Enter comma-separated tags. Example: smartphone,apple,2023"
+    )
     
     start_date = models.DateTimeField(default=timezone.now)
     end_date = models.DateTimeField(null=True, blank=True)
@@ -350,6 +357,14 @@ class Discount(models.Model):
             self.start_date <= now and 
             (self.end_date is None or now <= self.end_date)
         )
+    
+    def get_product_tags(self):
+        """
+        Convert product_tags string to a list of cleaned tags
+        """
+        if not self.product_tags:
+            return []
+        return [tag.strip().lower() for tag in self.product_tags.split(',') if tag.strip()]
     
     def __str__(self):
         return self.name

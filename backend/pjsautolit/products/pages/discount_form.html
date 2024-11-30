@@ -3,12 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <title>{% if form.instance.pk %}Edit{% else %}Create{% endif %} Discount</title>
-    <link rel="icon" type="image/png" href="https://i.postimg.cc/VkGmFmx1/Untitled-design-2.png">
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
 <body class="bg-gray-100 min-h-screen flex items-center justify-center py-6">
     <div class="w-full max-w-2xl px-4">
-        <form method="post" class="bg-white shadow-md rounded-lg px-8 pt-6 pb-8 mb-4">
+        <form method="post" class="bg-white shadow-md rounded-lg px-8 pt-6 pb-8 mb-4" id="discount-form">
             {% csrf_token %}
             
             {% if form.errors %}
@@ -36,11 +35,20 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {% for field in form %}
                     {% if field.name != 'is_active' %}
-                    <div class="mb-4 {% if field.name == 'name' or field.name == 'description' %}md:col-span-2{% endif %}">
+                    <div class="mb-4 {% if field.name == 'name' or field.name == 'description' or field.name == 'apply_to' or field.name == 'product_tags' %}md:col-span-2{% endif %} 
+                        {% if field.name == 'product_tags' %}product-tags-group{% endif %}" 
+                        {% if field.name == 'product_tags' %}style="display: none;"{% endif %}>
                         <label class="block text-gray-700 text-sm font-bold mb-2" for="{{ field.id_for_label }}">
                             {{ field.label }}{% if field.field.required %} *{% endif %}
                         </label>
                         {{ field }}
+                        {% if field.name == 'product_tags' %}
+                        <p class="text-gray-600 text-xs italic mt-1">
+                            For specific product discounts, enter comma-separated tags. 
+                            Example: "smartphone, apple, 2023" will apply to products 
+                            containing any of these tags.
+                        </p>
+                        {% endif %}
                         {% if field.errors %}
                             <p class="text-red-500 text-xs italic">{{ field.errors }}</p>
                         {% endif %}
@@ -63,5 +71,21 @@
             </div>
         </form>
     </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const productTagsGroup = document.querySelector('.product-tags-group');
+        const applyToSelect = document.querySelector('select[name="apply_to"]');
+
+        function toggleProductTagsVisibility() {
+            productTagsGroup.style.display = applyToSelect.value === 'SPECIFIC_PRODUCTS' ? 'block' : 'none';
+        }
+
+        applyToSelect.addEventListener('change', toggleProductTagsVisibility);
+
+        // Initialize visibility on page load
+        toggleProductTagsVisibility();
+    });
+    </script>
 </body>
 </html>
