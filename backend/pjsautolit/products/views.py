@@ -3041,3 +3041,10 @@ def discount_delete(request, pk):
         discount.delete()
         return redirect('discount_list')
     return render(request, 'pages/discount_confirm_delete.html', {'object': discount})
+
+
+from django.shortcuts import redirect
+
+
+def order_information_redirect(request):
+    return redirect('landing_page')

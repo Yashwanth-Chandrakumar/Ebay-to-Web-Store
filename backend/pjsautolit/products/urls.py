@@ -81,4 +81,5 @@ urlpatterns = [
     path('discounts/create/', views.discount_create, name='discount_create'),
     path('discounts/<int:pk>/update/', views.discount_update, name='discount_update'),
     path('discounts/<int:pk>/delete/', views.discount_delete, name='discount_delete'),
+    path('order_information.htm', views.order_information_redirect, name='order_information_redirect'),
 ]
