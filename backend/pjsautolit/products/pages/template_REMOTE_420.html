@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ product.title }}</title>
+    <link rel="icon" type="image/png" href="https://i.postimg.cc/VkGmFmx1/Untitled-design-2.png">
+
+    <meta name="description" content="Authentic vintage {{ product.category_name }} {{ product.title }} - Original {{ product.condition }} automobile literature from PJ's Auto Literature. Rare collectors' item featuring detailed automotive history for {{ product.short_description }}. Professional grade auto documentation, shipped globally with expert curation.">
+
+<meta name="keywords" content="{{ product.title }}, {{ product.short_description }}, 
+{{ product.category_name }} literature, vintage automotive documents, rare car brochures, 
+automobile historical documents, {{ product.condition }} auto literature, collector's automotive prints, 
+{{ product.category_id }} vehicle literature, classic car memorabilia, automotive historical archives, 
+vehicle documentation, {{ product.brand|default:'automotive' }} collectibles, 
+PJ's Auto Literature collection, professional automotive literature, 
+vintage car manual, automobile historical research material, 
+car enthusiast documentation, automotive research archives, 
+original dealer literature, classic automobile documentation, 
+vintage automobile brochure, car history preservation, 
+automotive historical preservation, collector's automotive resource, 
+rare vehicle documentation, automobile literature marketplace, 
+professional auto literature collection, 
+vintage car enthusiast resources, automobile historical collection, 
+car documentation archive, automotive literature museum, 
+professional vehicle literature source, 
+original automobile documentation">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="{% url 'product_detail' product_slug=product.html_link %}" />
+    <meta property="og:title" content="{{ product.title }}">
+    <meta property="og:description" content="{{ product.short_description }}. Buy {{ product.title }} at the best price.">
+    <meta property="og:image" content="{{ product.primary_image_url }}">
+    <meta property="og:url" content="{% url 'product_detail' product_slug=product.html_link %}">
+    <meta property="og:type" content="product">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+
+    <!-- SEO and Structured Data Meta Tags -->
+    <meta name="product:condition" content="{{ product.condition }}">
+    <meta name="product:availability" content="in_stock">
+    <meta name="product:price:currency" content="USD">
+    <meta name="product:price:amount" content="{{ product.price }}">
+    <meta name="author" content="PJ's Auto Literature">
+    <meta name="geo.region" content="US">
+    <meta name="revisit-after" content="7 days">
+    <link rel="author" href="https://www.pjsautoliterature.com">
+    <link rel="preload" href="{{ product.primary_image_url }}" as="image">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <!-- Product Schema -->
+    <script type="application/ld+json">
+        {
+            "@context": "https://schema.org/",
+            "@type": "Product",
+            "name": "{{ product.title }}",
+            "description": "{{ product.short_description }}",
+            "sku": "{{ product.item_id }}",
+            "mpn": "{{ product.item_id }}",
+            "brand": {
+                "@type": "Brand",
+                "name": "PJ's Auto Literature"
+            },
+            "offers": {
+                "@type": "Offer",
+                "priceCurrency": "USD",
+                "price": "{{ (product.price * 0.97)|floatformat:2 }}",
+                "availability": "https://schema.org/InStock",
+                "seller": {
+                    "@type": "Organization",
+                    "name": "PJ's Auto Literature"
+                }
+            },
+            "aggregateRating": {
+                "@type": "AggregateRating",
+                "ratingValue": "{{ product.average_rating|default:'5' }}",
+                "reviewCount": "{{ product.review_count|default:'25000' }}"
+            },
+            "additionalProperty": [
+                {
+                    "@type": "PropertyValue",
+                    "name": "Condition",
+                    "value": "{{ product.condition }}"
+                }
+            ]
+        }
+    </script>
+
+    <!-- Preload stylesheets -->
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+    <link rel="stylesheet" href="{% static 'css/responsive.css' %}">
+    <style>
+        :root {
+    --primary-color: #0056b3;
+    --secondary-color: #f8f9fa;
+    --accent-color: #dc3545;
+    --text-color: #333;
+    --light-gray: #e9ecef;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    line-height: 1.6;
+    color: var(--text-color);
+    background-color: var(--secondary-color);
+}
+
+.container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    background-color: white;
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.logo img {
+    height: 50px;
+}
+
+.nav-links {
+    display: flex;
+    gap: 20px;
+}
+
+.nav-links a {
+    text-decoration: none;
+    color: #333;
+    font-size: 18px;
+    transition: color 0.3s ease;
+}
+
+.nav-links a:hover {
+    color: var(--primary-color);
+}
+
+.menu-toggle {
+    display: none;
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: var(--text-color);
+}
+
+.user-actions {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.cart-icon {
+    position: relative;
+}
+
+.cart-icon i {
+    font-size: 20px;
+    color: var(--text-color);
+}
+
+.price-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.original-price {
+    text-decoration: line-through;
+    color: #888;
+    margin-right: 10px;
+}
+
+.discounted-price {
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+.discount-info {
+    background-color: #28a745;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+.info-icon {
+    cursor: pointer;
+    color: var(--primary-color);
+    margin-left: 5px;
+    transition: color 0.3s ease;
+}
+
+.info-icon:hover {
+    color: var(--accent-color);
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1001;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.4);
+}
+
+.modal-content {
+    background-color: #fff;
+    margin: 10% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+    max-width: 600px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close:hover {
+    color: #000;
+}
+
+.product-container {
+    display: flex;
+    gap: 40px;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    padding: 40px;
+    margin-top: 100px;
+}
+
+.left-column, .right-column {
+    flex: 1;
+}
+
+.large-image-container {
+    width: 100%;
+    height: 400px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--light-gray);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.large-image {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.add-to-cart-button {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 12px 24px;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 500;
+    border-radius: 4px;
+    transition: background-color 0.3s ease;
+    width: 100%;
+}
+
+.add-to-cart-button:hover {
+    background-color: #004494;
+}
+
+@media (max-width: 768px) {
+    .navbar {
+        flex-wrap: wrap;
+    }
+
+    .nav-links {
+        display: none;
+        flex-direction: column;
+        position: absolute;
+        top: 70px;
+        left: 0;
+        width: 100%;
+        background: white;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        padding: 10px;
+    }
+
+    .nav-links.active {
+        display: flex;
+    }
+
+    .nav-links a {
+        padding: 10px;
+        text-align: center;
+        border-bottom: 1px solid var(--light-gray);
+    }
+
+    .menu-toggle {
+        display: block;
+    }
+
+    .product-container {
+        flex-direction: column;
+        margin-top: 80px;
+        padding: 20px;
+    }
+
+    .large-image-container {
+        height: 300px;
+    }
+}
+    </style>
+</head>
+<body>
+    <nav class="navbar" aria-label="Main Navigation">
+        <div class="logo">
+            <a href="/" class="navbar-brand">
+                <img src="https://i.postimg.cc/h47H7Tcf/header-1.gif" alt="PJ's Auto Literature Logo">
+            </a>
+        </div>
+        
+        <button class="menu-toggle" aria-label="Toggle Navigation">
+            <i class="fas fa-bars"></i>
+        </button>
+        
+        <div class="nav-links">
+            <a href="{% url 'landing_page' %}" id="home-link">Home</a>
+            <a href="{% url 'landing_page' %}#show-schedule" class="nav-link">Show Schedule</a>
+            <a href="{% url 'product_list' %}" class="nav-link">Products</a>
+            <a href="{% url 'landing_page' %}#auto-links" class="nav-link">Auto Links</a>
+            <a href="{% url 'landing_page' %}#about-us" class="nav-link">About Us</a>
+            <a href="{% url 'terms' %}" class="nav-link">Terms</a>
+            <a href="#" class="nav-link">Contact</a>
+        </div>
+        
+        <div class="user-actions">
+            <div class="cart-icon">
+                <a href="/cart/" class="nav-link">
+                    <i class="fas fa-shopping-cart"></i>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="product-container">
+            <div class="left-column">
+                <div class="large-image-container">
+                    <img id="largeImage" class="large-image" src="{{ product.primary_image_url }}" alt="{{ product.title }} Product Image">
+                </div>
+                
+                <div class="small-images">
+                    <img src="{{ product.primary_image_url }}" alt="Product Image" onclick="changeImage(this.src)">
+                    {% for image in additional_images %}
+                        <img src="{{ image }}" alt="Product Image" onclick="changeImage(this.src)">
+                    {% endfor %}
+                </div>
+                
+                <div class="carousel-note">
+                    The item you receive might not be the exact same one that is in the picture. Some of these items we have in quantity & we do not take a new picture each time. Each item is different & some may have a minor imperfection and variances such as, a dealer stamp may or may not be present. However, the general condition of the item will be as described.
+                </div>
+            </div>
+            
+            <div class="right-column">
+                <h1 class="product-title">{{ product.title }}</h1>
+                
+                <p class="product-subtitle">
+                    {{ product.short_description }} 
+                    <button class="more-button" onclick="showMore()">More</button>
+                </p>
+                
+                <div class="price-container">
+                    <p class="price">
+                        <span class="original-price">{{ product.currency }} {{ product.price }}</span>
+                        <span class="discounted-price">{{ product.currency }} {{ (product.price * 0.97)|floatformat:2 }}</span>
+                        <span class="discount-info">3% OFF</span>
+                        <i class="fas fa-info-circle info-icon" onclick="showDiscountModal()"></i>
+                    </p>
+                </div>
+                
+                <form method="post" action="{% url 'add_to_cart' product.item_id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="add-to-cart-button" aria-label="Add {{ product.title }} to cart">
+                        Add to Cart
+                    </button>
+                </form>
+                
+                <div class="product-details">
+                    <h2>Item Specifics</h2>
+                    <table>
+                        <tr><td>Item ID:</td><td>{{ product.item_id }}</td></tr>
+                        <tr>
+                            <td>Shipping Cost:</td>
+                            <td>
+                                <a href="{% url 'terms' %}" target="_blank">$ {{ product.shipping_cost }}</a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Estimated Delivery:</td>
+                            <td>
+                                {{ product.min_estimated_delivery_date|date:"Y-m-d" }} - 
+                                {{ product.max_estimated_delivery_date|date:"Y-m-d" }}
+                            </td>
+                        </tr>
+                        <tr><td>Ship To Locations:</td><td>{{ product.ship_to_locations }}</td></tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- More Details Modal -->
+    <div id="moreModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeMore()">&times;</span>
+            <p>{{ product.short_description }}</p>
+            <br>
+            <p>
+                PJ's Auto Literature has over 100,000 different brochures, books, manuals and much more with only a fraction listed on our website. If you want additional information on this item or can't find what you're looking for here, contact us at:
+                <br><br>
+                pjsautoliterature@aol.com
+                <br>
+                Phone: 1-319-345-6760
+                <br><br>
+                Please add all items you want to purchase to the shopping cart before checking out to ensure one payment per shipment.
+            </p>
+        </div>
+    </div>
+
+    <!-- Discount Info Modal -->
+    <div id="discountModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeDiscountModal()">&times;</span>
+            <h2>Special Discount</h2>
+            <p>We're proud to offer all our products at 3% lower prices compared to eBay! This exclusive discount is our way of providing the best value to our customers.</p>
+            <p>🔹 Guaranteed Lower Prices</p>
+            <p>🔹 Same High-Quality Products</p>
+            <p>🔹 Direct from PJ's Auto Literature</p>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        function changeImage(newSrc) {
+            document.getElementById('largeImage').src = newSrc;
+        }
+
+        function showMore() {
+            document.getElementById('moreModal').style.display = 'block';
+        }
+
+        function closeMore() {
+            document.getElementById('moreModal').style.display = 'none';
+        }
+
+        function showDiscountModal() {
+            document.getElementById('discountModal').style.display = 'block';
+        }
+
+        function closeDiscountModal() {
+            document.getElementById('discountModal').style.display = 'none';
+        }
+
+        // Menu Toggle
+        document.querySelector('.menu-toggle').addEventListener('click', function() {
+            document.querySelector('.nav-links').classList.toggle('active');
+        });
+
+        // Close modals when clicking outside
+        window.onclick = function(event) {
+            const moreModal = document.getElementById('moreModal');
+            const discountModal = document.getElementById('discountModal');
+            
+            if (event.target == moreModal) {
+                moreModal.style.display = 'none';
+            }
+            
+            if (event.target == discountModal) {
+                discountModal.style.display = 'none';
+            }
+        }
+    </script>
+
+    <!-- Additional Product Schema -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org/",
+        "@type": "Product",
+        "name": "{{ product.title }}",
+        "image": "{{ product.primary_image_url }}",
+        "description": "{{ product.short_description }}",
+        "sku": "{{ product.item_id }}",
+        "offers": {
+            "@type": "Offer",
+            "priceCurrency": "USD",
+            "price": "{{ (product.price * 0.97)|floatformat:2 }}",
+            "availability": "https://schema.org/InStock"
+        }
+    }
+    </script>
+</body>
+</html>

@@ -366,35 +366,6 @@
         .close-discount-info:hover {
             color: #000;
         }
-        .price-container {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .original-price {
-            text-decoration: line-through;
-            color: #888;
-            font-size: 18px;
-        }
-        .discounted-price {
-            color: var(--accent-color);
-            font-size: 24px;
-            font-weight: 700;
-        }
-        .discount-badge {
-            background-color: var(--accent-color);
-            color: white;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 14px;
-            margin-left: 10px;
-        }
-        .info-icon {
-            cursor: pointer;
-            color: var(--primary-color);
-            font-size: 20px;
-            vertical-align: middle;
-        }
     </style>
 </head>
 <body>
@@ -437,12 +408,9 @@
             <div class="right-column">
                 <h1 class="product-title">{{ product.title }}</h1>
                 <p class="product-subtitle">{{ product.short_description }} <button class="more-button" onclick="showMore()">More</button></p>
-                <div class="price-container" id="priceContainer">
-                    <span id="originalPrice" class="original-price">{{ product.currency }} {{ product.price }}</span>
-                    <span class="discounted-price" id="discountedPrice"></span>
-                    <span class="discount-badge" id="discountBadge"></span>
-                    <i class="fas fa-info-circle info-icon" onclick="showDiscountInfo()"></i>
-                </div>
+                <p class="price">
+                    <a href="{% url 'terms' %}" target="_blank">{{ product.currency }} {{ product.price }}</a>
+                </p>
                 <form method="post" action="{% url 'add_to_cart' product.item_id %}">
                     {% csrf_token %}
                     <button type="submit" class="add-to-cart-button">Add to Cart</button>
@@ -499,33 +467,73 @@
         </div>
     </div>
     <script>
-        function calculateDiscount() {
+        // Function to apply discount and update price display
+        function applyDiscount() {
+            // Get the original price element
             const originalPriceEl = document.getElementById('originalPrice');
-            const discountedPriceEl = document.getElementById('discountedPrice');
-            const discountBadgeEl = document.getElementById('discountBadge');
-
-            // Extract original price
+            
+            // Extract the numeric price value
             const originalPrice = parseFloat(originalPriceEl.textContent.replace('{{ product.currency }} ', ''));
             
-            // Calculate 3% discount
+            // Calculate discounted price (3% off)
             const discountPercentage = 0.03;
             const discountedPrice = (originalPrice * (1 - discountPercentage)).toFixed(2);
-
-            // Update elements
-            discountedPriceEl.textContent = `{{ product.currency }} ${discountedPrice}`;
-            discountBadgeEl.textContent = '-3% OFF';
+            
+            // Create new price elements
+            const priceContainer = document.getElementById('priceContainer');
+            
+            // Clear existing content
+            priceContainer.innerHTML = '';
+            
+            // Create original price element
+            const originalPriceSpan = document.createElement('span');
+            originalPriceSpan.className = 'original-price';
+            originalPriceSpan.textContent = `{{ product.currency }} ${originalPrice.toFixed(2)}`;
+            
+            // Create discounted price element
+            const discountedPriceSpan = document.createElement('span');
+            discountedPriceSpan.className = 'discounted-price';
+            discountedPriceSpan.textContent = `{{ product.currency }} ${discountedPrice}`;
+            
+            // Create discount badge
+            const discountBadge = document.createElement('span');
+            discountBadge.className = 'discount-badge';
+            discountBadge.textContent = '-3% OFF';
+            
+            // Create info icon
+            const infoIcon = document.createElement('i');
+            infoIcon.className = 'fas fa-info-circle info-icon';
+            infoIcon.onclick = showDiscountInfo;
+            
+            // Append elements to price container
+            priceContainer.appendChild(originalPriceSpan);
+            priceContainer.appendChild(discountedPriceSpan);
+            priceContainer.appendChild(discountBadge);
+            priceContainer.appendChild(infoIcon);
         }
 
+        // Function to show discount info modal
         function showDiscountInfo() {
             document.getElementById('discountInfoModal').style.display = 'block';
         }
 
+        // Function to close discount info modal
         function closeDiscountInfo() {
             document.getElementById('discountInfoModal').style.display = 'none';
         }
 
-        // Run on page load
-        document.addEventListener('DOMContentLoaded', calculateDiscount);
+        // Extend existing window click handler to close discount modal
+        window.onclick = function(event) {
+            if (event.target == document.getElementById('moreModal')) {
+                document.getElementById('moreModal').style.display = 'none';
+            }
+            if (event.target == document.getElementById('discountInfoModal')) {
+                document.getElementById('discountInfoModal').style.display = 'none';
+            }
+        }
+
+        // Apply discount when page loads
+        document.addEventListener('DOMContentLoaded', applyDiscount);
     </script>
     <script>
         function changeImage(newSrc) {

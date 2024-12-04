@@ -1,4 +1,4 @@
-
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -292,109 +292,6 @@
         .price a:hover, .product-details a:hover {
             text-decoration: underline;
         }
-        .discount-badge {
-            background-color: var(--accent-color);
-            color: white;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 14px;
-            margin-left: 10px;
-            vertical-align: super;
-        }
-
-        .original-price {
-            text-decoration: line-through;
-            color: #888;
-            margin-right: 10px;
-            font-size: 18px;
-        }
-
-        .discounted-price {
-            color: var(--accent-color);
-            font-weight: bold;
-        }
-
-        .info-icon {
-            cursor: pointer;
-            color: var(--primary-color);
-            margin-left: 10px;
-            font-size: 20px;
-            vertical-align: middle;
-        }
-
-        .discount-info-modal {
-            display: none;
-            position: fixed;
-            z-index: 1100;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0,0,0,0.5);
-        }
-
-        .discount-info-content {
-            background-color: white;
-            margin: 15% auto;
-            padding: 20px;
-            border-radius: 8px;
-            width: 80%;
-            max-width: 500px;
-            text-align: center;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-
-        .discount-info-content h2 {
-            color: var(--primary-color);
-            margin-bottom: 15px;
-        }
-
-        .discount-info-content p {
-            line-height: 1.6;
-            color: #333;
-        }
-
-        .close-discount-info {
-            color: #aaa;
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        .close-discount-info:hover {
-            color: #000;
-        }
-        .price-container {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .original-price {
-            text-decoration: line-through;
-            color: #888;
-            font-size: 18px;
-        }
-        .discounted-price {
-            color: var(--accent-color);
-            font-size: 24px;
-            font-weight: 700;
-        }
-        .discount-badge {
-            background-color: var(--accent-color);
-            color: white;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 14px;
-            margin-left: 10px;
-        }
-        .info-icon {
-            cursor: pointer;
-            color: var(--primary-color);
-            font-size: 20px;
-            vertical-align: middle;
-        }
     </style>
 </head>
 <body>
@@ -437,12 +334,9 @@
             <div class="right-column">
                 <h1 class="product-title">{{ product.title }}</h1>
                 <p class="product-subtitle">{{ product.short_description }} <button class="more-button" onclick="showMore()">More</button></p>
-                <div class="price-container" id="priceContainer">
-                    <span id="originalPrice" class="original-price">{{ product.currency }} {{ product.price }}</span>
-                    <span class="discounted-price" id="discountedPrice"></span>
-                    <span class="discount-badge" id="discountBadge"></span>
-                    <i class="fas fa-info-circle info-icon" onclick="showDiscountInfo()"></i>
-                </div>
+                <p class="price">
+                    <a href="{% url 'terms' %}" target="_blank">{{ product.currency }} {{ product.price }}</a>
+                </p>
                 <form method="post" action="{% url 'add_to_cart' product.item_id %}">
                     {% csrf_token %}
                     <button type="submit" class="add-to-cart-button">Add to Cart</button>
@@ -484,49 +378,7 @@
             </p>
         </div>
     </div>
-    <div id="discountInfoModal" class="discount-info-modal">
-        <div class="discount-info-content">
-            <span class="close-discount-info" onclick="closeDiscountInfo()">&times;</span>
-            <h2>Exclusive Website Discount</h2>
-            <p>
-                🏷️ We offer a <strong>3% discount</strong> on all products compared to our eBay listings! 
-                This special pricing is exclusively available on our website to reward our direct customers.
-            </p>
-            <p>
-                By shopping directly with us, you not only save money but also support a small, 
-                passionate business dedicated to providing high-quality auto literature.
-            </p>
-        </div>
-    </div>
-    <script>
-        function calculateDiscount() {
-            const originalPriceEl = document.getElementById('originalPrice');
-            const discountedPriceEl = document.getElementById('discountedPrice');
-            const discountBadgeEl = document.getElementById('discountBadge');
 
-            // Extract original price
-            const originalPrice = parseFloat(originalPriceEl.textContent.replace('{{ product.currency }} ', ''));
-            
-            // Calculate 3% discount
-            const discountPercentage = 0.03;
-            const discountedPrice = (originalPrice * (1 - discountPercentage)).toFixed(2);
-
-            // Update elements
-            discountedPriceEl.textContent = `{{ product.currency }} ${discountedPrice}`;
-            discountBadgeEl.textContent = '-3% OFF';
-        }
-
-        function showDiscountInfo() {
-            document.getElementById('discountInfoModal').style.display = 'block';
-        }
-
-        function closeDiscountInfo() {
-            document.getElementById('discountInfoModal').style.display = 'none';
-        }
-
-        // Run on page load
-        document.addEventListener('DOMContentLoaded', calculateDiscount);
-    </script>
     <script>
         function changeImage(newSrc) {
             document.getElementById('largeImage').src = newSrc;
