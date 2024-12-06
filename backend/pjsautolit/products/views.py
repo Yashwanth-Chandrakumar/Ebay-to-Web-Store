@@ -268,8 +268,9 @@ def fetch_finding_api_data(page_number=1, min_price=1.00, max_price=10.00):
                         else None
                     ),
                     "price": float(
-                        item.find("ns:sellingStatus/ns:currentPrice", namespace).text
-                    ),
+    item.find("ns:sellingStatus/ns:currentPrice", namespace).text
+) * 0.97,
+
                     "selling_state": item.find(
                         "ns:sellingStatus/ns:sellingState", namespace
                     ).text,
@@ -417,10 +418,11 @@ def fetch_browse_api_data(item_id):
             result = {
                 "description": data.get("description", ""),
                 "price": (
-                    float(data["price"]["value"])
-                    if "price" in data and "value" in data["price"]
-                    else None
-                ),
+    float(data["price"]["value"]) * 0.97
+    if "price" in data and "value" in data["price"]
+    else None
+),
+
                 "currency": (
                     data["price"]["currency"]
                     if "price" in data and "currency" in data["price"]
@@ -526,7 +528,7 @@ def save_product_data(product_data):
 
         # print(f"description {description}")
         cleaned_description = clean_description(description)
-
+    
         defaults = {
             "title": product_data["title"],
             "global_id": product_data.get("global_id"),
@@ -641,7 +643,6 @@ from .models import \
 
 logger = logging.getLogger(__name__)
 
-
 @shared_task
 def generate_html_pages_async():
     # Check if the generation is already in progress
@@ -709,7 +710,6 @@ def generate_html_pages_async():
         logger.error(f"Errors encountered while generating HTML pages: {errors}")
     else:
         logger.info("HTML pages generated successfully.")
-
 
 import time
 
@@ -1165,6 +1165,7 @@ def run_daily_update_async(self):
             "country",
             "shipping_type",
             "ship_to_locations",
+            "price"
         ]
 
         field_mapping = {
@@ -2090,7 +2091,7 @@ def process_payment(request):
     print("Starting payment processing...")
 
     def calculate_usps_media_mail_cost(weight):
-        base_rate = 3.65
+        base_rate = 4.63
         additional_rate = 0.70
         rounded_weight = int(weight) if weight == int(weight) else int(weight) + 1
         return base_rate + (rounded_weight - 1) * additional_rate if rounded_weight > 1 else base_rate
