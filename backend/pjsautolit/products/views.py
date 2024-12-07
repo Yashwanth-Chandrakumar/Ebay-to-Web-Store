@@ -2091,8 +2091,8 @@ def process_payment(request):
     print("Starting payment processing...")
 
     def calculate_usps_media_mail_cost(weight):
-        base_rate = 4.63
-        additional_rate = 0.70
+        base_rate = 4.65
+        additional_rate = 0.75
         rounded_weight = int(weight) if weight == int(weight) else int(weight) + 1
         return base_rate + (rounded_weight - 1) * additional_rate if rounded_weight > 1 else base_rate
 
@@ -2669,8 +2669,8 @@ def checkout(request):
         total_weight_minor = int((cart_total_weight - total_weight_major) * 16)
         
         def calculate_usps_media_mail_cost(weight):
-            base_rate = Decimal('4.63')
-            additional_rate = Decimal('0.70')
+            base_rate = Decimal('4.65')
+            additional_rate = Decimal('0.75')
             rounded_weight = int(weight) if weight == int(weight) else int(weight) + 1
             return base_rate + (rounded_weight - 1) * additional_rate if rounded_weight > 1 else base_rate
         
