@@ -45,6 +45,9 @@ jobs:
             git pull
           fi
 
+          # Clean up unused Docker resources
+          docker system prune -a --volumes -f
+
           # Build the Docker image
           docker build -t yashwanthsc/pjsauto:latest ./backend/pjsautolit
 
