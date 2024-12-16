@@ -2091,10 +2091,36 @@ def process_payment(request):
     print("Starting payment processing...")
 
     def calculate_usps_media_mail_cost(weight):
-        base_rate = 4.65
-        additional_rate = 0.75
+        rate_brackets = [
+        (1, 4.63),
+        (2, 5.37),
+        (3, 6.11),
+        (4, 6.85),
+        (5, 7.59),
+        (6, 8.33),
+        (7, 9.07),
+        (8, 9.82),
+        (9, 10.57),
+        (10, 11.32),
+        (15, 15.07),
+        (20, 18.82),
+        (30, 26.32),
+        (40, 33.82),
+        (50, 41.32),
+        (60, 48.82),
+        (70, 56.32),
+    ]
+
+    # Round up weight to the nearest whole number
         rounded_weight = int(weight) if weight == int(weight) else int(weight) + 1
-        return base_rate + (rounded_weight - 1) * additional_rate if rounded_weight > 1 else base_rate
+
+        # Find the appropriate rate bracket
+        for max_weight, rate in rate_brackets:
+            if rounded_weight <= max_weight:
+                return rate
+
+        # If weight exceeds the highest bracket, return None or handle as needed
+        return None
 
     def create_square_customer(client, shipping_data):
         try:
@@ -2669,10 +2695,36 @@ def checkout(request):
         total_weight_minor = int((cart_total_weight - total_weight_major) * 16)
         
         def calculate_usps_media_mail_cost(weight):
-            base_rate = Decimal('4.65')
-            additional_rate = Decimal('0.75')
+            rate_brackets = [
+                (1, 4.63),
+                (2, 5.37),
+                (3, 6.11),
+                (4, 6.85),
+                (5, 7.59),
+                (6, 8.33),
+                (7, 9.07),
+                (8, 9.82),
+                (9, 10.57),
+                (10, 11.32),
+                (15, 15.07),
+                (20, 18.82),
+                (30, 26.32),
+                (40, 33.82),
+                (50, 41.32),
+                (60, 48.82),
+                (70, 56.32),
+            ]
+
+            # Round up weight to the nearest whole number
             rounded_weight = int(weight) if weight == int(weight) else int(weight) + 1
-            return base_rate + (rounded_weight - 1) * additional_rate if rounded_weight > 1 else base_rate
+
+            # Find the appropriate rate bracket
+            for max_weight, rate in rate_brackets:
+                if rounded_weight <= max_weight:
+                    return Decimal(str(rate))  # Convert to Decimal
+
+            # If weight exceeds the highest bracket, return None or handle as needed
+            return None
         
         shipping_cost = calculate_usps_media_mail_cost(cart_total_weight) + Decimal('2.00')
         total_including_shipping = cart_total + shipping_cost
@@ -3049,3 +3101,67 @@ from django.shortcuts import redirect
 
 def order_information_redirect(request):
     return redirect('landing_page')
+
+from django.http import JsonResponse
+from django.views.decorators.cache import cache_page
+from django.views.decorators.http import require_GET
+
+
+@require_GET
+@cache_page(60 * 60)  # Cache for 1 hour
+def get_shipping_cost(request, item_id):
+    def calculate_usps_media_mail_cost(weight):
+        rate_brackets = [
+        (1, 4.63),
+        (2, 5.37),
+        (3, 6.11),
+        (4, 6.85),
+        (5, 7.59),
+        (6, 8.33),
+        (7, 9.07),
+        (8, 9.82),
+        (9, 10.57),
+        (10, 11.32),
+        (15, 15.07),
+        (20, 18.82),
+        (30, 26.32),
+        (40, 33.82),
+        (50, 41.32),
+        (60, 48.82),
+        (70, 56.32),
+    ]
+
+    # Round up weight to the nearest whole number
+        rounded_weight = int(weight) if weight == int(weight) else int(weight) + 1
+
+        # Find the appropriate rate bracket
+        for max_weight, rate in rate_brackets:
+            if rounded_weight <= max_weight:
+                return rate
+
+        # If weight exceeds the highest bracket, return None or handle as needed
+        return None
+    try:
+        # First, try to get the weight from cache to avoid repeated API calls
+        cached_weight = cache.get(f'product_weight_{item_id}')
+        
+        if not cached_weight:
+            # Fetch weight from eBay API
+            cached_weight = get_ebay_product_weight(item_id)
+            
+            if cached_weight:
+                # Cache the weight for future requests
+                cache.set(f'product_weight_{item_id}', cached_weight, 24 * 60 * 60)  # Cache for 24 hours
+        
+        if cached_weight is not None:
+            shipping_cost = calculate_usps_media_mail_cost(cached_weight)
+            
+            return JsonResponse({
+                'shipping_cost': shipping_cost,
+                'weight': cached_weight
+            })
+        
+        return JsonResponse({'error': 'Could not fetch shipping cost'}, status=404)
+    
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)

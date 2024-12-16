@@ -346,10 +346,12 @@
                     <table>
                         <tr><td>Item ID:</td><td>{{ product.item_id }}</td></tr>
                         <tr>
-                            <td>Shipping Cost:</td>
-                            <td>
-                                <a href="{% url 'terms' %}" target="_blank">$ {{ product.shipping_cost }}</a>
-                            </td>
+                           
+                                <td>Shipping Cost:</td>
+                                <td id="shipping-cost-container">Calculating shipping cost...</td>
+                            
+                            
+                            
                         </tr>
                         <tr><td>Estimated Delivery:</td><td>{{ product.min_estimated_delivery_date|date:"Y-m-d" }} - {{ product.max_estimated_delivery_date|date:"Y-m-d" }}</td></tr>
                         <tr><td>Ship To Locations:</td><td>{{ product.ship_to_locations }}</td></tr>
@@ -362,7 +364,11 @@
     <!-- Modals -->
     <div id="moreModal" class="modal">
         <div class="modal-content">
-            <span class="close" onclick="closeMore()">&times;</span>
+            <span class="close" onclick="closeMore()" 
+      onkeydown="if(event.key==='Enter'||event.key===' '){closeMore()}" 
+      tabindex="0" 
+      role="button" 
+      aria-label="Close more information modal">&times;</span>
             <p>
                 {{ product.short_description }}
             </p>
@@ -378,25 +384,87 @@
             </p>
         </div>
     </div>
-
+   
     <script>
-        function changeImage(newSrc) {
-            document.getElementById('largeImage').src = newSrc;
+        function fetchShippingCost(itemId) {
+            const shippingCostElement = document.getElementById('shipping-cost-container');
+            
+            if (!shippingCostElement) return;
+        
+            fetch(`/get-shipping-cost/${itemId}/`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch shipping cost');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.shipping_cost) {
+                        shippingCostElement.innerHTML = `$${data.shipping_cost.toFixed(2)} (USPS Mail)`;
+                    } else {
+                        shippingCostElement.innerHTML = 'Shipping cost unavailable';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching shipping cost:', error);
+                    shippingCostElement.innerHTML = 'Shipping cost unavailable';
+                });
         }
+        
+        // Call the function when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            const itemId = "{{ product.item_id }}";
+            fetchShippingCost(itemId);
+        });
+        </script>
+    <script>
 
-        function showMore() {
-            document.getElementById('moreModal').style.display = 'block';
-        }
 
-        function closeMore() {
-            document.getElementById('moreModal').style.display = 'none';
-        }
+function changeImage(newSrc) {
+    document.getElementById('largeImage').src = newSrc;
+}
 
-        window.onclick = function(event) {
-            if (event.target == document.getElementById('moreModal')) {
-                document.getElementById('moreModal').style.display = 'none';
+function showMore() {
+    document.getElementById('moreModal').style.display = 'block';
+}
+
+function closeMore() {
+    document.getElementById('moreModal').style.display = 'none';
+}
+
+// Updated modal close functions with keyboard support
+document.addEventListener('DOMContentLoaded', () => {
+    const modals = [ 'moreModal'];
+    
+    modals.forEach(modalId => {
+        const modal = document.getElementById(modalId);
+        const closeBtn = modal.querySelector('.close');
+        
+        // Add keyboard support for close button
+        closeBtn.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                
+                    closeMore();
+                
             }
-        }
+        });
+        
+        // Close modal when clicking outside
+        window.addEventListener('click', (event) => {
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+        
+        // Close modal with Escape key
+        window.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && modal.style.display === 'block') {
+                modal.style.display = 'none';
+            }
+        });
+    });
+});
     </script>
 </body>
 </html>
