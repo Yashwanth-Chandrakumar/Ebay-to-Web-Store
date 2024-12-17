@@ -562,12 +562,14 @@ form .invalid-feedback.visible {
                         
                         <!-- Price and Discount Display -->
                         <div class="price-details">
+                            {% if item.discounts %}
                             <span class="original-price" style="text-decoration: line-through; color: #888;">
                                 ${{ item.original_price|floatformat:2 }}
                             </span>
                             <span class="discounted-price" style="color: #007bff; margin-left: 10px;">
                                 ${{ item.per_unit_price|floatformat:2 }}
-                                </span>
+                            </span>
+                            {% endif %}
                             
                             <!-- Discount Details -->
                             {% if item.discounts %}
