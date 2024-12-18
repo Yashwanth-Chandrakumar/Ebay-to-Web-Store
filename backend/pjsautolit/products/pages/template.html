@@ -387,35 +387,37 @@
    
     <script>
         function fetchShippingCost(itemId) {
-            const shippingCostElement = document.getElementById('shipping-cost-container');
-            
-            if (!shippingCostElement) return;
-        
-            fetch(`/get-shipping-cost/${itemId}/`)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Failed to fetch shipping cost');
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    if (data.shipping_cost) {
-                        shippingCostElement.innerHTML = `$${data.shipping_cost.toFixed(2)} (USPS Mail)`;
-                    } else {
-                        shippingCostElement.innerHTML = 'Shipping cost unavailable';
-                    }
-                })
-                .catch(error => {
-                    console.error('Error fetching shipping cost:', error);
-                    shippingCostElement.innerHTML = 'Shipping cost unavailable';
-                });
-        }
-        
-        // Call the function when the page loads
-        document.addEventListener('DOMContentLoaded', () => {
-            const itemId = "{{ product.item_id }}";
-            fetchShippingCost(itemId);
+    const shippingCostElement = document.getElementById('shipping-cost-container');
+    
+    if (!shippingCostElement) return;
+
+    fetch(`/get-shipping-cost/${itemId}/`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to fetch shipping cost');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.shipping_cost) {
+                // Add $2 to the shipping cost
+                const adjustedShippingCost = data.shipping_cost + 2;
+                shippingCostElement.innerHTML = `$${adjustedShippingCost.toFixed(2)} (USPS Mail)`;
+            } else {
+                shippingCostElement.innerHTML = 'Shipping cost unavailable';
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching shipping cost:', error);
+            shippingCostElement.innerHTML = 'Shipping cost unavailable';
         });
+}
+
+// Call the function when the page loads
+document.addEventListener('DOMContentLoaded', () => {
+    const itemId = "{{ product.item_id }}";
+    fetchShippingCost(itemId);
+});
         </script>
     <script>
 
