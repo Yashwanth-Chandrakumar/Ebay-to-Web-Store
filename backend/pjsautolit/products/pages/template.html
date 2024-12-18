@@ -402,7 +402,7 @@
             if (data.shipping_cost) {
                 // Add $2 to the shipping cost
                 const adjustedShippingCost = data.shipping_cost + 2;
-                shippingCostElement.innerHTML = `$${adjustedShippingCost.toFixed(2)} (USPS Mail)`;
+                shippingCostElement.innerHTML = `$${adjustedShippingCost.toFixed(2)} `;
             } else {
                 shippingCostElement.innerHTML = 'Shipping cost unavailable';
             }
