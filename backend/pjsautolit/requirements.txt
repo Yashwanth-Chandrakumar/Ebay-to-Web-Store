@@ -1,212 +1,43 @@
-aiohappyeyeballs==2.3.4
-aiohttp==3.10.1
-aiosignal==1.3.1
-amqp==5.2.0
-anyio==4.4.0
-apimatic-core==0.2.15
+amqp==5.3.1
+apimatic-core==0.2.17
 apimatic-core-interfaces==0.1.5
 apimatic-requests-client-adapter==0.1.6
 asgiref==3.8.1
-attrs==24.2.0
 beautifulsoup4==4.12.3
-billiard==4.2.0
-bleach==6.1.0
-blinker==1.8.2
-borb==2.1.25
+billiard==4.2.1
+bs4==0.0.2
 CacheControl==0.12.14
 celery==5.4.0
-certifi==2024.7.4
-cffi==1.17.0
-charset-normalizer==3.3.2
+certifi==2024.12.14
+charset-normalizer==3.4.0
 click==8.1.7
 click-didyoumean==0.3.1
 click-plugins==1.1.1
 click-repl==0.3.0
 colorama==0.4.6
-cryptography==43.0.0
-Cython==3.0.10
-defusedxml==0.8.0rc2
 deprecation==2.1.0
-dj-database-url==2.2.0
-Django==5.0.8
-django-analytical==3.1.0
-django-ckeditor==6.7.1
-django-constance==4.0.1
-django-js-asset==2.2.0
-django-summernote==0.8.20.0
-django-celery-results
-ebaysdk==2.2.0
-et-xmlfile==1.1.0
-filelock==3.15.4
-Flask==3.0.3
-fonttools==4.53.1
-frozenlist==1.4.1
-fsspec==2024.6.1
-gradio_client==1.1.1
-gunicorn==23.0.0
-h11==0.14.0
-httpcore==1.0.5
-httpx==0.27.0
-huggingface-hub==0.24.3
-idna==3.7
-itsdangerous==2.2.0
-Jinja2==3.1.4
-joblib==1.4.2
-jsonpickle==3.0.4
+dj-database-url==2.3.0
+Django==5.1.4
+django-celery-results==2.5.1
+et_xmlfile==2.0.0
+idna==3.10
+jsonpickle==3.3.0
 jsonpointer==2.4
-kombu==5.4.0
-lxml==5.2.2
-MarkupSafe==2.1.5
-mpmath==1.3.0
-msgpack==1.0.8
-multidict==6.0.5
-networkx==3.3
-nltk==3.8.1
-numpy==2.0.1
-oauthlib==3.2.2
+kombu==5.4.2
+msgpack==1.1.0
 openpyxl==3.1.5
-packaging==24.1
-pandas==2.2.2
-pillow==10.4.0
-prompt_toolkit==3.0.47
-psycopg2-binary==2.9.9
-pycparser==2.22
-PyJWT==2.9.0
-pypng==0.20220715.0
-python-barcode==0.15.1
-python-dateutil==2.8.2
-python3-openid==3.2.0
-pytz==2024.1
-PyYAML==6.0.1
-qrcode==7.4.2
-redis==5.0.1
-regex==2024.7.24
+packaging==24.2
+prompt_toolkit==3.0.48
+psycopg2-binary==2.9.10
+python-dateutil==2.9.0.post0
 requests==2.32.3
-requests-oauthlib==2.0.0
-safetensors==0.4.3
-setuptools==72.1.0
-six==1.16.0
-sniffio==1.3.1
-social-auth-app-django==5.4.2
-social-auth-core==4.5.4
+setuptools==75.6.0
+six==1.17.0
 soupsieve==2.6
-sqlparse==0.5.1
-square==0.0.3
-squareup==38.0.0.20240821
-sympy==1.13.1
-tqdm==4.66.4
+sqlparse==0.5.3
+squareup==39.1.0.20241218
 typing_extensions==4.12.2
-tzdata==2024.1
-urllib3==2.2.2
+tzdata==2024.2
+urllib3==2.2.3
 vine==5.1.0
 wcwidth==0.2.13
-webencodings==0.5.1
-websockets==11.0.3
-Werkzeug==3.0.3
-whitenoise==6.7.0
-yarl==1.9.4
-
-# aiohappyeyeballs==2.3.4
-# aiohttp==3.7.4
-# aiosignal==1.2.0
-# amqp==5.1.1
-# anyio==3.5.0
-# apimatic-core==0.2.15
-# apimatic-core-interfaces==0.1.5
-# apimatic-requests-client-adapter==0.1.6
-# asgiref==3.5.2
-# attrs==21.4.0
-# beautifulsoup4==4.9.3
-# billiard==3.6.4.0
-# bleach==4.1.0
-# blinker==1.4
-# borb==2.1.25
-# CacheControl==0.12.11
-# celery==5.2.7
-# certifi==2021.10.8
-# cffi==1.15.0
-# charset-normalizer==2.0.12
-# click==8.0.4
-# click-didyoumean==0.3.0
-# click-plugins==1.1.1
-# click-repl==0.2.0
-# colorama==0.4.4
-# cryptography==36.0.2
-# Cython==0.29.28
-# defusedxml==0.7.1
-# deprecation==2.1.0
-# dj-database-url==0.5.0
-# Django==3.2.18
-# django-analytical==3.1.0
-# django-ckeditor==6.3.0
-# django-constance==2.9.1
-# django-js-asset==2.0.0
-# django-summernote==0.8.20.0
-# django-celery-results==2.3.1
-# ebaysdk==2.2.0
-# et-xmlfile==1.1.0
-# filelock==3.3.0
-# Flask==2.0.3
-# fonttools==4.28.5
-# frozenlist==1.2.0
-# fsspec==2021.11.1
-# gradio_client==1.1.1
-# gunicorn==20.1.0
-# h11==0.12.0
-# httpcore==0.13.7
-# httpx==0.19.0
-# huggingface-hub==0.5.0
-# idna==3.3
-# itsdangerous==2.0.1
-# Jinja2==3.0.3
-# joblib==1.1.0
-# jsonpickle==2.0.0
-# jsonpointer==2.1
-# kombu==5.2.4
-# lxml==4.9.1
-# MarkupSafe==2.0.1
-# mpmath==1.2.1
-# msgpack==1.0.2
-# multidict==5.1.0
-# networkx==2.6.3
-# oauthlib==3.1.1
-# openpyxl==3.0.10
-# packaging==21.3
-# pillow==8.4.0
-# prompt_toolkit==3.0.24
-# psycopg2-binary==2.8.6
-# pycparser==2.21
-# PyJWT==2.1.0
-# pypng==0.0.20
-# python-barcode==0.13.1
-# python-dateutil==2.8.2
-# python3-openid==3.2.0
-# pytz==2022.1
-# PyYAML==5.4.1
-# qrcode==7.3
-# redis==4.0.2
-# regex==2021.11.10
-# requests==2.26.0
-# requests-oauthlib==1.3.0
-# safetensors==0.3.1
-# setuptools==59.5.0
-# six==1.16.0
-# sniffio==1.2.0
-# social-auth-app-django==4.0.0
-# social-auth-core==4.1.0
-# soupsieve==2.2.1
-# sqlparse==0.4.2
-# square==0.0.3
-# squareup==38.0.0.20240821
-# sympy==1.9
-# tqdm==4.62.3
-# typing_extensions==3.10.0.2
-# tzdata==2021.5
-# urllib3==1.26.6
-# vine==5.0.0
-# wcwidth==0.2.5
-# webencodings==0.5.1
-# websockets==9.1
-# Werkzeug==2.0.3
-# whitenoise==5.3.0
-# yarl==1.6.3     

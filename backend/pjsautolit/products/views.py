@@ -873,6 +873,9 @@ def order_details(request, order_id):
 # views.py
 
 
+from django.db.models import Q
+
+
 def product_list(request):
     query = request.GET.get("query", "")
     products = Product.objects.all()
@@ -891,7 +894,15 @@ def product_list(request):
             cart_count = 0
 
     if query:
-        products = products.filter(title__icontains=query)
+        # Split the query into words and create a Q object to search across title and short_description
+        query_words = query.split()
+        q_objects = Q()
+        
+        for word in query_words:
+            q_objects &= (Q(title__icontains=word) | Q(short_description__icontains=word))
+        
+        # Apply the filter to get products that match all words in the query
+        products = products.filter(q_objects)
 
     paginator = Paginator(products, 10)  # Show 10 products per page.
     page_number = request.GET.get("page")
@@ -903,6 +914,7 @@ def product_list(request):
         "cart_count": cart_count,
     }
     return render(request, "pages/product_list.html", context)
+
 
 
 def cron(request):
