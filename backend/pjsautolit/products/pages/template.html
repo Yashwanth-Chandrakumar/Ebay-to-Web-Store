@@ -61,11 +61,30 @@
             align-items: center;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
-        .logo {
-            display: flex;
-            align-items: center;
-            margin-left: 40px;
-        }
+        .logo-container {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.phone-number {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #333;
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.phone-number i {
+    color: #333;
+    font-size: 14px;
+}
+
+/* Adjust the existing logo margin */
+.logo {
+    margin-left: 0; /* Remove the previous margin */
+}
         .logo img {
             height: 50px;
         }
@@ -296,24 +315,31 @@
 </head>
 <body>
     <nav class="navbar">
-        <div class="logo">
-            <a href="/" class="navbar-brand"><img src="https://i.postimg.cc/h47H7Tcf/header-1.gif" style="height: 80px;"></a>
+        <div class="logo-container">
+           <div class="logo">
+              <a href="/" class="navbar-brand"><img src="https://i.postimg.cc/h47H7Tcf/header-1.gif" style="height: 80px;"></a>
+           </div>
+        </div>
+        <div class="phone-number">
+           <i class="fas fa-phone"></i>
+           <span>319-345-6760</span>
         </div>
         <div class="nav-links">
-            <a href="{% url 'landing_page' %}" id="home-link">Home</a>
-            <a href="{% url 'landing_page' %}#show-schedule" class="nav-link">Show Schedule</a>
-            <a href="{% url 'product_list' %}" class="nav-link">Products</a>
-            <a href="{% url 'landing_page' %}#auto-links" class="nav-link">Auto Links</a>
-            <a href="{% url 'landing_page' %}#about-us" class="nav-link">About Us</a>
-            <a href="{% url 'terms' %}" class="nav-link">Terms</a>
-            <a href="#" class="nav-link">Contact</a>
+           <a href="{% url 'landing_page' %}#top" id="home-link">Home</a>
+           <a href="{% url 'landing_page' %}#show-schedule" class="nav-link">Show Schedule</a>
+           <a href="/product/" class="nav-link">Products</a>
+           <a href="{% url 'landing_page' %}#auto-links" class="nav-link">Auto Links</a>
+           <a href="{% url 'landing_page' %}#about-us" class="nav-link">About Us</a>
+           <a href="/terms/" class="nav-link">Terms</a>
+           <a href="#" class="nav-link">Contact</a>
         </div>
         <div class="user-actions">
-            <div class="cart-icon">
-                <a href="/cart/" class="nav-link"> <i class="fas fa-shopping-cart"></i></a>
-            </div>
+           <div class="cart-icon">
+              <a href="/cart/" class="nav-link"> <i class="fas fa-shopping-cart"></i></a>
+              <span class="cart-count">{{cart_count}}</span>
+           </div>
         </div>
-    </nav>
+     </nav>
     <div class="container">
         <div class="product-container">
             <div class="left-column">
