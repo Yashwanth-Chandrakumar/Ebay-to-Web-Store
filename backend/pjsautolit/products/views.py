@@ -116,7 +116,7 @@ def fetch_all_items(request):
 
                 except Exception as e:
                     print(
-                        f"Error fetching data for page {current_page}, price range ${min_price}-${max_price}: {e}"
+                        f"process:fetch_all_items Error fetching data for page {current_page}, price range ${min_price}-${max_price}: {e}"
                     )
 
                 current_page += 1
@@ -169,13 +169,17 @@ def get_fetch_items_progress(request):
 #     browse_data = fetch_browse_api_data(item_id)
 #     return {**finding_data, **browse_data}
 
-
 def fetch_finding_api_data(page_number=1, min_price=1.00, max_price=10.00):
+    #print(f"\nFetching Finding API data:")
+    #print(f"Page number: {page_number}")
+    #print(f"Price range: ${min_price:.2f} - ${max_price:.2f}")
+    
     headers = {
         "X-EBAY-SOA-SECURITY-APPNAME": "PJsAutoL-keyset-PRD-d2986db2a-865af761",
         "X-EBAY-SOA-OPERATION-NAME": "findItemsIneBayStores",
         "Content-Type": "text/xml",
     }
+    #print("Headers prepared")
 
     xml_payload = f"""<?xml version="1.0" encoding="UTF-8"?>
     <findItemsIneBayStoresRequest xmlns="http://www.ebay.com/marketplace/search/v1/services">
@@ -198,136 +202,139 @@ def fetch_finding_api_data(page_number=1, min_price=1.00, max_price=10.00):
             <entriesPerPage>100</entriesPerPage>
         </paginationInput>
     </findItemsIneBayStoresRequest>"""
+    #print("XML payload prepared")
 
     attempt = 0
     while attempt < MAX_RETRIES:
         try:
+            #print(f"\nAttempt {attempt + 1} of {MAX_RETRIES}")
+            #print("Sending API request...")
             response = requests.post(FINDING_API_URL, headers=headers, data=xml_payload)
+            #print(f"Response status code: {response.status_code}")
             response.raise_for_status()
 
+            #print("Parsing XML response...")
             root = ET.fromstring(response.content)
             namespace = {"ns": "http://www.ebay.com/marketplace/search/v1/services"}
 
             # Check for eBay API errors
             ack = root.find(".//ns:ack", namespace)
+            #print(f"API acknowledgment: {ack.text if ack is not None else 'None'}")
+            
             if ack is not None and ack.text != "Success":
-                error_message = root.find(
-                    ".//ns:errorMessage/ns:error/ns:message", namespace
-                )
-                error_code = root.find(
-                    ".//ns:errorMessage/ns:error/ns:errorId", namespace
-                )
+                error_message = root.find(".//ns:errorMessage/ns:error/ns:message", namespace)
+                error_code = root.find(".//ns:errorMessage/ns:error/ns:errorId", namespace)
                 if error_message is not None and error_code is not None:
-                    raise Exception(
-                        f"eBay API Error {error_code.text}: {error_message.text}"
-                    )
+                    raise Exception(f"eBay API Error {error_code.text}: {error_message.text}")
                 else:
                     raise Exception(f"Unknown eBay API Error: {ack.text}")
 
             items = root.findall(".//ns:item", namespace)
+            #print(f"Found {len(items)} items in response")
+            
             total_pages = int(root.find(".//ns:totalPages", namespace).text)
+            #print(f"Total pages: {total_pages}")
 
             results = []
-            for item in items:
-                data = {
-                    "item_id": item.find("ns:itemId", namespace).text,
-                    "title": item.find("ns:title", namespace).text,
-                    "global_id": item.find("ns:globalId", namespace).text,
-                    "category_id": item.find(
-                        "ns:primaryCategory/ns:categoryId", namespace
-                    ).text,
-                    "category_name": item.find(
-                        "ns:primaryCategory/ns:categoryName", namespace
-                    ).text,
-                    "gallery_url": item.find("ns:galleryURL", namespace).text,
-                    "view_item_url": item.find("ns:viewItemURL", namespace).text,
-                    "auto_pay": item.find("ns:autoPay", namespace).text == "true",
-                    "postal_code": item.find("ns:postalCode", namespace).text,
-                    "location": item.find("ns:location", namespace).text,
-                    "country": item.find("ns:country", namespace).text,
-                    "shipping_type": item.find(
-                        "ns:shippingInfo/ns:shippingType", namespace
-                    ).text,
-                    "ship_to_locations": item.find(
-                        "ns:shippingInfo/ns:shipToLocations", namespace
-                    ).text,
-                    "expedited_shipping": item.find(
-                        "ns:shippingInfo/ns:expeditedShipping", namespace
-                    ).text
-                    == "true",
-                    "one_day_shipping_available": item.find(
-                        "ns:shippingInfo/ns:oneDayShippingAvailable", namespace
-                    ).text
-                    == "true",
-                    "handling_time": (
-                        int(
-                            item.find("ns:shippingInfo/ns:handlingTime", namespace).text
-                        )
-                        if item.find("ns:shippingInfo/ns:handlingTime", namespace)
-                        is not None
-                        else None
-                    ),
-                    "price": float(
-    item.find("ns:sellingStatus/ns:currentPrice", namespace).text
-) * 0.97,
+            for index, item in enumerate(items, 1):
+                #print(f"\nProcessing item {index} of {len(items)}")
+                try:
+                    # Helper function to safely get text from XML element
+                    def get_safe_text(element, path, default=None):
+                        elem = element.find(path, namespace)
+                        return elem.text if elem is not None else default
 
-                    "selling_state": item.find(
-                        "ns:sellingStatus/ns:sellingState", namespace
-                    ).text,
-                    "time_left": item.find(
-                        "ns:sellingStatus/ns:timeLeft", namespace
-                    ).text,
-                    "best_offer_enabled": item.find(
-                        "ns:listingInfo/ns:bestOfferEnabled", namespace
-                    ).text
-                    == "true",
-                    "buy_it_now_available": item.find(
-                        "ns:listingInfo/ns:buyItNowAvailable", namespace
-                    ).text
-                    == "true",
-                    "start_time": item.find(
-                        "ns:listingInfo/ns:startTime", namespace
-                    ).text,
-                    "end_time": item.find("ns:listingInfo/ns:endTime", namespace).text,
-                    "listing_type": item.find(
-                        "ns:listingInfo/ns:listingType", namespace
-                    ).text,
-                    "gift": item.find("ns:listingInfo/ns:gift", namespace).text
-                    == "true",
-                    "watch_count": (
-                        int(item.find("ns:listingInfo/ns:watchCount", namespace).text)
-                        if item.find("ns:listingInfo/ns:watchCount", namespace)
-                        is not None
-                        else None
-                    ),
-                    "returns_accepted": item.find("ns:returnsAccepted", namespace).text
-                    == "true",
-                    "is_multi_variation_listing": item.find(
-                        "ns:isMultiVariationListing", namespace
-                    ).text
-                    == "true",
-                    "top_rated_listing": item.find("ns:topRatedListing", namespace).text
-                    == "true",
-                }
-                results.append(data)
+                    # Helper function to safely convert to boolean
+                    def get_safe_bool(element, path):
+                        return get_safe_text(element, path) == "true"
 
+                    # Helper function to safely convert to integer
+                    def get_safe_int(element, path):
+                        text = get_safe_text(element, path)
+                        return int(text) if text is not None else None
+
+                    # Process price with rounding
+                    price_elem = item.find("ns:sellingStatus/ns:currentPrice", namespace)
+                    if price_elem is not None:
+                        original_price = float(price_elem.text)
+                        discounted_price = original_price * 0.97
+                        # Using math.ceil to round up to 2 decimal places
+                        rounded_price = math.ceil(discounted_price * 100) / 100
+                        #print(f"Price processing:")
+                        #print(f"  Original price: ${original_price:.2f}")
+                        #print(f"  After discount: ${discounted_price:.2f}")
+                        #print(f"  Final ceiling-rounded price: ${rounded_price:.2f}")
+                    else:
+                        rounded_price = 0.00
+
+                    data = {
+                        "item_id": get_safe_text(item, "ns:itemId"),
+                        "title": get_safe_text(item, "ns:title"),
+                        "global_id": get_safe_text(item, "ns:globalId"),
+                        "category_id": get_safe_text(item, "ns:primaryCategory/ns:categoryId"),
+                        "category_name": get_safe_text(item, "ns:primaryCategory/ns:categoryName"),
+                        "gallery_url": get_safe_text(item, "ns:galleryURL"),
+                        "view_item_url": get_safe_text(item, "ns:viewItemURL"),
+                        "auto_pay": get_safe_bool(item, "ns:autoPay"),
+                        "postal_code": get_safe_text(item, "ns:postalCode"),
+                        "location": get_safe_text(item, "ns:location"),
+                        "country": get_safe_text(item, "ns:country"),
+                        "shipping_type": get_safe_text(item, "ns:shippingInfo/ns:shippingType"),
+                        "ship_to_locations": get_safe_text(item, "ns:shippingInfo/ns:shipToLocations"),
+                        "price": rounded_price,  # Using the rounded price
+                        "expedited_shipping": get_safe_bool(item, "ns:shippingInfo/ns:expeditedShipping"),
+                        "one_day_shipping_available": get_safe_bool(item, "ns:shippingInfo/ns:oneDayShippingAvailable"),
+                        "handling_time": get_safe_int(item, "ns:shippingInfo/ns:handlingTime"),
+                        "selling_state": get_safe_text(item, "ns:sellingStatus/ns:sellingState"),
+                        "time_left": get_safe_text(item, "ns:sellingStatus/ns:timeLeft"),
+                        "best_offer_enabled": get_safe_bool(item, "ns:listingInfo/ns:bestOfferEnabled"),
+                        "buy_it_now_available": get_safe_bool(item, "ns:listingInfo/ns:buyItNowAvailable"),
+                        "start_time": get_safe_text(item, "ns:listingInfo/ns:startTime"),
+                        "end_time": get_safe_text(item, "ns:listingInfo/ns:endTime"),
+                        "listing_type": get_safe_text(item, "ns:listingInfo/ns:listingType"),
+                        "gift": get_safe_bool(item, "ns:listingInfo/ns:gift"),
+                        "watch_count": get_safe_int(item, "ns:listingInfo/ns:watchCount"),
+                        "returns_accepted": get_safe_bool(item, "ns:returnsAccepted"),
+                        "is_multi_variation_listing": get_safe_bool(item, "ns:isMultiVariationListing"),
+                        "top_rated_listing": get_safe_bool(item, "ns:topRatedListing")
+                    }
+
+                    # Remove None values to avoid serialization issues
+                    data = {k: v for k, v in data.items() if v is not None}
+                    #print(f"Successfully processed item {data.get('item_id', 'unknown')}")
+                    results.append(data)
+
+                except Exception as item_error:
+                    #print(f"Error processing individual item {index}:")
+                    #print(f"Error details: {str(item_error)}")
+                    continue
+
+            #print(f"\nSuccessfully processed {len(results)} items")
             return results, total_pages
 
-        except (RequestException, HTTPError) as e:
-            print(f"HTTP Error (attempt {attempt + 1}): {e}")
-            print(f"Response status code: {response.status_code}")
-            print(f"Response headers: {response.headers}")
-            print(f"Response content: {response.content.decode('utf-8')}")
+        except requests.exceptions.RequestException as e:
+            #print(f"HTTP Error (attempt {attempt + 1}): {e}")
+            #print(f"Response status code: {response.status_code}")
+            #print(f"Response headers: {response.headers}")
+            #print(f"Response content: {response.content.decode('utf-8')}")
+            pass
         except ET.ParseError as e:
-            print(f"XML Parsing Error (attempt {attempt + 1}): {e}")
-            print(f"Response content: {response.content.decode('utf-8')}")
+            #print(f"XML Parsing Error (attempt {attempt + 1}): {e}")
+            #print(f"Response content: {response.content.decode('utf-8')}")
+            pass
         except Exception as e:
-            print(f"General Error (attempt {attempt + 1}): {e}")
+            #print(f"General Error (attempt {attempt + 1}): {e}")
+            import traceback
+
+            #print(f"Traceback: {traceback.format_exc()}")
+            pass
 
         attempt += 1
-        time.sleep(RETRY_DELAY * (2**attempt))  # Exponential backoff
+        retry_delay = RETRY_DELAY * (2**attempt)
+        #print(f"Retrying in {retry_delay} seconds...")
+        time.sleep(retry_delay)  # Exponential backoff
 
-    print(f"Failed to fetch FindingService API data after {MAX_RETRIES} attempts")
+    #print(f"Failed to fetch FindingService API data after {MAX_RETRIES} attempts")
     return [], 0
 
 
@@ -1115,116 +1122,135 @@ def process_price_range(
 
         except Exception as e:
             print(
-                f"Error fetching data for page {current_page}, price range ${min_price:.2f} - ${max_price:.2f}: {e}"
+                f"process: process_price_range Error fetching data for page {current_page}, price range ${min_price:.2f} - ${max_price:.2f}: {e}"
             )
 
     updated_item_ids_queue.put(local_updated_item_ids)
 
-
 import json
 import time
+from decimal import Decimal
 
 from celery import shared_task
 from celery.exceptions import Ignore
 from celery.result import AsyncResult
+from django.core.serializers.json import DjangoJSONEncoder
 from django.http import JsonResponse, StreamingHttpResponse
 from django.utils import timezone
 
-from .models import FetchStatus, Product, ProductChangeLog
 
+class DecimalEncoder(DjangoJSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, Decimal):
+            return float(obj)
+        return super().default(obj)
 
 @shared_task(bind=True)
 def run_daily_update_async(self):
-    print("Starting daily update...")
-    self.update_state(state="PROGRESS", meta={"products_processed": 0})
-
+    #print("=" * 50)
+    #print("Starting daily update...")
+    #print("Initializing task state...")
+    
     def is_aborted():
-        return (
+        abort_status = (
             self.request.called_directly
             or self.request.id is None
             or self.AsyncResult(self.request.id).state == "REVOKED"
         )
+        #print(f"Checking abort status: {abort_status}")
+        return abort_status
 
     try:
+        #print("Creating/getting fetch status...")
         fetch_status, created = FetchStatus.objects.get_or_create(fetch_type="daily")
+        #print(f"Fetch status created: {created}")
 
         products_processed = 0
-
+        #print("Getting existing item IDs...")
         existing_item_ids = set(Product.objects.values_list("item_id", flat=True))
+        #print(f"Found {len(existing_item_ids)} existing items")
         updated_item_ids = set()
 
+        #print("Setting up price ranges...")
         price_ranges = []
-        min_price = 1.00
-        max_price = 10.00
-        price_increment = 10.00
+        min_price = Decimal('1.00')
+        max_price = Decimal('10.00')
+        price_increment = Decimal('10.00')
 
-        while min_price <= 4000.00:
-            price_ranges.append((min_price, max_price))
-            min_price = max_price + 0.01
+        while min_price <= Decimal('4000.00'):
+            price_ranges.append((float(min_price), float(max_price)))  # Convert to float
+            #print(f"Added price range: ${min_price:.2f} - ${max_price:.2f}")
+            min_price = max_price + Decimal('0.01')
             max_price += price_increment
 
+        #print(f"Created {len(price_ranges)} price ranges")
+
         fields_to_check = [
-            "item_id",
-            "title",
-            "global_id",
-            "category_id",
-            "category_name",
-            "gallery_url",
-            "view_item_url",
-            "auto_pay",
-            "postal_code",
-            "location",
-            "country",
-            "shipping_type",
-            "ship_to_locations",
-            "price"
+            "item_id", "title", "global_id", "category_id", "category_name",
+            "gallery_url", "view_item_url", "auto_pay", "postal_code",
+            "location", "country", "shipping_type", "ship_to_locations", "price"
         ]
+        #print(f"Fields to check: {fields_to_check}")
 
-        field_mapping = {
-            "description": "short_description",
-            # Add any other mismatched field names here
-        }
-
+        field_mapping = {"description": "short_description"}
+        
         try:
             for min_price, max_price in price_ranges:
+                #print(f"\nProcessing price range: ${min_price:.2f} - ${max_price:.2f}")
                 if is_aborted():
-                    print("Task aborted.")
+                    #print("Task aborted during price range processing")
                     raise Ignore()
 
-                # print(f"Processing price range: ${min_price:.2f} - ${max_price:.2f}")
                 current_page = 1
                 total_pages = 1
 
                 while current_page <= total_pages:
+                    #print(f"\nProcessing page {current_page} of {total_pages}")
                     if is_aborted():
-                        print("Task aborted.")
+                        #print("Task aborted during page processing")
                         raise Ignore()
 
                     try:
+                        #print(f"Fetching data for page {current_page}...")
                         items, total_pages = fetch_finding_api_data(
                             page_number=current_page,
                             min_price=min_price,
                             max_price=max_price,
                         )
-                        # print(
-                        #     f"Fetched page {current_page} of {total_pages} for price range ${min_price:.2f} - ${max_price:.2f}"
-                        # )
+                        #print(f"Fetched {len(items)} items from API")
 
                         for item in items:
                             item_id = item["item_id"]
+                            #print(f"\nProcessing item: {item_id}")
                             updated_item_ids.add(item_id)
+
+                            # Convert Decimal to float in the item data
+                            for key, value in item.items():
+                                if isinstance(value, Decimal):
+                                    item[key] = float(value)
+                                    #print(f"Converted Decimal to float for {key}: {value}")
 
                             mapped_item = {
                                 field_mapping.get(k, k): v for k, v in item.items()
                             }
 
                             try:
+                                #print(f"Checking if product exists: {item_id}")
                                 product = Product.objects.get(item_id=item_id)
+                                #print("Product found, checking for changes...")
+                                
                                 before_dict = {
                                     key: getattr(product, key)
                                     for key in fields_to_check
                                     if hasattr(product, key)
                                 }
+                                
+                                # Convert Decimal values to float in before_dict
+                                before_dict = {
+                                    k: float(v) if isinstance(v, Decimal) else v
+                                    for k, v in before_dict.items()
+                                }
+                                
                                 after_dict = {
                                     key: value
                                     for key, value in mapped_item.items()
@@ -1238,13 +1264,11 @@ def run_daily_update_async(self):
                                 }
 
                                 if changes:
+                                    #print(f"Changes detected for {item_id}:")
                                     for key, value in changes.items():
+                                        #print(f"  {key}: {before_dict.get(key)} -> {value}")
                                         setattr(product, key, value)
                                     product.save()
-                                    # print(
-                                    #     f"Updated product: {item_id} - {product.title}"
-                                    # )
-                                    # print(f"Changes: {changes}")
 
                                     change_log = ProductChangeLog.objects.create(
                                         item_id=item_id,
@@ -1253,27 +1277,37 @@ def run_daily_update_async(self):
                                     )
                                     change_log.set_changes(before_dict, after_dict)
                                     change_log.save()
+                                    #print("Change log created")
+                                #else:
+                                    #print("No changes detected")
+
                             except Product.DoesNotExist:
+                                #print(f"Product {item_id} not found, creating new...")
                                 browse_data = fetch_browse_api_data(item_id)
+                                
+                                # Convert Decimal values in browse_data
+                                for key, value in browse_data.items():
+                                    if isinstance(value, Decimal):
+                                        browse_data[key] = float(value)
+                                        #print(f"Converted Decimal to float in browse_data: {key}")
+                                
                                 mapped_browse_data = {
                                     field_mapping.get(k, k): v
                                     for k, v in browse_data.items()
                                 }
                                 combined_data = {**mapped_item, **mapped_browse_data}
                                 save_product_data(combined_data)
-                                # print(
-                                #     f"Created new product: {item_id} - {combined_data.get('title', 'Unknown Title')}"
-                                # )
+                                #print(f"Created new product: {item_id}")
 
                                 ProductChangeLog.objects.create(
                                     item_id=item_id,
-                                    product_name=combined_data.get(
-                                        "title", "Unknown Title"
-                                    ),
+                                    product_name=combined_data.get("title", "Unknown Title"),
                                     operation="created",
                                 )
+                                #print("Creation log created")
 
                             products_processed += 1
+                            #print(f"Products processed: {products_processed}")
                             self.update_state(
                                 state="PROGRESS",
                                 meta={"products_processed": products_processed},
@@ -1282,49 +1316,75 @@ def run_daily_update_async(self):
                         current_page += 1
 
                     except Exception as e:
-                        print(
-                            f"Error fetching data for page {current_page}, price range ${min_price:.2f} - ${max_price:.2f}: {e}"
-                        )
+                        #print(f"Error processing page {current_page}:")
+                        #print(f"Error details: {str(e)}")
+                        #print(f"Error type: {type(e)}")
+                        import traceback
+
+                        #print(f"Traceback: {traceback.format_exc()}")
+                        pass
 
         except Exception as e:
-            print(f"Error during daily update: {e}")
+            #print(f"Error during main processing loop:")
+            #print(f"Error details: {str(e)}")
             return {"status": "error", "message": str(e)}
 
-        # Deletion process
+        #print("\nProcessing deletions...")
         items_to_delete = existing_item_ids - updated_item_ids
+        #print(f"Found {len(items_to_delete)} items to check for deletion")
+
         for item_id in items_to_delete:
+            #print(f"\nChecking item {item_id} for deletion...")
             if is_aborted():
-                print("Task aborted.")
+                #print("Task aborted during deletion process")
                 raise Ignore()
 
             listing_status = get_ebay_listing_status(item_id)
+            #print(f"eBay listing status: {listing_status}")
+            
             if listing_status != "Active":
                 try:
                     product = Product.objects.get(item_id=item_id)
                     product_name = product.title
                     product.delete()
-                    # print(f"Deleted inactive product: {item_id} - {product_name}")
+                    #print(f"Deleted inactive product: {item_id} - {product_name}")
+                    
                     ProductChangeLog.objects.create(
-                        item_id=item_id, product_name=product_name, operation="deleted"
+                        item_id=item_id,
+                        product_name=product_name,
+                        operation="deleted"
                     )
+                    #print("Deletion log created")
                 except Product.DoesNotExist:
-                    print(f"Product {item_id} not found in database, skipping deletion")
+                    #print(f"Product {item_id} not found in database, skipping deletion")
+                    pass
 
             products_processed += 1
+            #print(f"Total products processed: {products_processed}")
             self.update_state(
-                state="PROGRESS", meta={"products_processed": products_processed}
+                state="PROGRESS",
+                meta={"products_processed": products_processed}
             )
 
+        #print("\nUpdating fetch status...")
         fetch_status.last_run = timezone.now()
         fetch_status.save()
+        
+        #print("Triggering HTML page generation...")
         generate_html_pages_async.delay()
 
-        print("Daily update completed.")
+        #print("Daily update completed successfully.")
         return {"status": "completed", "products_processed": products_processed}
+        
     except Exception as e:
-        print(f"Error during daily update: {e}")
-        return {"status": "error", "message": str(e)}
+        #print("Fatal error in daily update:")
+        #print(f"Error type: {type(e)}")
+        #print(f"Error message: {str(e)}")
+        import traceback
 
+        #print(f"Traceback: {traceback.format_exc()}")
+        return {"status": "error", "message": str(e)}
+    
 import time
 
 from celery.result import AsyncResult
@@ -1651,7 +1711,7 @@ def generate_report_async(self):
 
                 except Exception as e:
                     logger.error(
-                        f"Error fetching data for page {current_page}, price range ${min_price:.2f} - ${max_price:.2f}: {e}"
+                        f"process: generate_report Error fetching data for page {current_page}, price range ${min_price:.2f} - ${max_price:.2f}: {e}"
                     )
 
     except Exception as e:
