@@ -433,13 +433,14 @@
 }
 
 .calendar td {
-    position: relative;
-    height: 100px;
-    vertical-align: top;
-    padding: 0.5rem;
-    border: 1px solid #e9ecef;
-    transition: all 0.3s ease;
-}
+            position: relative;
+            height: 100px;
+            vertical-align: top;
+            padding: 0.5rem;
+            border: 1px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+
 
 .calendar td:hover {
     background-color: #e9ecef;
@@ -449,12 +450,21 @@
 }
 
 .calendar td .date {
-    position: absolute;
-    top: 5px;
-    left: 5px;
-    font-size: 0.9rem;
-    color: #495057;
-}
+            font-size: 0.9rem;
+            color: #495057;
+            margin-bottom: 0.5rem;
+        }
+        .event-title {
+            font-size: 0.8rem;
+            color: #0056b3;
+            margin-top: 0.5rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            text-align: center;
+        }
+
+
 .event-icon {
   width: 20px;
   height: 20px;
@@ -485,34 +495,34 @@
 }
 
 .event-modal {
-    display: none;
-    position: absolute;
-    background-color: #fff;
-    border-radius: 8px;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-    padding: 1rem;
-    z-index: 1000;
-    max-width: 250px;
-    transition: opacity 0.3s ease, transform 0.3s ease;
-    opacity: 0;
-    transform: translateY(10px);
-}
+            display: none;
+            position: absolute;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            padding: 1rem;
+            z-index: 1000;
+            max-width: 300px;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            opacity: 0;
+            transform: translateY(10px);
+        }
 
-.event-modal.show {
-    opacity: 1;
-    transform: translateY(0);
-}
+        .event-modal.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
 
-.event-modal-content h4 {
-    color: #0056b3;
-    margin-bottom: 0.5rem;
-}
+        .event-modal-content h4 {
+            color: #0056b3;
+            margin-bottom: 0.5rem;
+        }
 
-.event-modal-content p {
-    color: #495057;
-    font-size: 0.9rem;
-}
-         
+        .event-modal-content p {
+            color: #495057;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        } 
          /* Auto Links Section */
          #auto-links {
              background-color: white;
@@ -873,95 +883,106 @@
     
     <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const calendarBody = document.getElementById('calendarBody');
-        const currentMonthElement = document.getElementById('currentMonth');
-        const prevMonthButton = document.getElementById('prevMonth');
-        const nextMonthButton = document.getElementById('nextMonth');
-        const eventModal = document.getElementById('eventModal');
-        const eventTitle = document.getElementById('eventTitle');
-        const eventDescription = document.getElementById('eventDescription');
-        const eventLocation = document.getElementById('eventLocation');
-    
-        let currentDate = new Date();
-    
-        // Sample events data (replace this with data from your backend)
-        const events = {{ events_json|safe }};
-    
-        function renderCalendar() {
-            const year = currentDate.getFullYear();
-            const month = currentDate.getMonth();
-    
-            currentMonthElement.textContent = `${currentDate.toLocaleString('default', { month: 'long' })} ${year}`;
-    
-            const firstDay = new Date(year, month, 1);
-            const lastDay = new Date(year, month + 1, 0);
-            const daysInMonth = lastDay.getDate();
-            const startingDay = firstDay.getDay();
-    
-            let dateCounter = 1;
-            let calendarHTML = '';
-    
-            for (let i = 0; i < 6; i++) {
-                let row = '<tr>';
-                for (let j = 0; j < 7; j++) {
-                    if (i === 0 && j < startingDay) {
-                        row += '<td></td>';
-                    } else if (dateCounter > daysInMonth) {
-                        row += '<td></td>';
-                    } else {
-                        const date = `${year}-${String(month + 1).padStart(2, '0')}-${String(dateCounter).padStart(2, '0')}`;
-                        const hasEvent = events[date] ? '<div class="event-icon"><i class="fas fa-car"></i></div>' : '';
-                        row += `<td data-date="${date}"><span class="date">${dateCounter}</span>${hasEvent}</td>`;
-                        dateCounter++;
+            const calendarBody = document.getElementById('calendarBody');
+            const currentMonthElement = document.getElementById('currentMonth');
+            const prevMonthButton = document.getElementById('prevMonth');
+            const nextMonthButton = document.getElementById('nextMonth');
+            const eventModal = document.getElementById('eventModal');
+            const eventTitle = document.getElementById('eventTitle');
+            const eventDescription = document.getElementById('eventDescription');
+            const eventLocation = document.getElementById('eventLocation');
+
+            let currentDate = new Date();
+
+            // Sample events data (replace this with data from your backend)
+            const events = {{ events_json|safe }};
+
+            function renderCalendar() {
+                const year = currentDate.getFullYear();
+                const month = currentDate.getMonth();
+
+                currentMonthElement.textContent = `${currentDate.toLocaleString('default', { month: 'long' })} ${year}`;
+
+                const firstDay = new Date(year, month, 1);
+                const lastDay = new Date(year, month + 1, 0);
+                const daysInMonth = lastDay.getDate();
+                const startingDay = firstDay.getDay();
+
+                let dateCounter = 1;
+                let calendarHTML = '';
+
+                for (let i = 0; i < 6; i++) {
+                    let row = '<tr>';
+                    for (let j = 0; j < 7; j++) {
+                        if (i === 0 && j < startingDay) {
+                            row += '<td></td>';
+                        } else if (dateCounter > daysInMonth) {
+                            row += '<td></td>';
+                        } else {
+                            const date = `${year}-${String(month + 1).padStart(2, '0')}-${String(dateCounter).padStart(2, '0')}`;
+                            const event = events[date];
+                            const eventTitleHTML = event ? `<div class="event-title">${event.title}</div>` : '';
+                            row += `
+                                <td data-date="${date}">
+                                    <div class="date">${dateCounter}</div>
+                                    ${eventTitleHTML}
+                                </td>`;
+                            dateCounter++;
+                        }
                     }
+                    row += '</tr>';
+                    calendarHTML += row;
                 }
-                row += '</tr>';
-                calendarHTML += row;
+
+                calendarBody.innerHTML = calendarHTML;
+
+                // Add event listeners to cells with events
+                document.querySelectorAll('td[data-date]').forEach(cell => {
+                    const date = cell.getAttribute('data-date');
+                    if (events[date]) {
+                        cell.addEventListener('mouseenter', (e) => showEventModal(e, date));
+                        cell.addEventListener('mouseleave', hideEventModal);
+                    }
+                });
             }
-    
-            calendarBody.innerHTML = calendarHTML;
-    
-            // Add event listeners to cells with events
-            document.querySelectorAll('td[data-date]').forEach(cell => {
-                const date = cell.getAttribute('data-date');
-                if (events[date]) {
-                    cell.addEventListener('mouseenter', (e) => showEventModal(e, date));
-                    cell.addEventListener('mouseleave', hideEventModal);
+
+            function showEventModal(e, date) {
+                const event = events[date];
+                if (event) {
+                    eventTitle.textContent = event.title;
+                    eventDescription.textContent = event.description;
+                    eventLocation.textContent = `Location: ${event.location}`;
+                    
+                    eventModal.style.display = 'block';
+                    
+                    // Position the modal near the cell but not directly under the cursor
+                    const rect = e.target.getBoundingClientRect();
+                    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                    
+                    eventModal.style.left = `${rect.left + rect.width}px`;
+                    eventModal.style.top = `${rect.top + scrollTop}px`;
+                    
+                    setTimeout(() => eventModal.classList.add('show'), 10);
                 }
+            }
+
+            function hideEventModal() {
+                eventModal.classList.remove('show');
+                setTimeout(() => eventModal.style.display = 'none', 300);
+            }
+
+            prevMonthButton.addEventListener('click', () => {
+                currentDate.setMonth(currentDate.getMonth() - 1);
+                renderCalendar();
             });
-        }
-    
-        function showEventModal(e, date) {
-        const event = events[date];
-        if (event) {
-            eventTitle.textContent = event.title;
-            eventDescription.textContent = event.description;
-            
-            eventLocation.textContent = `Location: ${event.location}`;
-            
-            eventModal.style.display = 'block';
-            eventModal.style.left = `${e.pageX}px`;
-            eventModal.style.top = `${e.pageY}px`;
-            setTimeout(() => eventModal.classList.add('show'), 10);
-        }
-    }
-        function hideEventModal() {
-            eventModal.classList.remove('show');
-            setTimeout(() => eventModal.style.display = 'none', 300);
-        }
-    
-        prevMonthButton.addEventListener('click', () => {
-            currentDate.setMonth(currentDate.getMonth() - 1);
+
+            nextMonthButton.addEventListener('click', () => {
+                currentDate.setMonth(currentDate.getMonth() + 1);
+                renderCalendar();
+            });
+
             renderCalendar();
         });
-    
-        nextMonthButton.addEventListener('click', () => {
-            currentDate.setMonth(currentDate.getMonth() + 1);
-            renderCalendar();
-        });
-    
-        renderCalendar();
-    });
     </script>
       <script>
          document.getElementById('home-link').addEventListener('click', function(event) {
