@@ -20,6 +20,7 @@ dj-database-url==2.3.0
 Django==5.1.4
 django-celery-results==2.5.1
 et_xmlfile==2.0.0
+gunicorn==23.0.0
 idna==3.10
 jsonpickle==3.3.0
 jsonpointer==2.4
