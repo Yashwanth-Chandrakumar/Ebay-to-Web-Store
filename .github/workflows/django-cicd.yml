@@ -1,9 +1,8 @@
 name: Django CI/CD on Amazon Linux 2023
-
 on:
   push:
     branches:
-      - main  # Replace with the branch that triggers the build and deployment
+      - main
 
 jobs:
   build-and-deploy:
@@ -11,16 +10,16 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
-
+      
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
-
+      
     - name: Login to Docker Hub
       uses: docker/login-action@v2
       with:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
-
+        
     - name: Deploy to AWS EC2
       uses: appleboy/ssh-action@master
       with:
@@ -28,15 +27,14 @@ jobs:
         username: ${{ secrets.EC2_USER }}
         key: ${{ secrets.EC2_SSH_KEY }}
         script: |
-
-          ls
-
-          pwd
+          # Enable maintenance mode
+          sudo touch /var/www/html/maintenance.flag
           
-          # Navigate to the project directory
+          # Wait for existing requests to complete (adjust time as needed)
+          sleep 10
+          
+          # Your existing deployment steps
           cd /home/${{ secrets.EC2_USER }}/
-
-          # Clone the repository if the directory doesn't exist, else pull the latest changes
           if [ ! -d "Ebay-to-Web-Store" ]; then
             git clone https://github.com/Yashwanth-Chandrakumar/Ebay-to-Web-Store.git
             cd Ebay-to-Web-Store
@@ -44,18 +42,20 @@ jobs:
             cd Ebay-to-Web-Store
             git pull
           fi
-
-          # Clean up unused Docker resources
+          
+          # Clean up Docker resources
           docker system prune -a --volumes -f
-
-          # Build the Docker image
+          
+          # Build and deploy new container
           docker build -t yashwanthsc/pjsauto:latest ./backend/pjsautolit
-
-          # Check for a running container and remove it if exists
           if docker ps --format '{{.Names}}' | grep -q pjs; then
             docker stop pjs
             docker rm pjs
           fi
-
-          # Run the recently built Docker container
           docker run -d --name pjs -p 8000:8000 yashwanthsc/pjsauto:latest
+          
+          # Wait for new container to be ready (adjust time as needed)
+          sleep 15
+          
+          # Disable maintenance mode
+          sudo rm -f /var/www/html/maintenance.flag
