@@ -3,6 +3,10 @@
 # Set Redis URL for Celery broker (update this with your actual Redis URL)
 export CELERY_BROKER_URL="redis://:pjsautolit@172.31.21.137:6379/0"
 
+# Call the generate-html API endpoint
+echo "Calling generate-html API..."
+curl -X GET http://localhost:8000/generate-html/
+
 # Start Celery worker in the background
 celery -A pjsautolit worker --pool=solo -l info &
 CELERY_PID=$!
