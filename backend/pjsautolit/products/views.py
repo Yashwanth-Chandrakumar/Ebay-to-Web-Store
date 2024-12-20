@@ -2164,38 +2164,25 @@ def process_payment(request):
 
     def calculate_usps_media_mail_cost(weight):
         rate_brackets = [
-        (1, 4.63),
-        (2, 5.37),
-        (3, 6.11),
-        (4, 6.85),
-        (5, 7.59),
-        (6, 8.33),
-        (7, 9.07),
-        (8, 9.82),
-        (9, 10.57),
-        (10, 11.32),
-        (15, 15.07),
-        (20, 18.82),
-        (30, 26.32),
-        (40, 33.82),
-        (50, 41.32),
-        (60, 48.82),
-        (70, 56.32),
-    ]
-
-    # Round up weight to the nearest whole number
+            (1, 4.63), (2, 5.37), (3, 6.11), (4, 6.85), (5, 7.59),
+            (6, 8.33), (7, 9.07), (8, 9.82), (9, 10.57), (10, 11.32),
+            (15, 15.07), (20, 18.82), (30, 26.32), (40, 33.82),
+            (50, 41.32), (60, 48.82), (70, 56.32),
+        ]
         rounded_weight = int(weight) if weight == int(weight) else int(weight) + 1
-
-        # Find the appropriate rate bracket
         for max_weight, rate in rate_brackets:
             if rounded_weight <= max_weight:
                 return rate
-
-        # If weight exceeds the highest bracket, return None or handle as needed
         return None
 
     def create_square_customer(client, shipping_data):
         try:
+            # Format phone number to E.164 format
+            phone = shipping_data['phone'].replace('(', '').replace(')', '').replace(' ', '').replace('-', '')
+            if phone.startswith('0'):  # Remove leading zero if present
+                phone = phone[1:]
+            phone = f'+1{phone}' if not phone.startswith('+') else phone
+
             customer_body = {
                 'given_name': shipping_data['first_name'],
                 'family_name': shipping_data['last_name'],
@@ -2208,163 +2195,142 @@ def process_payment(request):
                     'postal_code': shipping_data['postal_code'],
                     'country': 'US',
                 },
-                'phone_number': shipping_data['phone']
+                'phone_number': phone
             }
             print("Creating Square customer with body:", json.dumps(customer_body, indent=2))
             result = client.customers.create_customer(body=customer_body)
             if result.is_success():
-                customer_id = result.body.get('customer', {}).get('id')
-                print(f"Created Square customer with ID: {customer_id}")
-                return customer_id
+                return result.body.get('customer', {}).get('id')
             else:
                 print("Failed to create Square customer:", result.errors)
-                return None
+                raise ValueError(f"Failed to create Square customer: {result.errors}")
         except Exception as e:
             print(f"Error creating Square customer: {e}")
-            import traceback
-            traceback.print_exc()
-            return None
+            raise
 
     if request.method != 'POST':
-        print("Invalid request method:", request.method)
         return JsonResponse({'error': 'Invalid request method'}, status=400)
 
     try:
-        data = json.loads(request.body)
-        print("Received payment data:", data)
+        # Start transaction savepoint
+        sid = transaction.savepoint()
 
+        data = json.loads(request.body)
         source_id = data.get('sourceId', '').strip()
         if not source_id:
-            print("ERROR: Empty or missing sourceId")
             return JsonResponse({
                 'error': 'Invalid payment source',
-                'details': 'Source ID is required and cannot be empty'
+                'details': 'Source ID is required'
             }, status=400)
 
         cart_id = request.session.get('cart_id')
         shipping_data = request.session.get('shipping_data')
-        print(f"Cart ID from session: {cart_id}")
-        print("Shipping data from session:", shipping_data)
-
         if not cart_id or not shipping_data:
-            print("Missing required session data")
             raise ValueError("Missing cart or shipping information")
 
         cart = Cart.objects.get(id=cart_id)
-        print(f"Found cart: {cart}")
+        
+        # Calculate totals
+        cart_total = cart.total_amount()
+        shipping_cost = calculate_usps_media_mail_cost(cart.total_weight()) + 2.00
+        total_including_shipping = cart_total + Decimal(shipping_cost)
 
-        with transaction.atomic():
-            print("Creating shipping address...")
-            shipping_address = ShippingAddress.objects.create(**shipping_data)
-            print(f"Created shipping address: {shipping_address}")
+        # Initialize Square client
+        client = Client(
+            access_token=settings.SQUARE_ACCESS_TOKEN,
+            environment='production'
+        )
 
-            cart_total = cart.total_amount()
-            shipping_cost = calculate_usps_media_mail_cost(cart.total_weight()) + 2.00
-            total_including_shipping = cart_total + Decimal(shipping_cost)
-            print(f"Order totals - Subtotal: ${cart_total}, Shipping: ${shipping_cost}, Total: ${total_including_shipping}")
+        # Create Square customer first
+        customer_id = create_square_customer(client, shipping_data)
+        if not customer_id:
+            transaction.savepoint_rollback(sid)
+            return JsonResponse({
+                'error': 'Failed to create Square customer'
+            }, status=400)
 
-            print("Creating order...")
-            order = Order.objects.create(
-                cart=cart,
-                shipping_address=shipping_address,
-                subtotal=cart_total,
-                shipping_cost=shipping_cost,
-                total_amount=total_including_shipping,
-                status='pending'
-            )
-            print(f"Created order: {order}")
-
-            print("Creating order items...")
-            for item in cart.cartitem_set.all():
-                order_item = OrderItem.objects.create(
-                    order=order,
-                    product_id=item.product.item_id,
-                    product_title=item.product.title,
-                    quantity=item.quantity,
-                    price=item.product.price,
-                )
-                print(f"Created order item: {order_item}")
-
-            print("Processing Square payment...")
-            client = Client(
-                access_token=settings.SQUARE_ACCESS_TOKEN,
-                environment='production'
-            )
-
-            customer_id = create_square_customer(client, shipping_data)
-            if not customer_id:
-                return JsonResponse({
-                    'error': 'Failed to create Square customer',
-                    'details': 'Unable to create a customer for the payment process.'
-                }, status=400)
-
-            payment_body = {
-    'source_id': source_id,
-    'idempotency_key': str(uuid.uuid4()),
-    'amount_money': {
-        'amount': int(total_including_shipping * 100),
-        'currency': 'USD'
-    },
-    'autocomplete': True,
-    'location_id': settings.SQUARE_LOCATION_ID,
-    'customer_id': customer_id,
-    'line_items': [
-    {
-        'name': item.product.title,  # Use item.product.title instead of item.product_title
-        'quantity': str(item.quantity),
-        'base_price_money': {
-            'amount': str(item.product.price),  # Keep as decimal
-            'currency': 'USD'
-        },
-        'total_money': {
-            'amount': str(item.product.price * item.quantity),  # Keep as decimal
-            'currency': 'USD'
+        # Create the payment body
+        payment_body = {
+            'source_id': source_id,
+            'idempotency_key': str(uuid.uuid4()),
+            'amount_money': {
+                'amount': int(total_including_shipping * 100),
+                'currency': 'USD'
+            },
+            'autocomplete': True,
+            'location_id': settings.SQUARE_LOCATION_ID,
+            'customer_id': customer_id,
+            'line_items': [
+            {
+                'name': item.product.title, # Use item.product.title instead of item.product_title
+                'quantity': str(item.quantity),
+                'base_price_money': {
+                'amount': str(item.product.price), # Keep as decimal
+                'currency': 'USD'
+            },
+                'total_money': {
+                'amount': str(item.product.price * item.quantity), # Keep as decimal
+                'currency': 'USD'
+            }
+            } for item in cart.cartitem_set.all()
+            ],
+            'shipping_address': {
+                'address_line_1': shipping_data['address_line1'],
+                'address_line_2': shipping_data.get('address_line2', ''),
+                'locality': shipping_data['city'],
+                'administrative_district_level_1': shipping_data['state'],
+                'postal_code': shipping_data['postal_code'],
+                'country': 'US'
+            }
         }
-    } for item in cart.cartitem_set.all()
-],
-    'shipping_address': {
-        'address_line_1': shipping_data['address_line1'],
-        'address_line_2': shipping_data.get('address_line2', ''),
-        'locality': shipping_data['city'],
-        'administrative_district_level_1': shipping_data['state'],
-        'postal_code': shipping_data['postal_code'],
-        'country': 'US'
-    }
-}
-            print("Detailed Square payment request body:", json.dumps(payment_body, indent=2))
 
-            try:
-                result = client.payments.create_payment(body=payment_body)
-                if result.is_success():
-                    print("Payment successful!")
-                    order.status = 'completed'
-                    order.square_payment_id = result.body.get('payment', {}).get('id')
-                    order.save()
-                    del request.session['cart_id']
-                    del request.session['shipping_data']
-                    return JsonResponse({
-                        'success': True,
-                        'order_id': order.id,
-                        'square_payment_id': order.square_payment_id
-                    })
-                else:
-                    error_details = result.errors if hasattr(result, 'errors') else "Unknown error"
-                    print("Payment failed with details:", error_details)
-                    return JsonResponse({
-                        'error': 'Payment processing failed',
-                        'details': error_details
-                    }, status=400)
+        # Process payment
+        result = client.payments.create_payment(body=payment_body)
+        if not result.is_success():
+            transaction.savepoint_rollback(sid)
+            return JsonResponse({
+                'error': 'Payment processing failed',
+                'details': result.errors
+            }, status=400)
 
-            except Exception as square_error:
-                print(f"Square API error: {str(square_error)}")
-                import traceback
-                traceback.print_exc()
-                return JsonResponse({
-                    'error': 'Square payment processing failed',
-                    'details': str(square_error)
-                }, status=500)
+        # If payment successful, create order and related records
+        shipping_address = ShippingAddress.objects.create(**shipping_data)
+        order = Order.objects.create(
+            cart=cart,
+            shipping_address=shipping_address,
+            subtotal=cart_total,
+            shipping_cost=shipping_cost,
+            total_amount=total_including_shipping,
+            status='completed',
+            square_payment_id=result.body.get('payment', {}).get('id')
+        )
+
+        # Create order items
+        for item in cart.cartitem_set.all():
+            OrderItem.objects.create(
+                order=order,
+                product_id=item.product.item_id,
+                product_title=item.product.title,
+                quantity=item.quantity,
+                price=item.product.price,
+            )
+
+        # Commit the transaction
+        transaction.savepoint_commit(sid)
+
+        # Clear session data
+        del request.session['cart_id']
+        del request.session['shipping_data']
+
+        return JsonResponse({
+            'success': True,
+            'order_id': order.id,
+            'square_payment_id': order.square_payment_id
+        })
 
     except Exception as e:
+        if 'sid' in locals():
+            transaction.savepoint_rollback(sid)
         print(f"Payment processing error: {str(e)}")
         import traceback
         traceback.print_exc()
@@ -2372,7 +2338,6 @@ def process_payment(request):
             'error': 'An error occurred processing payment',
             'details': str(e)
         }, status=500)
-
     
 
 def add_to_cart(request, product_id):
@@ -2640,18 +2605,44 @@ from decimal import ROUND_CEILING, ROUND_HALF_UP, Decimal
 from django.conf import settings
 from django.contrib import messages
 from django.db import transaction
+from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from square.client import Client
 
 from .forms import ShippingAddressForm
-from .models import Cart, Order, OrderItem, ShippingAddress
+from .models import Cart, Discount, Order, OrderItem, ShippingAddress
 
 
 def checkout(request):
     try:
         print("Starting checkout process...")
+        
+        # Handle AJAX POST request for shipping form
+        if request.method == 'POST' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            try:
+                # Parse JSON data from request
+                data = json.loads(request.body)
+                
+                # Validate the form data
+                form = ShippingAddressForm(data)
+                if form.is_valid():
+                    # Store shipping data in session
+                    request.session['shipping_data'] = form.cleaned_data
+                    return JsonResponse({'success': True})
+                else:
+                    return JsonResponse({
+                        'success': False,
+                        'errors': form.errors
+                    })
+                    
+            except json.JSONDecodeError:
+                return JsonResponse({
+                    'success': False,
+                    'errors': {'form': ['Invalid form data']}
+                }, status=400)
         
         # Get cart
         cart_id = request.session.get("cart_id")
@@ -2669,6 +2660,39 @@ def checkout(request):
             print("Cart is empty")
             messages.error(request, "Your cart is empty")
             return redirect("view_cart")
+        
+        # Calculate shipping cost function
+        def calculate_usps_media_mail_cost(weight):
+            rate_brackets = [
+                (1, 4.63),
+                (2, 5.37),
+                (3, 6.11),
+                (4, 6.85),
+                (5, 7.59),
+                (6, 8.33),
+                (7, 9.07),
+                (8, 9.82),
+                (9, 10.57),
+                (10, 11.32),
+                (15, 15.07),
+                (20, 18.82),
+                (30, 26.32),
+                (40, 33.82),
+                (50, 41.32),
+                (60, 48.82),
+                (70, 56.32),
+            ]
+
+            # Round up weight to the nearest whole number
+            rounded_weight = int(weight) if weight == int(weight) else int(weight) + 1
+
+            # Find the appropriate rate bracket
+            for max_weight, rate in rate_brackets:
+                if rounded_weight <= max_weight:
+                    return Decimal(str(rate))  # Convert to Decimal
+
+            # If weight exceeds the highest bracket, return None or handle as needed
+            return None
         
         # Robust retrieval of cart total and discounts
         cart_total = Decimal(request.session.get('discounted_cart_total', str(cart.total_amount()))).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
@@ -2766,42 +2790,11 @@ def checkout(request):
         total_weight_major = int(cart_total_weight)
         total_weight_minor = int((cart_total_weight - total_weight_major) * 16)
         
-        def calculate_usps_media_mail_cost(weight):
-            rate_brackets = [
-                (1, 4.63),
-                (2, 5.37),
-                (3, 6.11),
-                (4, 6.85),
-                (5, 7.59),
-                (6, 8.33),
-                (7, 9.07),
-                (8, 9.82),
-                (9, 10.57),
-                (10, 11.32),
-                (15, 15.07),
-                (20, 18.82),
-                (30, 26.32),
-                (40, 33.82),
-                (50, 41.32),
-                (60, 48.82),
-                (70, 56.32),
-            ]
-
-            # Round up weight to the nearest whole number
-            rounded_weight = int(weight) if weight == int(weight) else int(weight) + 1
-
-            # Find the appropriate rate bracket
-            for max_weight, rate in rate_brackets:
-                if rounded_weight <= max_weight:
-                    return Decimal(str(rate))  # Convert to Decimal
-
-            # If weight exceeds the highest bracket, return None or handle as needed
-            return None
-        
         shipping_cost = calculate_usps_media_mail_cost(cart_total_weight) + Decimal('2.00')
         total_including_shipping = cart_total + shipping_cost
         total_including_shipping = total_including_shipping.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
         
+        # Create context dictionary
         context = {
             'detailed_cart_items': detailed_cart_items,
             'cart_total': cart_total,
@@ -2813,6 +2806,7 @@ def checkout(request):
             'total_including_shipping': total_including_shipping,
             'square_application_id': settings.SQUARE_APPLICATION_ID,
             'square_location_id': settings.SQUARE_LOCATION_ID,
+            'cart_count': cart_items.count(),  # Add cart count for navbar
         }
         
         return render(request, "pages/checkout.html", context)
@@ -2822,6 +2816,14 @@ def checkout(request):
         import traceback
         print("Full traceback:")
         print(traceback.format_exc())
+        
+        # Return JSON response for AJAX requests
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': False,
+                'errors': {'form': [str(e)]}
+            }, status=500)
+            
         messages.error(request, "An error occurred during checkout. Please try again.")
         return redirect("view_cart")
 

@@ -11,7 +11,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> <!-- If using jQuery -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://web.squarecdn.com/v1/square.js"></script>  
 
     <style>
         :root {
@@ -474,7 +473,6 @@ form .invalid-feedback.visible {
     color: #ffc107;
 }
     </style>
-    <script src="https://web.squarecdn.com/v1/square.js"></script>
 
 </head>
 <body>
@@ -848,7 +846,7 @@ const paymentComments = [
                     window.location.href = `/order-confirmation/${paymentResult.order_id}/`;
                 }, 2000);
             } else {
-                throw new Error(paymentResult.error);
+                throw new Error(paymentResult.error || 'Payment processing failed');
             }
         } else {
             throw new Error(result.errors[0].message);
@@ -856,28 +854,46 @@ const paymentComments = [
     } catch (error) {
         console.error('Payment error:', error);
         showToast(error.message || 'Payment processing failed.', 'error');
+    } finally {
+        hideLoading();
         cardButton.disabled = false;
     }
 }
 
     async function processShippingForm() {
     const form = document.getElementById('shipping-form');
-    const formData = new FormData(form);
+    const formData = {};
+    
+    const fields = form.querySelectorAll('input, select');
+    fields.forEach(field => {
+        formData[field.name] = field.value;
+    });
     
     try {
         const response = await fetch('/checkout/', {
             method: 'POST',
-            body: formData,
             headers: {
+                'Content-Type': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest',
                 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-            }
+            },
+            body: JSON.stringify(formData)
         });
+
+        // Check if response is JSON
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            throw new Error('Server returned non-JSON response');
+        }
 
         const data = await response.json();
         console.log('Shipping form response:', data);
         
         if (!data.success && data.errors) {
+            // Clear previous errors
+            const errorElements = document.querySelectorAll('.error-message');
+            errorElements.forEach(el => el.textContent = '');
+            
             // Display validation errors
             Object.keys(data.errors).forEach(field => {
                 const errorElement = document.getElementById(`${field}-error`);
@@ -892,6 +908,7 @@ const paymentComments = [
         return data;
     } catch (error) {
         console.error('Error processing shipping form:', error);
+        showToast('Error saving shipping information. Please try again.', 'error');
         return { success: false };
     }
 }
