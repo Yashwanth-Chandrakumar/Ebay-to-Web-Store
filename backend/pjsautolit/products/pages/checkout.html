@@ -803,10 +803,12 @@ const paymentComments = [
     const dynamicComment = paymentComments[commentIndex];
     
     // Show toast with dynamic comment and click count
+    if (paymentClickCount>=2){
     showToast(
         `(${paymentClickCount}x) ${dynamicComment}`, 
         'info'
     );
+    }
     
     try {
         // Validate shipping form first
