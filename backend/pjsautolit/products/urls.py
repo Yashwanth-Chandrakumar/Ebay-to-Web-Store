@@ -4,7 +4,7 @@ from django.views.generic import TemplateView
 
 from . import views
 from .sitemaps import CustomPageSitemap, ProductSitemap
-
+from .views import ProductLookupView
 sitemaps = {
     'products': ProductSitemap,
     'static': CustomPageSitemap,
@@ -83,4 +83,7 @@ urlpatterns = [
     path('discounts/<int:pk>/delete/', views.discount_delete, name='discount_delete'),
     path('order_information.htm', views.order_information_redirect, name='order_information_redirect'),
     path('get-shipping-cost/<str:item_id>/', views.get_shipping_cost, name='get_shipping_cost'),
+    path('product-lookup/', ProductLookupView.as_view(), name='product-lookup'),
+    path('create-products/', views.create_products, name='create-products'),
+    path('update-products/', views.update_products, name='update-products'),
 ]

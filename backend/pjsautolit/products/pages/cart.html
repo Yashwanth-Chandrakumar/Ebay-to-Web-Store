@@ -340,9 +340,9 @@
                             <form method="post" action="{% url 'update_cart' item.id %}">
                                 {% csrf_token %}
                                 <div class="quantity-wrapper">
-                                    <input type="number" class="quantity-input" value="1" min="1">
-                                    <button class="quantity-update-btn">Update</button>
-                                  </div>
+                                    <input type="number" name="quantity" class="quantity-input" value="{{ item.quantity }}" min="1">
+                                    <button type="submit" class="quantity-update-btn">Update</button>
+                                </div>
                             </form>
                         </td>
                         <td>${{ item.product.price|floatformat:2 }}</td>

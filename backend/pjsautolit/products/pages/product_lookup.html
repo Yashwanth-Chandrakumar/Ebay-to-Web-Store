@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f7fafc;
+            margin: 0;
+            padding: 20px;
+            color: #2d3748;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        h1 {
+            color: #1a365d;
+            font-size: 2rem;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        
+        .input-panel {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #4a5568;
+        }
+        
+        textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            font-size: 1rem;
+            resize: vertical;
+        }
+        
+        button {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .primary-button {
+            background: #4299e1;
+            color: white;
+        }
+        
+        .primary-button:hover {
+            background: #2b6cb0;
+        }
+        
+        .success-button {
+            background: #48bb78;
+            color: white;
+        }
+        
+        .success-button:hover {
+            background: #2f855a;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        th {
+            background: #f8fafc;
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: #4a5568;
+            text-transform: uppercase;
+            font-size: 0.875rem;
+        }
+        
+        td {
+            padding: 1rem;
+            border-top: 1px solid #e2e8f0;
+        }
+        
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+        
+        .status-exists {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+        
+        .status-not-found {
+            background: #fed7d7;
+            color: #742a2a;
+        }
+        
+        .loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Rest of the HTML remains the same, just remove the Tailwind classes -->
+    <div class="container">
+        <h1>Product Lookup</h1>
+        
+        <div class="input-panel">
+            <div>
+                <label for="item-ids">Enter Item ID(s)</label>
+                <textarea 
+                    id="item-ids"
+                    rows="3"
+                    placeholder="Enter single item ID or multiple IDs separated by commas"
+                ></textarea>
+            </div>
+            
+            <button id="check-items" class="primary-button">
+                Check Items
+            </button>
+        </div>
+
+        <div id="results-table" class="hidden">
+            <h2>Results</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Item ID</th>
+                        <th>Title</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="results-body"></tbody>
+            </table>
+            
+            <div class="button-group">
+                <div id="create-products-section" class="hidden">
+                    <button id="create-products" class="success-button">
+                        Create Missing Products
+                    </button>
+                </div>
+                
+                <div id="update-products-section" class="hidden">
+                    <button id="update-products" class="primary-button">
+                        Update Existing Products
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="loading" class="hidden loading">
+            <div class="spinner"></div>
+            <p>Processing request...</p>
+        </div>
+    </div>
+
+<script>
+document.getElementById('check-items').addEventListener('click', async function() {
+    const itemIds = document.getElementById('item-ids').value;
+    if (!itemIds.trim()) {
+        alert('Please enter at least one item ID');
+        return;
+    }
+
+    showLoading();
+    
+    try {
+        const response = await fetch('{% url "product-lookup" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: `item_ids=${encodeURIComponent(itemIds)}`
+        });
+
+        const data = await response.json();
+        if (data.error) {
+            alert(data.error);
+            return;
+        }
+
+        displayResults(data.results);
+    } catch (error) {
+        alert('An error occurred while checking items');
+    } finally {
+        hideLoading();
+    }
+});
+
+document.getElementById('create-products').addEventListener('click', async function() {
+    const itemIds = document.getElementById('item-ids').value;
+    showLoading();
+    
+    try {
+        const response = await fetch('{% url "create-products" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: `item_ids=${encodeURIComponent(itemIds)}`
+        });
+
+        const data = await response.json();
+        if (data.error) {
+            alert(data.error);
+            return;
+        }
+
+        alert(`Created ${data.created.length} products\nNot found: ${data.not_found.length} products\nErrors: ${data.errors.length}`);
+        location.reload();
+    } catch (error) {
+        alert('An error occurred while creating products');
+    } finally {
+        hideLoading();
+    }
+});
+
+function displayResults(results) {
+    const tbody = document.getElementById('results-body');
+    tbody.innerHTML = '';
+    
+    let hasNonExisting = false;
+    let hasExisting = false;
+    
+    results.forEach(result => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td class="px-6 py-4 whitespace-no-wrap border-b border-gray-200">
+                ${result.item_id}
+            </td>
+            <td class="px-6 py-4 whitespace-no-wrap border-b border-gray-200">
+                ${result.title || 'N/A'}
+            </td>
+            <td class="px-6 py-4 whitespace-no-wrap border-b border-gray-200">
+                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${result.exists ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                    ${result.exists ? 'Exists' : 'Not Found'}
+                </span>
+            </td>
+        `;
+        tbody.appendChild(row);
+        
+        if (!result.exists) {
+            hasNonExisting = true;
+        } else {
+            hasExisting = true;
+        }
+    });
+    
+    document.getElementById('results-table').classList.remove('hidden');
+    document.getElementById('create-products-section').classList.toggle('hidden', !hasNonExisting);
+    document.getElementById('update-products-section').classList.toggle('hidden', !hasExisting);
+}
+
+document.getElementById('update-products').addEventListener('click', async function() {
+    const itemIds = document.getElementById('item-ids').value;
+    showLoading();
+    
+    try {
+        const response = await fetch('{% url "update-products" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: `item_ids=${encodeURIComponent(itemIds)}`
+        });
+
+        const data = await response.json();
+        if (data.error) {
+            alert(data.error);
+            return;
+        }
+
+        const updatedCount = data.updated.length;
+        const message = `Updated ${updatedCount} products\n` +
+                       `Errors: ${data.errors.length}\n\n` +
+                       data.updated.map(item => 
+                           `Item ${item.item_id} updated:\n${Object.entries(item.changes)
+                               .map(([key, value]) => `- ${key}: ${value}`)
+                               .join('\n')}`
+                       ).join('\n\n');
+                       
+        alert(message);
+        location.reload();
+    } catch (error) {
+        alert('The product will be updated in the background successfully.');
+    } finally {
+        hideLoading();
+    }
+});
+function showLoading() {
+    document.getElementById('loading').classList.remove('hidden');
+}
+
+function hideLoading() {
+    document.getElementById('loading').classList.add('hidden');
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+</body>
+</html>
