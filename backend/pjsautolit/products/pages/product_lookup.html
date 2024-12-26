@@ -149,7 +149,6 @@
     </style>
 </head>
 <body>
-    <!-- Rest of the HTML remains the same, just remove the Tailwind classes -->
     <div class="container">
         <h1>Product Lookup</h1>
         
@@ -224,7 +223,7 @@ document.getElementById('check-items').addEventListener('click', async function(
 
         const data = await response.json();
         if (data.error) {
-            alert(data.error);
+            // alert(data.error);
             return;
         }
 
@@ -239,7 +238,7 @@ document.getElementById('check-items').addEventListener('click', async function(
 document.getElementById('create-products').addEventListener('click', async function() {
     const itemIds = document.getElementById('item-ids').value;
     showLoading();
-    
+
     try {
         const response = await fetch('{% url "create-products" %}', {
             method: 'POST',
@@ -251,27 +250,58 @@ document.getElementById('create-products').addEventListener('click', async funct
         });
 
         const data = await response.json();
-        if (data.error) {
-            alert(data.error);
-            return;
-        }
+        // alert(data.message);
 
-        alert(`Created ${data.created.length} products\nNot found: ${data.not_found.length} products\nErrors: ${data.errors.length}`);
-        location.reload();
+        if (data.success && document.getElementById('update-products-section').classList.contains('hidden')) {
+            location.reload();
+        } else if (data.success) {
+            await checkItems(itemIds);
+        }
     } catch (error) {
-        alert('An error occurred while creating products');
+        console.error('Creation error:', error);
     } finally {
         hideLoading();
     }
 });
 
+document.getElementById('update-products').addEventListener('click', async function() {
+    const itemIds = document.getElementById('item-ids').value;
+    showLoading();
+
+    try {
+        const response = await fetch('{% url "update-products" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: `item_ids=${encodeURIComponent(itemIds)}`
+        });
+
+        const data = await response.json();
+        // alert(data.message);
+
+        if (data.success && document.getElementById('create-products-section').classList.contains('hidden')) {
+            location.reload();
+        } else if (data.success) {
+            await checkItems(itemIds);
+        }
+    } catch (error) {
+        console.error('Update error:', error);
+    } finally {
+        hideLoading();
+    }
+});
+
+
+
 function displayResults(results) {
     const tbody = document.getElementById('results-body');
     tbody.innerHTML = '';
-    
+
     let hasNonExisting = false;
     let hasExisting = false;
-    
+
     results.forEach(result => {
         const row = document.createElement('tr');
         row.innerHTML = `
@@ -288,56 +318,19 @@ function displayResults(results) {
             </td>
         `;
         tbody.appendChild(row);
-        
+
         if (!result.exists) {
             hasNonExisting = true;
         } else {
             hasExisting = true;
         }
     });
-    
+
     document.getElementById('results-table').classList.remove('hidden');
     document.getElementById('create-products-section').classList.toggle('hidden', !hasNonExisting);
     document.getElementById('update-products-section').classList.toggle('hidden', !hasExisting);
 }
 
-document.getElementById('update-products').addEventListener('click', async function() {
-    const itemIds = document.getElementById('item-ids').value;
-    showLoading();
-    
-    try {
-        const response = await fetch('{% url "update-products" %}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'X-CSRFToken': getCookie('csrftoken')
-            },
-            body: `item_ids=${encodeURIComponent(itemIds)}`
-        });
-
-        const data = await response.json();
-        if (data.error) {
-            alert(data.error);
-            return;
-        }
-
-        const updatedCount = data.updated.length;
-        const message = `Updated ${updatedCount} products\n` +
-                       `Errors: ${data.errors.length}\n\n` +
-                       data.updated.map(item => 
-                           `Item ${item.item_id} updated:\n${Object.entries(item.changes)
-                               .map(([key, value]) => `- ${key}: ${value}`)
-                               .join('\n')}`
-                       ).join('\n\n');
-                       
-        alert(message);
-        location.reload();
-    } catch (error) {
-        alert('The product will be updated in the background successfully.');
-    } finally {
-        hideLoading();
-    }
-});
 function showLoading() {
     document.getElementById('loading').classList.remove('hidden');
 }
