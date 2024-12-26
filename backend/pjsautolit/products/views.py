@@ -3505,8 +3505,7 @@ def create_products(request):
             browse_data['price'] = finding_data['price']
             combined_data = {**finding_data, **browse_data}
             
-            product = Product(**combined_data)
-            product.save()
+            save_product_data(combined_data)
             print(f"[SUCCESS] Created product for item_id: {item_id}")
             created_items.append(item_id)
             ProductChangeLog.objects.create(
