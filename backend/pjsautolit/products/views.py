@@ -3961,7 +3961,7 @@ def create_new_product(item_id, browse_data):
             'item_id': item_id,
             'process': 'Create',
             'status': 'Success',
-            'message': f'Created {finding_data['title']}'
+            'message': f"Created {finding_data['title']}"
         }
         
     except Exception as e:
