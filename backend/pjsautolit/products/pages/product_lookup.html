@@ -146,6 +146,79 @@
         .hidden {
             display: none;
         }
+        .alert-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            max-width: 400px;
+            width: 100%;
+        }
+
+        .alert {
+            padding: 16px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            animation: slideIn 0.5s ease-out;
+            transition: opacity 0.3s ease-out;
+        }
+
+        .alert.fade-out {
+            opacity: 0;
+        }
+
+        .alert-success {
+            background-color: #C6F6D5;
+            border-left: 4px solid #48BB78;
+            color: #22543D;
+        }
+
+        .alert-error {
+            background-color: #FED7D7;
+            border-left: 4px solid #F56565;
+            color: #742A2A;
+        }
+
+        .alert-warning {
+            background-color: #FEEBC8;
+            border-left: 4px solid #ED8936;
+            color: #7B341E;
+        }
+
+        .alert-content {
+            flex: 1;
+            margin-right: 10px;
+        }
+
+        .alert-close {
+            background: none;
+            border: none;
+            color: inherit;
+            cursor: pointer;
+            padding: 4px;
+            font-size: 18px;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+
+        .alert-close:hover {
+            opacity: 1;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
     </style>
 </head>
 <body>
@@ -200,98 +273,182 @@
             <p>Processing request...</p>
         </div>
     </div>
-
+    <div id="alert-container" class="alert-container"></div>
 <script>
-document.getElementById('check-items').addEventListener('click', async function() {
-    const itemIds = document.getElementById('item-ids').value;
-    if (!itemIds.trim()) {
-        alert('Please enter at least one item ID');
-        return;
-    }
+    class AlertSystem {
+            constructor() {
+                this.container = document.getElementById('alert-container');
+                this.alerts = new Set();
+            }
 
-    showLoading();
-    
-    try {
-        const response = await fetch('{% url "product-lookup" %}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'X-CSRFToken': getCookie('csrftoken')
-            },
-            body: `item_ids=${encodeURIComponent(itemIds)}`
-        });
+            show(message, type = 'success', duration = 5000) {
+                const alert = document.createElement('div');
+                alert.className = `alert alert-${type}`;
+                
+                alert.innerHTML = `
+                    <div class="alert-content">${message}</div>
+                    <button class="alert-close">&times;</button>
+                `;
 
-        const data = await response.json();
-        if (data.error) {
-            // alert(data.error);
-            return;
+                const closeBtn = alert.querySelector('.alert-close');
+                closeBtn.addEventListener('click', () => this.remove(alert));
+
+                this.container.appendChild(alert);
+                this.alerts.add(alert);
+
+                if (duration) {
+                    setTimeout(() => this.remove(alert), duration);
+                }
+
+                return alert;
+            }
+
+            remove(alert) {
+                if (!this.alerts.has(alert)) return;
+                
+                alert.classList.add('fade-out');
+                setTimeout(() => {
+                    if (alert.parentNode === this.container) {
+                        this.container.removeChild(alert);
+                        this.alerts.delete(alert);
+                    }
+                }, 300);
+            }
+
+            success(message, duration) {
+                return this.show(message, 'success', duration);
+            }
+
+            error(message, duration) {
+                return this.show(message, 'error', duration);
+            }
+
+            warning(message, duration) {
+                return this.show(message, 'warning', duration);
+            }
         }
 
-        displayResults(data.results);
-    } catch (error) {
-        alert('An error occurred while checking items');
-    } finally {
-        hideLoading();
-    }
-});
+        // Initialize the alert system
+        const alertSystem = new AlertSystem();
 
-document.getElementById('create-products').addEventListener('click', async function() {
-    const itemIds = document.getElementById('item-ids').value;
-    showLoading();
+        document.getElementById('create-products').addEventListener('click', async function() {
+            const itemIds = document.getElementById('item-ids').value;
+            showLoading();
 
-    try {
-        const response = await fetch('{% url "create-products" %}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'X-CSRFToken': getCookie('csrftoken')
-            },
-            body: `item_ids=${encodeURIComponent(itemIds)}`
+            try {
+                const response = await fetch('{% url "create-products" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: `item_ids=${encodeURIComponent(itemIds)}`
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    alertSystem.success(`Products created successfully! Created: ${data.data.created.length} items`);
+                    
+                    if (data.data.errors.length > 0) {
+                        alertSystem.warning(`Some items had errors: ${data.data.errors.length} issues found`);
+                    }
+
+                    if (document.getElementById('update-products-section').classList.contains('hidden')) {
+                        setTimeout(() => location.reload(), 2000);
+                    } else {
+                        await checkItems(itemIds);
+                    }
+                } else {
+                    alertSystem.error(data.error || 'Failed to create products');
+                }
+            } catch (error) {
+                alertSystem.error('An unexpected error occurred');
+                console.error('Creation error:', error);
+            } finally {
+                hideLoading();
+            }
         });
 
-        const data = await response.json();
-        // alert(data.message);
+        document.getElementById('update-products').addEventListener('click', async function() {
+            const itemIds = document.getElementById('item-ids').value;
+            showLoading();
 
-        if (data.success && document.getElementById('update-products-section').classList.contains('hidden')) {
-            location.reload();
-        } else if (data.success) {
-            await checkItems(itemIds);
-        }
-    } catch (error) {
-        console.error('Creation error:', error);
-    } finally {
-        hideLoading();
-    }
-});
+            try {
+                const response = await fetch('{% url "update-products" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: `item_ids=${encodeURIComponent(itemIds)}`
+                });
 
-document.getElementById('update-products').addEventListener('click', async function() {
-    const itemIds = document.getElementById('item-ids').value;
-    showLoading();
+                const data = await response.json();
+                
+                if (data.success) {
+                    if (data.data.updated.length > 0) {
+                        alertSystem.success(`Successfully updated ${data.data.updated.length} products`);
+                    }
+                    
+                    if (data.data.deleted.length > 0) {
+                        alertSystem.warning(`${data.data.deleted.length} products were deleted (listing ended)`);
+                    }
+                    
+                    if (data.data.errors.length > 0) {
+                        alertSystem.error(`Failed to update ${data.data.errors.length} items`);
+                    }
 
-    try {
-        const response = await fetch('{% url "update-products" %}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'X-CSRFToken': getCookie('csrftoken')
-            },
-            body: `item_ids=${encodeURIComponent(itemIds)}`
+                    if (document.getElementById('create-products-section').classList.contains('hidden')) {
+                        setTimeout(() => location.reload(), 2000);
+                    } else {
+                        await checkItems(itemIds);
+                    }
+                } else {
+                    alertSystem.error(data.error || 'Failed to update products');
+                }
+            } catch (error) {
+                alertSystem.error('An unexpected error occurred');
+                console.error('Update error:', error);
+            } finally {
+                hideLoading();
+            }
         });
 
-        const data = await response.json();
-        // alert(data.message);
+        // Modify the check-items event listener as well
+        document.getElementById('check-items').addEventListener('click', async function() {
+            const itemIds = document.getElementById('item-ids').value;
+            if (!itemIds.trim()) {
+                alertSystem.error('Please enter at least one item ID');
+                return;
+            }
 
-        if (data.success && document.getElementById('create-products-section').classList.contains('hidden')) {
-            location.reload();
-        } else if (data.success) {
-            await checkItems(itemIds);
-        }
-    } catch (error) {
-        console.error('Update error:', error);
-    } finally {
-        hideLoading();
-    }
-});
+            showLoading();
+            
+            try {
+                const response = await fetch('{% url "product-lookup" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: `item_ids=${encodeURIComponent(itemIds)}`
+                });
+
+                const data = await response.json();
+                if (data.error) {
+                    alertSystem.error(data.error);
+                    return;
+                }
+
+                displayResults(data.results);
+                alertSystem.success('Items checked successfully');
+            } catch (error) {
+                alertSystem.error('An error occurred while checking items');
+            } finally {
+                hideLoading();
+            }
+        });
 
 
 

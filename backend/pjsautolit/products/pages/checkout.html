@@ -472,6 +472,19 @@ form .invalid-feedback.visible {
     margin-right: 5px;
     color: #ffc107;
 }
+#buttons-container{
+    background-color: blue;
+}
+.buttons-container{
+    background-color: blue;
+
+}
+#paypal-button-container {
+    margin: 3rem auto 0;
+    max-width: 500px;
+    display: flex;
+    justify-content: center;
+}
     </style>
 
 </head>
@@ -661,7 +674,11 @@ form .invalid-feedback.visible {
                 <button id="card-button" type="button" class="btn btn-primary btn-lg w-100">
                     Pay ${{ total_including_shipping }}
                 </button>
+                <div id="paypal-button-container"></div>
+<p id="result-message"></p>
             </form>
+            
+    
         </div>
     </div>
 </div>
@@ -697,12 +714,109 @@ form .invalid-feedback.visible {
         <span class="visually-hidden">Loading...</span>
     </div>
 </div>
-
+<script
+            src="https://www.paypal.com/sdk/js?client-id=AcB615AZVM5gbnUlutUVElQZ8XO5uE8_WluA4JQFZ0L61hxxLcZpXNeVlaCWbWwGxjSzrzArGYlu0bFf&buyer-country=US&currency=USD&components=buttons"
+            data-sdk-integration-source="developer-studio"
+        ></script>
 <script src="https://web.squarecdn.com/v1/square.js"></script>
 
 <!-- <script src="https://sandbox.web.squarecdn.com/v1/square.js"></script> -->
 
 <script>
+    window.paypal.Buttons({
+    style: {
+        shape: "rect",
+        layout: "vertical",
+        color: "blue",
+        label: "pay",
+    },
+    
+    async createOrder() {
+        try {
+            showLoading();
+            
+            // Validate shipping form first
+            if (!validateShippingForm()) {
+                hideLoading();
+                showToast('Please fill in all required shipping information.', 'error');
+                return;
+            }
+
+            // Process shipping form
+            const shippingData = await processShippingForm();
+            if (!shippingData.success) {
+                hideLoading();
+                showToast('Error saving shipping information.', 'error');
+                return;
+            }
+
+            const response = await fetch("/api/orders/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to create order');
+            }
+
+            const orderData = await response.json();
+            return orderData.id;
+
+        } catch (error) {
+            hideLoading();
+            console.error('PayPal create order error:', error);
+            showToast(error.message || 'Could not initiate PayPal Checkout', 'error');
+            throw error;
+        }
+    },
+
+    async onApprove(data, actions) {
+        try {
+            showLoading();
+
+            const response = await fetch(`/api/orders/${data.orderID}/capture/`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            });
+
+            const captureData = await response.json();
+
+            if (captureData.success) {
+                showToast('Payment successful!', 'success');
+                setTimeout(() => {
+                    window.location.href = `/order-confirmation/${captureData.order_id}/`;
+                }, 2000);
+            } else {
+                throw new Error(captureData.error || 'Payment capture failed');
+            }
+        } catch (error) {
+            console.error('PayPal capture error:', error);
+            showToast(error.message || 'Payment processing failed', 'error');
+        } finally {
+            hideLoading();
+        }
+    },
+
+    onCancel() {
+        showToast('PayPal checkout cancelled', 'info');
+    },
+    
+    onError(err) {
+        hideLoading();
+        console.error('PayPal error:', err);
+        showToast('An error occurred with PayPal. Please try again.', 'error');
+    }
+
+}).render("#paypal-button-container");
+
+
     const US_STATES = [
     { value: 'AL', label: 'Alabama' },
     { value: 'AK', label: 'Alaska' },
@@ -1115,3 +1229,4 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 </body>
 </html>
+

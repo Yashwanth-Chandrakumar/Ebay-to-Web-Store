@@ -86,4 +86,7 @@ urlpatterns = [
     path('product-lookup/', ProductLookupView.as_view(), name='product-lookup'),
     path('create-products/', views.create_products, name='create-products'),
     path('update-products/', views.update_products, name='update-products'),
+    path('api/orders/', views.create_paypal_order, name='create_paypal_order'),
+    path('api/orders/<str:order_id>/capture/', views.capture_paypal_order, name='capture_paypal_order'),
+
 ]

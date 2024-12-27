@@ -14,7 +14,7 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 import os
 from pathlib import Path
 
-# ... other settings ...
+
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 print(f"Base direct: {BASE_DIR}")
@@ -39,7 +39,7 @@ TEMPLATES = [
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
-
+SECURE_CROSS_ORIGIN_OPENER_POLICY='same-origin-allow-popups'
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = "django-insecure-ydu@0gbnw*q_q*+^k!&vn!%zcmz(d)%&+%l6&wcsh46!k5c()b"
 
@@ -79,6 +79,8 @@ SQUARE_LOCATION_ID = "1CYN2MHX8D40J"
 # SQUARE_APPLICATION_ID = "sandbox-sq0idb-0fuCLASC_zEwmy6QHy3-rA"
 # SQUARE_ACCESS_TOKEN = "EAAAlzyKG0eMV2-LTS3JJHqrEN_CtarZm7r-Is11_xozI3_ssAV8We3jueT2-592"
 # SQUARE_LOCATION_ID = "LH3QV6GWVA32W"
+PAYPAL_CLIENT_ID = "AcB615AZVM5gbnUlutUVElQZ8XO5uE8_WluA4JQFZ0L61hxxLcZpXNeVlaCWbWwGxjSzrzArGYlu0bFf"
+PAYPAL_CLIENT_SECRET = "EHPfk-89lg8aMxCvoR4Qgh7yL2CFmM6XVdu3SiMJNns4PhB4YWjK_mZy78hopRBZnmpaScEvJwwsLVCL"
 
 
 MIDDLEWARE = [
@@ -100,10 +102,10 @@ ASGI_APPLICATION = "pjsautolit.asgi.application"
 WSGI_APPLICATION = "pjsautolit.wsgi.application"
 # Celery settings
 CELERY_BROKER_URL = os.environ.get(
-    # "CELERY_BROKER_URL",
-    # "redis://:pjsautolit@172.31.21.137:6379/0",
     "CELERY_BROKER_URL",
-    "rediss://red-crts7tggph6c73daq840:dEPiQFWEmuEz7s6cZdcCA1Te0kuwnTdK@oregon-redis.render.com:6379",
+    "redis://:pjsautolit@172.31.21.137:6379/0",
+    # "CELERY_BROKER_URL",
+    # "rediss://red-crts7tggph6c73daq840:dEPiQFWEmuEz7s6cZdcCA1Te0kuwnTdK@oregon-redis.render.com:6379",
 )
 CELERY_RESULT_BACKEND = "django-db"
 CELERY_ACCEPT_CONTENT = ["json"]
