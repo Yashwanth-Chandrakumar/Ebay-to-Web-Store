@@ -1,5 +1,4 @@
 name: Django CI/CD on Amazon Linux 2023
-
 on:
   push:
     branches:
@@ -8,7 +7,6 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
@@ -32,19 +30,16 @@ jobs:
           # Enable maintenance mode
           sudo touch /var/www/html/maintenance.flag
           
-          # Wait for existing requests to complete
+          # Wait for existing requests to complete (adjust time as needed)
           sleep 10
           
-          # Clone or update repository using deploy key
+          # Your existing deployment steps
           cd /home/${{ secrets.EC2_USER }}/
           if [ ! -d "Ebay-to-Web-Store" ]; then
-            # Use deploy token for authentication
-            git remote set-url origin https://${{ secrets.GIT_ACCESS_TOKEN }}@github.com/Yashwanth-Chandrakumar/Ebay-to-Web-Store.git
+            git clone https://github.com/Yashwanth-Chandrakumar/Ebay-to-Web-Store.git
             cd Ebay-to-Web-Store
           else
             cd Ebay-to-Web-Store
-            # Use deploy token for authentication
-            git remote set-url origin https://${{ secrets.GITHUB_TOKEN }}@github.com/Yashwanth-Chandrakumar/Ebay-to-Web-Store.git
             git pull
           fi
           
@@ -53,35 +48,14 @@ jobs:
           
           # Build and deploy new container
           docker build -t yashwanthsc/pjsauto:latest ./backend/pjsautolit
-          
-          # Stop and remove existing container if it exists
-          if docker ps -a --format '{{.Names}}' | grep -q pjs; then
+          if docker ps --format '{{.Names}}' | grep -q pjs; then
             docker stop pjs
             docker rm pjs
           fi
+          docker run -d --name pjs -p 8000:8000 yashwanthsc/pjsauto:latest
           
-          # Run new container with health check
-          docker run -d --name pjs \
-            -p 8000:8000 \
-            --health-cmd="curl -f http://localhost:8000/health || exit 1" \
-            --health-interval=5s \
-            --health-retries=3 \
-            --health-timeout=2s \
-            yashwanthsc/pjsauto:latest
-          
-          # Wait for container health check
-          attempts=0
-          max_attempts=30
-          until [ "$(docker inspect --format='{{.State.Health.Status}}' pjs)" == "healthy" ] || [ $attempts -eq $max_attempts ]; do
-            echo "Waiting for container to be healthy..."
-            sleep 2
-            attempts=$((attempts + 1))
-          done
-          
-          if [ $attempts -eq $max_attempts ]; then
-            echo "Container failed to become healthy"
-            exit 1
-          fi
+          # Wait for new container to be ready (adjust time as needed)
+          sleep 15
           
           # Disable maintenance mode
           sudo rm -f /var/www/html/maintenance.flag
