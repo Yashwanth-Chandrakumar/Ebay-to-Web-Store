@@ -3241,308 +3241,307 @@ def get_shipping_cost(request, item_id):
         return JsonResponse({'error': str(e)}, status=500)
 
 
+import json
+import uuid
 from decimal import Decimal
 
-from django.http import JsonResponse
-# Single product update
-from django.shortcuts import render
-from django.views.generic import TemplateView
-
-from .models import Product, ProductChangeLog
-
-
-class ProductLookupView(TemplateView):
-    template_name = 'product_lookup.html'
-
-    def get(self, request, *args, **kwargs):
-        print(f"[DEBUG] ProductLookupView GET request received")
-        return render(request, self.template_name)
-
-    def post(self, request, *args, **kwargs):
-        print(f"[DEBUG] ProductLookupView POST request received with data: {request.POST}")
-        item_ids = request.POST.get('item_ids', '').strip()
-        item_list = [id.strip() for id in item_ids.split(',') if id.strip()]
-        
-        if not item_list:
-            print("[DEBUG] No valid item IDs provided")
-            return JsonResponse({'error': 'No valid item IDs provided'})
-
-        results = []
-        for item_id in item_list:
-            print(f"[DEBUG] Looking up product with item_id: {item_id}")
-            product = Product.objects.filter(item_id=item_id).first()
-            results.append({
-                'item_id': item_id,
-                'exists': product is not None,
-                'title': product.title if product else None
-            })
-        
-        print(f"[DEBUG] Lookup results: {results}")
-        return JsonResponse({'results': results})
-
-def update_products(request):
-    if request.method != 'POST':
-        return JsonResponse({'error': 'Invalid request method'})
-
-    print("[DEBUG] Starting update_products function")
-    item_ids = request.POST.get('item_ids', '').strip()
-    item_list = [id.strip() for id in item_ids.split(',') if id.strip()]
-    print(f"[DEBUG] Processing items: {item_list}")
-    
-    if not item_list:
-        return JsonResponse({'error': 'No valid item IDs provided'})
-
-    fields_to_check = ["title", "global_id", "category_id", "category_name",
-                      "gallery_url", "view_item_url", "auto_pay", "postal_code",
-                      "location", "country", "shipping_type", "ship_to_locations", 
-                      "price", "short_description"]
-
-    updated_items = []
-    deleted_items = []
-    errors = []
-
-    for item_id in item_list:
-        print(f"\n[DEBUG] Processing item_id: {item_id}")
-        try:
-            browse_data = fetch_browse_api_data(item_id)
-            # print(f"[DEBUG] Browse API data received: {browse_data}")
-            
-            if not browse_data:
-                print(f"[ERROR] No Browse API data for item_id: {item_id}")
-                errors.append({'item_id': item_id, 'error': 'No Browse API data found'})
-                continue
-
-            try:
-                product = Product.objects.get(item_id=item_id)
-                print(f"[DEBUG] Found product in database: {product.title}")
-                
-                # Handle deletion case first and skip the rest
-                if 'end_time' in browse_data:
-                    print(f"[DEBUG] End time found: {browse_data['end_time']}")
-                    try:
-                        ProductChangeLog.objects.create(
-                            item_id=item_id,
-                            product_name=product.title,
-                            operation="deleted",
-                            changes={
-                                'reason': 'Product listing ended',
-                                'end_time': browse_data['end_time']
-                            }
-                        )
-                        product.delete()
-                        deleted_items.append({
-                            'item_id': item_id,
-                            'end_time': browse_data['end_time']
-                        })
-                        continue
-                    except Exception as e:
-                        print(f"[ERROR] Failed to delete product: {str(e)}")
-                        errors.append({'item_id': item_id, 'error': f'Deletion failed: {str(e)}'})
-                        continue
-
-                # Only proceed with update logic if item is not deleted
-                if 'price' not in browse_data:
-                    print(f"[ERROR] No price in browse_data for item_id: {item_id}")
-                    errors.append({'item_id': item_id, 'error': 'No price found in Browse API data'})
-                    continue
-
-                # Rest of the update logic remains the same
-                price = float(browse_data['price'])
-                min_price = max(price - 0.1, 0)
-                max_price = (price + 0.1)
-
-                finding_data = None
-                current_page = 1
-                
-                while True:
-                    print(f"[DEBUG] Fetching page {current_page} for price range: ${min_price:.2f} - ${max_price:.2f}")
-                    items, total_pages = fetch_finding_api_data(
-                        page_number=current_page,
-                        min_price=min_price,
-                        max_price=max_price
-                    )
-
-                    finding_data = next((item for item in items if item['item_id'] == item_id), None)
-                    if finding_data:
-                        break
-                    
-                    if current_page >= total_pages:
-                        break
-
-                    current_page += 1
-
-                if not finding_data:
-                    print(f"[ERROR] Item not found in Finding API: {item_id}")
-                    errors.append({'item_id': item_id, 'error': 'Item not found in Finding API'})
-                    continue
-
-                print("[DEBUG] Preparing data for update")
-                if 'description' in finding_data:
-                    finding_data['short_description'] = clean_description(finding_data.pop('description'))
-                if 'description' in browse_data:
-                    browse_data['short_description'] = clean_description(browse_data.pop('description'))
-                browse_data['price'] = finding_data['price']
-                combined_data = {**finding_data, **browse_data}
-                
-                before_dict = {
-                    key: float(getattr(product, key)) if isinstance(getattr(product, key), Decimal) else getattr(product, key)
-                    for key in fields_to_check if hasattr(product, key)
-                }
-
-                changes = {}
-                for key, value in combined_data.items():
-                    if key in fields_to_check and hasattr(product, key):
-                        if before_dict.get(key) != value:
-                            setattr(product, key, value)
-                            changes[key] = value
-
-                if changes:
-                    try:
-                        product.save()
-                        change_log = ProductChangeLog.objects.create(
-                            item_id=item_id,
-                            product_name=product.title,
-                            operation="updated"
-                        )
-                        change_log.set_changes(before_dict, {**before_dict, **changes})
-                        change_log.save()
-                        updated_items.append({
-                            'item_id': item_id,
-                            'changes': changes
-                        })
-                    except Exception as e:
-                        print(f"[ERROR] Failed to save changes: {str(e)}")
-                        errors.append({'item_id': item_id, 'error': f'Save failed: {str(e)}'})
-
-            except Product.DoesNotExist:
-                print(f"[ERROR] Product not found in database: {item_id}")
-                errors.append({'item_id': item_id, 'error': 'Product not found in database'})
-
-        except Exception as e:
-            print(f"[ERROR] Unexpected error for item_id {item_id}: {str(e)}")
-            errors.append({'item_id': item_id, 'error': str(e)})
-    generate_html_pages_async.delay()
-    return JsonResponse({
-    'success': True,
-    'message': 'Products updated successfully',
-    'data': {
-        'updated': updated_items,
-        'deleted': deleted_items,
-        'errors': errors
-    }
-})
-
-def create_products(request):
-    if request.method != 'POST':
-        return JsonResponse({'error': 'Invalid request method'})
-
-    print("[DEBUG] Starting create_products function")
-    item_ids = request.POST.get('item_ids', '').strip()
-    item_list = [id.strip() for id in item_ids.split(',') if id.strip()]
-    print(f"[DEBUG] Processing {len(item_list)} items: {item_list}")
-    
-    if not item_list:
-        return JsonResponse({'error': 'No valid item IDs provided'})
-
-    created_items = []
-    errors = []
-
-    for item_id in item_list:
-        try:
-            print(f"\n[DEBUG] Processing item_id: {item_id}")
-            browse_data = fetch_browse_api_data(item_id)
-            if not browse_data or 'price' not in browse_data:
-                print(f"[ERROR] No Browse API data found for item_id: {item_id}")
-                errors.append({'item_id': item_id, 'error': 'No Browse API data found'})
-                continue
-
-            # Check if end_time exists and skip creation if it does
-            if 'end_time' in browse_data:
-                print(f"[DEBUG] Item {item_id} has an end_time, skipping creation")
-                errors.append({'item_id': item_id, 'error': 'Item has expired'})
-                continue
-
-            price = float(browse_data['price'])
-            min_price = max(price - 0.1, 0)
-            max_price = (price + 0.1)
-            print(f"[DEBUG] Price range for Finding API: {min_price} - {max_price}")
-
-            finding_data = None
-            current_page = 1
-            print(f"[DEBUG] Starting Finding API pagination search for item_id: {item_id}")
-
-            while True:
-                print(f"[DEBUG] Fetching page {current_page} for price range: ${min_price:.2f} - ${max_price:.2f}")
-                items, total_pages = fetch_finding_api_data(
-                    page_number=current_page,
-                    min_price=min_price,
-                    max_price=max_price
-                )
-                print(f"[DEBUG] Retrieved page {current_page} of {total_pages} total pages")
-                print(f"[DEBUG] Found {len(items)} items on this page")
-
-                finding_data = next((item for item in items if item['item_id'] == item_id), None)
-                if finding_data:
-                    print(f"[DEBUG] Found item {item_id} on page {current_page}")
-                    break
-                
-                if current_page >= total_pages:
-                    print(f"[DEBUG] Reached last page ({current_page}) without finding item {item_id}")
-                    break
-
-                current_page += 1
-                print(f"[DEBUG] Moving to page {current_page}")
-
-            if not finding_data:
-                print(f"[ERROR] Item {item_id} not found in Finding API results")
-                errors.append({'item_id': item_id, 'error': 'Item not found in Finding API'})
-                continue
-
-            print(f"[DEBUG] Preparing data for item creation: {item_id}")
-            if 'description' in finding_data:
-                finding_data['short_description'] = clean_description(finding_data.pop('description'))
-            if 'description' in browse_data:
-                browse_data['short_description'] = clean_description(browse_data.pop('description'))
-            browse_data['price'] = finding_data['price']
-            combined_data = {**finding_data, **browse_data}
-            
-            save_product_data(combined_data)
-            print(f"[SUCCESS] Created product for item_id: {item_id}")
-            created_items.append(item_id)
-            ProductChangeLog.objects.create(
-                item_id=item_id,
-                product_name=combined_data.get("title", "Unknown Title"),
-                operation="created",
-            )
-
-        except Exception as e:
-            print(f"[ERROR] Exception for item_id {item_id}: {str(e)}")
-            print(f"[ERROR] Exception traceback: {traceback.format_exc()}")
-            errors.append({'item_id': item_id, 'error': str(e)})
-    generate_html_pages_async.delay()
-    print(f"[DEBUG] Final results - Created: {len(created_items)}, Errors: {len(errors)}")
-    return JsonResponse({
-    'success': True,
-    'message': 'Products created successfully',
-    'data': {
-        'created': created_items,
-        'errors': errors
-    }
-})
-
-
-
-
+import requests
+from django.conf import settings
+from django.db import transaction
 # paypal
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
-from decimal import Decimal
-import json
-import uuid
-from django.db import transaction
-import requests
-from django.conf import settings
+
+# Single product update
+# from django.shortcuts import render
+# from django.views.generic import TemplateView
+
+# from .models import Product, ProductChangeLog
+
+
+# class ProductLookupView(TemplateView):
+#     template_name = 'product_lookup.html'
+
+#     def get(self, request, *args, **kwargs):
+#         print(f"[DEBUG] ProductLookupView GET request received")
+#         return render(request, self.template_name)
+
+#     def post(self, request, *args, **kwargs):
+#         print(f"[DEBUG] ProductLookupView POST request received with data: {request.POST}")
+#         item_ids = request.POST.get('item_ids', '').strip()
+#         item_list = [id.strip() for id in item_ids.split(',') if id.strip()]
+        
+#         if not item_list:
+#             print("[DEBUG] No valid item IDs provided")
+#             return JsonResponse({'error': 'No valid item IDs provided'})
+
+#         results = []
+#         for item_id in item_list:
+#             print(f"[DEBUG] Looking up product with item_id: {item_id}")
+#             product = Product.objects.filter(item_id=item_id).first()
+#             results.append({
+#                 'item_id': item_id,
+#                 'exists': product is not None,
+#                 'title': product.title if product else None
+#             })
+        
+#         print(f"[DEBUG] Lookup results: {results}")
+#         return JsonResponse({'results': results})
+
+# def update_products(request):
+#     if request.method != 'POST':
+#         return JsonResponse({'error': 'Invalid request method'})
+
+#     print("[DEBUG] Starting update_products function")
+#     item_ids = request.POST.get('item_ids', '').strip()
+#     item_list = [id.strip() for id in item_ids.split(',') if id.strip()]
+#     print(f"[DEBUG] Processing items: {item_list}")
+    
+#     if not item_list:
+#         return JsonResponse({'error': 'No valid item IDs provided'})
+
+#     fields_to_check = ["title", "global_id", "category_id", "category_name",
+#                       "gallery_url", "view_item_url", "auto_pay", "postal_code",
+#                       "location", "country", "shipping_type", "ship_to_locations", 
+#                       "price", "short_description"]
+
+#     updated_items = []
+#     deleted_items = []
+#     errors = []
+
+#     for item_id in item_list:
+#         print(f"\n[DEBUG] Processing item_id: {item_id}")
+#         try:
+#             browse_data = fetch_browse_api_data(item_id)
+#             # print(f"[DEBUG] Browse API data received: {browse_data}")
+            
+#             if not browse_data:
+#                 print(f"[ERROR] No Browse API data for item_id: {item_id}")
+#                 errors.append({'item_id': item_id, 'error': 'No Browse API data found'})
+#                 continue
+
+#             try:
+#                 product = Product.objects.get(item_id=item_id)
+#                 print(f"[DEBUG] Found product in database: {product.title}")
+                
+#                 # Handle deletion case first and skip the rest
+#                 if 'end_time' in browse_data:
+#                     print(f"[DEBUG] End time found: {browse_data['end_time']}")
+#                     try:
+#                         ProductChangeLog.objects.create(
+#                             item_id=item_id,
+#                             product_name=product.title,
+#                             operation="deleted",
+#                             changes={
+#                                 'reason': 'Product listing ended',
+#                                 'end_time': browse_data['end_time']
+#                             }
+#                         )
+#                         product.delete()
+#                         deleted_items.append({
+#                             'item_id': item_id,
+#                             'end_time': browse_data['end_time']
+#                         })
+#                         continue
+#                     except Exception as e:
+#                         print(f"[ERROR] Failed to delete product: {str(e)}")
+#                         errors.append({'item_id': item_id, 'error': f'Deletion failed: {str(e)}'})
+#                         continue
+
+#                 # Only proceed with update logic if item is not deleted
+#                 if 'price' not in browse_data:
+#                     print(f"[ERROR] No price in browse_data for item_id: {item_id}")
+#                     errors.append({'item_id': item_id, 'error': 'No price found in Browse API data'})
+#                     continue
+
+#                 # Rest of the update logic remains the same
+#                 price = float(browse_data['price'])
+#                 min_price = max(price - 0.1, 0)
+#                 max_price = (price + 0.1)
+
+#                 finding_data = None
+#                 current_page = 1
+                
+#                 while True:
+#                     print(f"[DEBUG] Fetching page {current_page} for price range: ${min_price:.2f} - ${max_price:.2f}")
+#                     items, total_pages = fetch_finding_api_data(
+#                         page_number=current_page,
+#                         min_price=min_price,
+#                         max_price=max_price
+#                     )
+
+#                     finding_data = next((item for item in items if item['item_id'] == item_id), None)
+#                     if finding_data:
+#                         break
+                    
+#                     if current_page >= total_pages:
+#                         break
+
+#                     current_page += 1
+
+#                 if not finding_data:
+#                     print(f"[ERROR] Item not found in Finding API: {item_id}")
+#                     errors.append({'item_id': item_id, 'error': 'Item not found in Finding API'})
+#                     continue
+
+#                 print("[DEBUG] Preparing data for update")
+#                 if 'description' in finding_data:
+#                     finding_data['short_description'] = clean_description(finding_data.pop('description'))
+#                 if 'description' in browse_data:
+#                     browse_data['short_description'] = clean_description(browse_data.pop('description'))
+#                 browse_data['price'] = finding_data['price']
+#                 combined_data = {**finding_data, **browse_data}
+                
+#                 before_dict = {
+#                     key: float(getattr(product, key)) if isinstance(getattr(product, key), Decimal) else getattr(product, key)
+#                     for key in fields_to_check if hasattr(product, key)
+#                 }
+
+#                 changes = {}
+#                 for key, value in combined_data.items():
+#                     if key in fields_to_check and hasattr(product, key):
+#                         if before_dict.get(key) != value:
+#                             setattr(product, key, value)
+#                             changes[key] = value
+
+#                 if changes:
+#                     try:
+#                         product.save()
+#                         change_log = ProductChangeLog.objects.create(
+#                             item_id=item_id,
+#                             product_name=product.title,
+#                             operation="updated"
+#                         )
+#                         change_log.set_changes(before_dict, {**before_dict, **changes})
+#                         change_log.save()
+#                         updated_items.append({
+#                             'item_id': item_id,
+#                             'changes': changes
+#                         })
+#                     except Exception as e:
+#                         print(f"[ERROR] Failed to save changes: {str(e)}")
+#                         errors.append({'item_id': item_id, 'error': f'Save failed: {str(e)}'})
+
+#             except Product.DoesNotExist:
+#                 print(f"[ERROR] Product not found in database: {item_id}")
+#                 errors.append({'item_id': item_id, 'error': 'Product not found in database'})
+
+#         except Exception as e:
+#             print(f"[ERROR] Unexpected error for item_id {item_id}: {str(e)}")
+#             errors.append({'item_id': item_id, 'error': str(e)})
+#     generate_html_pages_async.delay()
+#     return JsonResponse({
+#     'success': True,
+#     'message': 'Products updated successfully',
+#     'data': {
+#         'updated': updated_items,
+#         'deleted': deleted_items,
+#         'errors': errors
+#     }
+# })
+
+# def create_products(request):
+#     if request.method != 'POST':
+#         return JsonResponse({'error': 'Invalid request method'})
+
+#     print("[DEBUG] Starting create_products function")
+#     item_ids = request.POST.get('item_ids', '').strip()
+#     item_list = [id.strip() for id in item_ids.split(',') if id.strip()]
+#     print(f"[DEBUG] Processing {len(item_list)} items: {item_list}")
+    
+#     if not item_list:
+#         return JsonResponse({'error': 'No valid item IDs provided'})
+
+#     created_items = []
+#     errors = []
+
+#     for item_id in item_list:
+#         try:
+#             print(f"\n[DEBUG] Processing item_id: {item_id}")
+#             browse_data = fetch_browse_api_data(item_id)
+#             if not browse_data or 'price' not in browse_data:
+#                 print(f"[ERROR] No Browse API data found for item_id: {item_id}")
+#                 errors.append({'item_id': item_id, 'error': 'No Browse API data found'})
+#                 continue
+
+#             # Check if end_time exists and skip creation if it does
+#             if 'end_time' in browse_data:
+#                 print(f"[DEBUG] Item {item_id} has an end_time, skipping creation")
+#                 errors.append({'item_id': item_id, 'error': 'Item has expired'})
+#                 continue
+
+#             price = float(browse_data['price'])
+#             min_price = max(price - 0.1, 0)
+#             max_price = (price + 0.1)
+#             print(f"[DEBUG] Price range for Finding API: {min_price} - {max_price}")
+
+#             finding_data = None
+#             current_page = 1
+#             print(f"[DEBUG] Starting Finding API pagination search for item_id: {item_id}")
+
+#             while True:
+#                 print(f"[DEBUG] Fetching page {current_page} for price range: ${min_price:.2f} - ${max_price:.2f}")
+#                 items, total_pages = fetch_finding_api_data(
+#                     page_number=current_page,
+#                     min_price=min_price,
+#                     max_price=max_price
+#                 )
+#                 print(f"[DEBUG] Retrieved page {current_page} of {total_pages} total pages")
+#                 print(f"[DEBUG] Found {len(items)} items on this page")
+
+#                 finding_data = next((item for item in items if item['item_id'] == item_id), None)
+#                 if finding_data:
+#                     print(f"[DEBUG] Found item {item_id} on page {current_page}")
+#                     break
+                
+#                 if current_page >= total_pages:
+#                     print(f"[DEBUG] Reached last page ({current_page}) without finding item {item_id}")
+#                     break
+
+#                 current_page += 1
+#                 print(f"[DEBUG] Moving to page {current_page}")
+
+#             if not finding_data:
+#                 print(f"[ERROR] Item {item_id} not found in Finding API results")
+#                 errors.append({'item_id': item_id, 'error': 'Item not found in Finding API'})
+#                 continue
+
+#             print(f"[DEBUG] Preparing data for item creation: {item_id}")
+#             if 'description' in finding_data:
+#                 finding_data['short_description'] = clean_description(finding_data.pop('description'))
+#             if 'description' in browse_data:
+#                 browse_data['short_description'] = clean_description(browse_data.pop('description'))
+#             browse_data['price'] = finding_data['price']
+#             combined_data = {**finding_data, **browse_data}
+            
+#             save_product_data(combined_data)
+#             print(f"[SUCCESS] Created product for item_id: {item_id}")
+#             created_items.append(item_id)
+#             ProductChangeLog.objects.create(
+#                 item_id=item_id,
+#                 product_name=combined_data.get("title", "Unknown Title"),
+#                 operation="created",
+#             )
+
+#         except Exception as e:
+#             print(f"[ERROR] Exception for item_id {item_id}: {str(e)}")
+#             print(f"[ERROR] Exception traceback: {traceback.format_exc()}")
+#             errors.append({'item_id': item_id, 'error': str(e)})
+#     generate_html_pages_async.delay()
+#     print(f"[DEBUG] Final results - Created: {len(created_items)}, Errors: {len(errors)}")
+#     return JsonResponse({
+#     'success': True,
+#     'message': 'Products created successfully',
+#     'data': {
+#         'created': created_items,
+#         'errors': errors
+#     }
+# })
+
+
+
+
 
 def get_paypal_access_token():
     try:
@@ -3580,15 +3579,17 @@ def get_paypal_access_token():
     
 
 
+import json
+import uuid
+from decimal import Decimal
+
+import requests
+from django.conf import settings
+from django.db import transaction
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
-from decimal import Decimal
-import json
-import uuid
-from django.db import transaction
-import requests
-from django.conf import settings
+
 
 def calculate_usps_media_mail_cost(weight):
     rate_brackets = [
@@ -3773,3 +3774,258 @@ def capture_paypal_order(request, order_id):
             "error": "Payment processing failed",
             "details": str(e)
         }, status=500)
+    
+
+
+
+# single product alter
+from django.http import JsonResponse
+from django.shortcuts import render
+from django.views.generic import TemplateView
+
+from .models import Product, ProductChangeLog
+
+
+class ProductLookupView(TemplateView):
+    template_name = 'product_lookup.html'
+
+    def get(self, request, *args, **kwargs):
+        return render(request, self.template_name)
+
+    def post(self, request, *args, **kwargs):
+        item_ids = request.POST.get('item_ids', '').strip()
+        item_list = [id.strip() for id in item_ids.split(',') if id.strip()]
+        
+        if not item_list:
+            return JsonResponse({'error': 'No valid item IDs provided'})
+
+        results = []
+        for item_id in item_list:
+            product = Product.objects.filter(item_id=item_id).first()
+            results.append({
+                'item_id': item_id,
+                'exists': product is not None,
+                'title': product.title if product else None
+            })
+        
+        return JsonResponse({'results': results})
+    
+def process_products(request):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Invalid request method'})
+
+    item_ids = request.POST.get('item_ids', '').strip()
+    item_list = [id.strip() for id in item_ids.split(',') if id.strip()]
+    
+    if not item_list:
+        return JsonResponse({'error': 'No valid item IDs provided'})
+
+    results = []
+    
+    for item_id in item_list:
+        try:
+            product_exists = Product.objects.filter(item_id=item_id).exists()
+            browse_data = fetch_browse_api_data(item_id)
+            
+            if not browse_data:
+                results.append({
+                    'item_id': item_id,
+                    'process': 'API Check',
+                    'status': 'Failed',
+                    'message': 'No Browse API data found'
+                })
+                continue
+
+            if 'end_time' in browse_data:
+                if product_exists:
+                    result = handle_product_deletion(item_id)
+                    results.append(result)
+                continue
+
+            if product_exists:
+                result = update_existing_product(item_id, browse_data)
+            else:
+                result = create_new_product(item_id, browse_data)
+            
+            results.append(result)
+
+        except Exception as e:
+            results.append({
+                'item_id': item_id,
+                'process': 'Processing',
+                'status': 'Failed',
+                'message': str(e)
+            })
+
+    return JsonResponse({
+        'success': True,
+        'results': results
+    })
+
+def handle_product_deletion(item_id):
+    try:
+        product = Product.objects.get(item_id=item_id)
+        ProductChangeLog.objects.create(
+            item_id=item_id,
+            product_name=product.title,
+            operation="deleted",
+            changes={'reason': 'Product listing ended'}
+        )
+        product.delete()
+        return {
+            'item_id': item_id,
+            'process': 'Delete',
+            'status': 'Success',
+            'message': 'Product deleted - listing ended'
+        }
+    except Exception as e:
+        return {
+            'item_id': item_id,
+            'process': 'Delete',
+            'status': 'Failed',
+            'message': str(e)
+        }
+
+def update_existing_product(item_id, browse_data):
+    try:
+        product = Product.objects.get(item_id=item_id)
+        price = float(browse_data['price'])
+        finding_data = get_finding_api_data(item_id, price)
+        
+        if not finding_data:
+            return {
+                'item_id': item_id,
+                'process': 'Update',
+                'status': 'Failed',
+                'message': 'Item not found in Finding API'
+            }
+
+        before_dict = get_product_current_state(product)
+        changes = apply_product_updates(product, finding_data, browse_data)
+        
+        if changes:
+            product.save()
+            log_product_changes(item_id, product.title, before_dict, changes)
+            return {
+                'item_id': item_id,
+                'process': 'Update',
+                'status': 'Success',
+                'message': f'Updated fields: {", ".join(changes.keys())}'
+            }
+        else:
+            return {
+                'item_id': item_id,
+                'process': 'Update',
+                'status': 'Success',
+                'message': 'No changes needed'
+            }
+            
+    except Exception as e:
+        return {
+            'item_id': item_id,
+            'process': 'Update',
+            'status': 'Failed',
+            'message': str(e)
+        }
+
+def create_new_product(item_id, browse_data):
+    try:
+        price = float(browse_data['price'])
+        finding_data = get_finding_api_data(item_id, price)
+        
+        if not finding_data:
+            return {
+                'item_id': item_id,
+                'process': 'Create',
+                'status': 'Failed',
+                'message': 'Item not found in Finding API'
+            }
+
+        if 'description' in finding_data:
+            finding_data['short_description'] = clean_description(finding_data.pop('description'))
+        if 'description' in browse_data:
+            browse_data['short_description'] = clean_description(browse_data.pop('description'))
+
+        browse_data['price'] = finding_data['price']
+        combined_data = {**finding_data, **browse_data}
+        
+        save_product_data(combined_data)
+        
+        ProductChangeLog.objects.create(
+            item_id=item_id,
+            product_name=finding_data['title'],
+            operation="created"
+        )
+        
+        return {
+            'item_id': item_id,
+            'process': 'Create',
+            'status': 'Success',
+            'message': f'Created {finding_data['title']}'
+        }
+        
+    except Exception as e:
+        return {
+            'item_id': item_id,
+            'process': 'Create',
+            'status': 'Failed',
+            'message': str(e)
+        }
+
+def get_finding_api_data(item_id, price):
+    min_price = max(price - 0.1, 0)
+    max_price = price + 0.1
+    current_page = 1
+    
+    while True:
+        items, total_pages = fetch_finding_api_data(
+            page_number=current_page,
+            min_price=min_price,
+            max_price=max_price
+        )
+        
+        finding_data = next((item for item in items if item['item_id'] == item_id), None)
+        if finding_data or current_page >= total_pages:
+            return finding_data
+            
+        current_page += 1
+
+def get_product_current_state(product):
+    fields_to_check = [
+        "title", "global_id", "category_id", "category_name",
+        "gallery_url", "view_item_url", "auto_pay", "postal_code",
+        "location", "country", "shipping_type", "ship_to_locations", 
+        "price", "short_description"
+    ]
+    
+    return {
+        key: float(getattr(product, key)) if isinstance(getattr(product, key), Decimal) 
+        else getattr(product, key)
+        for key in fields_to_check if hasattr(product, key)
+    }
+
+def apply_product_updates(product, finding_data, browse_data):
+    if 'description' in finding_data:
+        finding_data['short_description'] = clean_description(finding_data.pop('description'))
+    if 'description' in browse_data:
+        browse_data['short_description'] = clean_description(browse_data.pop('description'))
+        
+    browse_data['price'] = finding_data['price']
+    combined_data = {**finding_data, **browse_data}
+    
+    changes = {}
+    for key, value in combined_data.items():
+        if hasattr(product, key) and getattr(product, key) != value:
+            setattr(product, key, value)
+            changes[key] = value
+            
+    return changes
+
+def log_product_changes(item_id, title, before_dict, changes):
+    change_log = ProductChangeLog.objects.create(
+        item_id=item_id,
+        product_name=title,
+        operation="updated"
+    )
+    change_log.set_changes(before_dict, {**before_dict, **changes})
+    change_log.save()

@@ -219,6 +219,24 @@
                 opacity: 1;
             }
         }
+        .status-success {
+            background: #C6F6D5;
+            color: #22543D;
+        }
+        
+        .status-failed {
+            background: #FED7D7;
+            color: #742A2A;
+        }
+        
+        .process-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            background: #E2E8F0;
+            color: #2D3748;
+        }
     </style>
 </head>
 <body>
@@ -235,45 +253,31 @@
                 ></textarea>
             </div>
             
-            <button id="check-items" class="primary-button">
-                Check Items
+            <button id="process-items" class="primary-button">
+                Process Items
             </button>
         </div>
 
         <div id="results-table" class="hidden">
-            <h2>Results</h2>
+            <h2>Processing Results</h2>
             <table>
                 <thead>
                     <tr>
                         <th>Item ID</th>
-                        <th>Title</th>
+                        <th>Process</th>
                         <th>Status</th>
+                        <th>Message</th>
                     </tr>
                 </thead>
                 <tbody id="results-body"></tbody>
             </table>
-            
-            <div class="button-group">
-                <div id="create-products-section" class="hidden">
-                    <button id="create-products" class="success-button">
-                        Create Missing Products
-                    </button>
-                </div>
-                
-                <div id="update-products-section" class="hidden">
-                    <button id="update-products" class="primary-button">
-                        Update Existing Products
-                    </button>
-                </div>
-            </div>
         </div>
 
         <div id="loading" class="hidden loading">
             <div class="spinner"></div>
-            <p>Processing request...</p>
+            <p>Processing items...</p>
         </div>
     </div>
-    <div id="alert-container" class="alert-container"></div>
 <script>
     class AlertSystem {
             constructor() {
@@ -330,93 +334,7 @@
 
         // Initialize the alert system
         const alertSystem = new AlertSystem();
-
-        document.getElementById('create-products').addEventListener('click', async function() {
-            const itemIds = document.getElementById('item-ids').value;
-            showLoading();
-
-            try {
-                const response = await fetch('{% url "create-products" %}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                        'X-CSRFToken': getCookie('csrftoken')
-                    },
-                    body: `item_ids=${encodeURIComponent(itemIds)}`
-                });
-
-                const data = await response.json();
-                
-                if (data.success) {
-                    alertSystem.success(`Products created successfully! Created: ${data.data.created.length} items`);
-                    
-                    if (data.data.errors.length > 0) {
-                        alertSystem.warning(`Some items had errors: ${data.data.errors.length} issues found`);
-                    }
-
-                    if (document.getElementById('update-products-section').classList.contains('hidden')) {
-                        setTimeout(() => location.reload(), 2000);
-                    } else {
-                        await checkItems(itemIds);
-                    }
-                } else {
-                    alertSystem.error(data.error || 'Failed to create products');
-                }
-            } catch (error) {
-                alertSystem.error('An unexpected error occurred');
-                console.error('Creation error:', error);
-            } finally {
-                hideLoading();
-            }
-        });
-
-        document.getElementById('update-products').addEventListener('click', async function() {
-            const itemIds = document.getElementById('item-ids').value;
-            showLoading();
-
-            try {
-                const response = await fetch('{% url "update-products" %}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                        'X-CSRFToken': getCookie('csrftoken')
-                    },
-                    body: `item_ids=${encodeURIComponent(itemIds)}`
-                });
-
-                const data = await response.json();
-                
-                if (data.success) {
-                    if (data.data.updated.length > 0) {
-                        alertSystem.success(`Successfully updated ${data.data.updated.length} products`);
-                    }
-                    
-                    if (data.data.deleted.length > 0) {
-                        alertSystem.warning(`${data.data.deleted.length} products were deleted (listing ended)`);
-                    }
-                    
-                    if (data.data.errors.length > 0) {
-                        alertSystem.error(`Failed to update ${data.data.errors.length} items`);
-                    }
-
-                    if (document.getElementById('create-products-section').classList.contains('hidden')) {
-                        setTimeout(() => location.reload(), 2000);
-                    } else {
-                        await checkItems(itemIds);
-                    }
-                } else {
-                    alertSystem.error(data.error || 'Failed to update products');
-                }
-            } catch (error) {
-                alertSystem.error('An unexpected error occurred');
-                console.error('Update error:', error);
-            } finally {
-                hideLoading();
-            }
-        });
-
-        // Modify the check-items event listener as well
-        document.getElementById('check-items').addEventListener('click', async function() {
+    document.getElementById('process-items').addEventListener('click', async function() {
             const itemIds = document.getElementById('item-ids').value;
             if (!itemIds.trim()) {
                 alertSystem.error('Please enter at least one item ID');
@@ -426,7 +344,7 @@
             showLoading();
             
             try {
-                const response = await fetch('{% url "product-lookup" %}', {
+                const response = await fetch('{% url "process-products" %}', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded',
@@ -442,51 +360,33 @@
                 }
 
                 displayResults(data.results);
-                alertSystem.success('Items checked successfully');
+                alertSystem.success('Processing completed');
             } catch (error) {
-                alertSystem.error('An error occurred while checking items');
+                alertSystem.error('An error occurred while processing items');
             } finally {
                 hideLoading();
             }
         });
 
+        function displayResults(results) {
+            const tbody = document.getElementById('results-body');
+            tbody.innerHTML = '';
 
+            results.forEach(result => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${result.item_id}</td>
+                    <td><span class="process-badge">${result.process}</span></td>
+                    <td><span class="status-badge ${result.status.toLowerCase() === 'success' ? 'status-success' : 'status-failed'}">
+                        ${result.status}
+                    </span></td>
+                    <td>${result.message}</td>
+                `;
+                tbody.appendChild(row);
+            });
 
-function displayResults(results) {
-    const tbody = document.getElementById('results-body');
-    tbody.innerHTML = '';
-
-    let hasNonExisting = false;
-    let hasExisting = false;
-
-    results.forEach(result => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td class="px-6 py-4 whitespace-no-wrap border-b border-gray-200">
-                ${result.item_id}
-            </td>
-            <td class="px-6 py-4 whitespace-no-wrap border-b border-gray-200">
-                ${result.title || 'N/A'}
-            </td>
-            <td class="px-6 py-4 whitespace-no-wrap border-b border-gray-200">
-                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${result.exists ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
-                    ${result.exists ? 'Exists' : 'Not Found'}
-                </span>
-            </td>
-        `;
-        tbody.appendChild(row);
-
-        if (!result.exists) {
-            hasNonExisting = true;
-        } else {
-            hasExisting = true;
+            document.getElementById('results-table').classList.remove('hidden');
         }
-    });
-
-    document.getElementById('results-table').classList.remove('hidden');
-    document.getElementById('create-products-section').classList.toggle('hidden', !hasNonExisting);
-    document.getElementById('update-products-section').classList.toggle('hidden', !hasExisting);
-}
 
 function showLoading() {
     document.getElementById('loading').classList.remove('hidden');

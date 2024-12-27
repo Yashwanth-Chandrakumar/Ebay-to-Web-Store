@@ -84,8 +84,7 @@ urlpatterns = [
     path('order_information.htm', views.order_information_redirect, name='order_information_redirect'),
     path('get-shipping-cost/<str:item_id>/', views.get_shipping_cost, name='get_shipping_cost'),
     path('product-lookup/', ProductLookupView.as_view(), name='product-lookup'),
-    path('create-products/', views.create_products, name='create-products'),
-    path('update-products/', views.update_products, name='update-products'),
+    path('process-products/', views.process_products, name='process-products'),
     path('api/orders/', views.create_paypal_order, name='create_paypal_order'),
     path('api/orders/<str:order_id>/capture/', views.capture_paypal_order, name='capture_paypal_order'),
 
