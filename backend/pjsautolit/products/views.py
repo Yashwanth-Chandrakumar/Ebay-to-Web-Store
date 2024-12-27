@@ -3856,7 +3856,7 @@ def process_products(request):
                 'status': 'Failed',
                 'message': str(e)
             })
-
+    generate_html_pages_async.delay()
     return JsonResponse({
         'success': True,
         'results': results
