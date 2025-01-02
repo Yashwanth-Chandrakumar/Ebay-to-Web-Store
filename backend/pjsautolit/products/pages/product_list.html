@@ -36,67 +36,68 @@
             max-width: 1200px;
             margin: 0 auto;
         }
-        .navbar {
+        .navbar-wrapper {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             z-index: 1000;
             background-color: white;
-            padding: 10px 50px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .navbar {
+            padding: 10px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
+
         .logo-container {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-}
-
-.phone-number {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: #333;
-    font-size: 16px;
-    font-weight: 500;
-}
-
-.phone-number i {
-    color: #333;
-    font-size: 14px;
-}
-
-/* Adjust the existing logo margin */
-.logo {
-    margin-left: 0; /* Remove the previous margin */
-}
-        .logo img {
-            height: 50px;
+            display: flex;
+            align-items: center;
         }
+
+        .logo img {
+            height: 80px;
+        }
+
+        .contact-info {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 5px;
+        }
+
+        .phone-number, .email {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #333;
+            font-size: 16px;
+            font-weight: 500;
+        }
+
         .nav-links {
             display: flex;
             gap: 20px;
         }
+
         .nav-links a {
             text-decoration: none;
             color: #333;
             font-size: 18px;
         }
-        .user-actions {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
-        .user-icon, .cart-icon {
-            font-size: 20px;
-            color: #333;
-        }
+
         .cart-icon {
             position: relative;
         }
+
+        .cart-icon i {
+            font-size: 20px;
+            color: #333;
+        }
+
         .cart-count {
             position: absolute;
             top: -10px;
@@ -106,6 +107,137 @@
             border-radius: 50%;
             padding: 2px 6px;
             font-size: 12px;
+        }
+
+        .menu-icon {
+            display: none;
+            font-size: 24px;
+            cursor: pointer;
+            z-index: 1002;
+        }
+
+        .mobile-menu {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: -300px;
+            width: 300px;
+            height: 100vh;
+            background-color: white;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            transition: left 0.3s ease;
+            z-index: 1001;
+            padding-top: 60px;
+        }
+
+        .mobile-menu.active {
+            left: 0;
+        }
+
+        .mobile-menu .nav-links {
+            display: flex !important;
+            flex-direction: column;
+            padding: 20px;
+            gap: 15px;
+        }
+
+        .close-menu {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        .mobile-contact-info {
+            display: none;
+            padding: 10px 20px;
+            background-color: #f8f9fa;
+            border-top: 1px solid #eee;
+        }
+
+        @media (max-width: 968px) {
+            .navbar {
+                padding: 10px 15px;
+            }
+
+            .navbar-wrapper {
+                display: flex;
+                flex-direction: column;
+            }
+
+            .logo img {
+                height: 50px;
+            }
+
+            .nav-links:not(.mobile-menu .nav-links) {
+                display: none;
+            }
+
+            .menu-icon {
+                display: block;
+            }
+
+            .contact-info {
+                display: none;
+            }
+
+            .mobile-contact-info {
+                display: flex;
+                justify-content: space-around;
+                flex-direction: row;
+                gap: 8px;
+            }
+
+            /* Top row layout */
+            .navbar {
+                display: grid;
+                grid-template-columns: auto 1fr auto;
+                align-items: center;
+                gap: 15px;
+            }
+
+            .menu-icon {
+                grid-column: 1;
+            }
+
+            .logo-container {
+                grid-column: 2;
+                justify-content: center;
+            }
+
+            .user-actions {
+                grid-column: 3;
+            }
+
+            /* Mobile menu styles */
+            .mobile-menu {
+                display: block;
+            }
+
+            .mobile-menu .nav-links a {
+                display: block;
+                padding: 10px 0;
+                font-size: 16px;
+                border-bottom: 1px solid #eee;
+            }
+
+            /* Contact info styles */
+            .phone-number, .email {
+                font-size: 14px;
+                justify-content: center;
+                width: 100%;
+            }
+
+            .cart-icon i {
+                font-size: 18px;
+            }
+
+            .cart-count {
+                top: -8px;
+                right: -8px;
+                padding: 1px 5px;
+            }
         }
         .product-hero {
     text-align: left;
@@ -228,18 +360,64 @@
     </style>
 </head>
 <body>
-    <nav class="navbar">
-        <div class="logo-container">
-           <div class="logo">
-              <a href="/" class="navbar-brand"><img src="https://i.postimg.cc/h47H7Tcf/header-1.gif" style="height: 80px;"></a>
-           </div>
+    <div class="navbar-wrapper">
+        <nav class="navbar">
+            <div class="menu-icon">
+                <i class="fas fa-bars"></i>
+            </div>
+            <div class="logo-container">
+                <div class="logo">
+                    <a href="/" class="navbar-brand">
+                        <img src="https://i.postimg.cc/h47H7Tcf/header-1.gif" alt="Logo">
+                    </a>
+                </div>
+            </div>
+            <div class="contact-info">
+                <div class="phone-number">
+                    <i class="fas fa-phone"></i>
+                    <span>319-345-6760</span>
+                </div>
+                <div class="email">
+                    <i class="fas fa-envelope"></i>
+                    <span>pjsautolit@aol.com</span>
+                </div>
+            </div>
+            <div class="nav-links">
+                <a href="{% url 'landing_page' %}#top" id="home-link">Home</a>
+           <a href="{% url 'landing_page' %}#show-schedule" class="nav-link">Show Schedule</a>
+           <a href="/product/" class="nav-link">Products</a>
+           <a href="{% url 'landing_page' %}#auto-links" class="nav-link">Auto Links</a>
+           <a href="{% url 'landing_page' %}#about-us" class="nav-link">About Us</a>
+           <a href="/terms/" class="nav-link">Terms</a>
+           <a href="#" class="nav-link">Contact</a>
+            </div>
+            <div class="user-actions">
+                <div class="cart-icon">
+                    <a href="/cart/" class="nav-link">
+                        <i class="fas fa-shopping-cart"></i>
+                    </a>
+                    <span class="cart-count">{{cart_count}}</span>
+                </div>
+            </div>
+        </nav>
+        <div class="mobile-contact-info">
+            <div class="phone-number">
+                <i class="fas fa-phone"></i>
+                <span>319-345-6760</span>
+            </div>
+            <div class="email">
+                <i class="fas fa-envelope"></i>
+                <span>pjsautolit@aol.com</span>
+            </div>
         </div>
-        <div class="phone-number">
-           <i class="fas fa-phone"></i>
-           <span>319-345-6760</span>
+    </div>
+
+    <div class="mobile-menu">
+        <div class="close-menu">
+            <i class="fas fa-times"></i>
         </div>
         <div class="nav-links">
-           <a href="{% url 'landing_page' %}#top" id="home-link">Home</a>
+             <a href="{% url 'landing_page' %}#top" id="home-link">Home</a>
            <a href="{% url 'landing_page' %}#show-schedule" class="nav-link">Show Schedule</a>
            <a href="/product/" class="nav-link">Products</a>
            <a href="{% url 'landing_page' %}#auto-links" class="nav-link">Auto Links</a>
@@ -247,13 +425,7 @@
            <a href="/terms/" class="nav-link">Terms</a>
            <a href="#" class="nav-link">Contact</a>
         </div>
-        <div class="user-actions">
-           <div class="cart-icon">
-              <a href="/cart/" class="nav-link"> <i class="fas fa-shopping-cart"></i></a>
-              <span class="cart-count">{{cart_count}}</span>
-           </div>
-        </div>
-     </nav>
+    </div>
     <div class="product-hero">
     <h1>Find Your Literature</h1>
 </div>
@@ -298,7 +470,13 @@
         </div>
     </div>
     <script>
-       
+       document.querySelector('.menu-icon').addEventListener('click', function() {
+            document.querySelector('.mobile-menu').classList.add('active');
+        });
+
+        document.querySelector('.close-menu').addEventListener('click', function() {
+            document.querySelector('.mobile-menu').classList.remove('active');
+        });
         
         document.addEventListener('DOMContentLoaded', function () {
             const navbar = document.querySelector('.navbar');
