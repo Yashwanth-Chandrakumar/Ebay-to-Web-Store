@@ -21,6 +21,7 @@ urlpatterns = [
     path("admin-view-4/", views.admin_page4, name="admin_page4"),
     path("product/", views.product_list, name="product_list"),
     path("terms/", views.terms_view, name="terms"),
+    path("contact/", views.contact_view, name="contact"),
     path("product/<slug:product_slug>/", views.product_detail, name="product_detail"),
     path("cron/", views.cron, name="cron"),
     path("cleandesc/", views.clean_description, name="clean"),

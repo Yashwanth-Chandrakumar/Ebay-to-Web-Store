@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PJ's Auto Literature - Product List</title>
+    <title>PJ's Auto Literature - Contact page</title>
     <link rel="icon" type="image/png" href="https://i.postimg.cc/VkGmFmx1/Untitled-design-2.png">
     <meta name="description" content="PJ's Auto Literature. Buy Auto literature at the best price. Explore more details including condition, seller information, and shipping options.">
     <meta name="google-site-verification" content="y91eOp-jsN4mY8IQlUl-QhHdb4U9H1NdJbMEdyhShz8" />
@@ -26,15 +26,14 @@
             font-weight: 700;
         }
         body {
-            line-height: 1.6;
-            color: var(--dark-color);
-            background-color: var(--light-color);
-        }
-        .container {
-            
-            width: 90%;
-            max-width: 1200px;
-            margin: 0 auto;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
         }
         .navbar-wrapper {
             position: fixed;
@@ -239,123 +238,23 @@
                 padding: 1px 5px;
             }
         }
-        .product-hero {
-    text-align: left;
-    padding-top: 200px;
-    padding-left: 160px;
-    padding-bottom: 100px;
-    background: radial-gradient(circle at top, #8aafd2 0%, #00519d 60%);
-    color: white;
-}
-
-.product-hero h1 {
-    font-size: 50px;
-    font-weight: 900;
-    text-shadow: 4px 5px 8px rgba(0, 0, 0, 0.5);
-    margin-bottom: 0;
-}
-.search-bar-container {
-            width: 100%;
-            height: 80px; /* Adjust based on your search bar height */
-        }
-        .search-bar {
-            width: 100%;
+        .contact-info {
             text-align: center;
-            padding: 20px 0;
-            /* background-color: var(--light-color); */
-            transition: all 0.3s ease;
-        }
-        .search-bar.fixed {
-            position: fixed;
-            top: 110px; /* Adjust based on your navbar height */
-            left: 0;
-            right: 0;
-            z-index: 999;
-            /* box-shadow: 0 2px 5px rgba(0,0,0,0.1); */
-        }
-        .search-bar input[type="text"] {
-            width: 80%;
-            padding: 10px;
-            font-size: 1em;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
-        }
-        .product {
-            background-color: #fff;
+            background-color: white;
+            padding: 2rem;
             border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-        .product:hover {
-            transform: translateY(-5px);
-        }
-        .product img {
-            width: 150px;
-            height: 150px;
-            margin-right: 20px;
-            border-radius: 8px;
-            object-fit: cover;
-        }
-        .product-details {
-            flex: 1;
-        }
-        .product-details h2 {
-            margin: 0 0 10px;
-            font-size: 1.5em;
-            color: var(--secondary-color);
-        }
-        .product-details p {
-            margin: 5px 0;
-            color: var(--dark-color);
-        }
-        .btn {
-            display: inline-block;
-            padding: 10px 15px;
-            font-size: 1em;
-            color: #fff;
-            background-color: var(--primary-color);
-            border: none;
-            border-radius: 5px;
+        .contact-info a {
+            display: block;
+            color: #333;
             text-decoration: none;
-            text-align: center;
-            cursor: pointer;
-            transition: background-color 0.3s;
+            font-size: 1.2rem;
+            margin: 10px 0;
+            font-weight: bold;
         }
-        .btn:hover {
-            background-color: var(--accent-color);
-        }
-        .pagination {
-            display: flex;
-            justify-content: center;
-            margin-top: 30px;
-        }
-        .pagination a {
-            padding: 10px 15px;
-            margin: 0 5px;
-            font-size: 1em;
-            color: var(--primary-color);
-            text-decoration: none;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            transition: background-color 0.3s, color 0.3s;
-        }
-        .pagination a:hover {
-            background-color: var(--primary-color);
-            color: #fff;
-        }
-        .pagination .current {
-            padding: 10px 15px;
-            margin: 0 5px;
-            font-size: 1em;
-            color: var(--dark-color);
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            background-color: var(--light-color);
+        .contact-info a:hover {
+            color: #666;
         }
     </style>
 </head>
@@ -426,92 +325,16 @@
            <a href="/contact/" class="nav-link">Contact</a>
         </div>
     </div>
-    <div class="product-hero">
-    <h1>Find Your Literature</h1>
-</div>
-<div class="search-bar-container">
-    <div class="search-bar" id="search-bar">
-        <form method="get" action="{% url 'product_list' %}" id="search-form">
-            <input type="text" id="search-input" name="query" value="{{ query }}" placeholder="Search products using keyword">
-        </form>
+    <div class="contact-info">
+        <a href="tel:319-345-6760"><i class="fas fa-phone"></i>&nbsp;&nbsp;&nbsp;&nbsp;319-345-6760</a>
+        <a href="mailto:pjsautolit@aol.com"> <i class="fas fa-envelope"></i>&nbsp;&nbsp;&nbsp;&nbsp;pjsautolit@aol.com</a>
     </div>
-</div>
-    <div class="container">
-        <div id="products">
-            {% for product in page_obj %}
-                <div class="product">
-                    <img src="{{ product.primary_image_url }}" alt="{{ product.title }}">
-                    <div class="product-details">
-                        <h2><a href="{% url 'product_detail' product.html_link %}" style="text-decoration: none; color: var(--secondary-color);">{{ product.title }}</a></h2>
-                        <p>Price: ${{ product.price }}</p>
-                        <a href="{% url 'product_detail' product.html_link %}" class="btn">View Details</a>
-                    </div>
-                </div>
-            {% empty %}
-                <p>No products available.</p>
-            {% endfor %}
-        </div>
-        <div class="pagination">
-            <span class="step-links">
-                {% if page_obj.has_previous %}
-                    <a href="?query={{ query }}&page=1">&laquo; first</a>
-                    <a href="?query={{ query }}&page={{ page_obj.previous_page_number }}">previous</a>
-                {% endif %}
-    
-                <span class="current">
-                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
-                </span>
-    
-                {% if page_obj.has_next %}
-                    <a href="?query={{ query }}&page={{ page_obj.next_page_number }}">next</a>
-                    <a href="?query={{ query }}&page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
-                {% endif %}
-            </span>
-        </div>
-    </div>
-    <script>
-       document.querySelector('.menu-icon').addEventListener('click', function() {
-            document.querySelector('.mobile-menu').classList.add('active');
-        });
+    <script>document.querySelector('.menu-icon').addEventListener('click', function() {
+        document.querySelector('.mobile-menu').classList.add('active');
+    });
 
-        document.querySelector('.close-menu').addEventListener('click', function() {
-            document.querySelector('.mobile-menu').classList.remove('active');
-        });
-        
-        document.addEventListener('DOMContentLoaded', function () {
-            const navbar = document.querySelector('.navbar');
-            const searchBar = document.getElementById('search-bar');
-            const searchBarContainer = document.querySelector('.search-bar-container');
-            const searchBarOffset = searchBarContainer.offsetTop;
-            const navbarHeight = navbar.offsetHeight;
-
-            window.addEventListener('scroll', function() {
-                if (window.pageYOffset > searchBarOffset - navbarHeight) {
-                    searchBar.classList.add('fixed');
-                } else {
-                    searchBar.classList.remove('fixed');
-                }
-            });
-
-            const searchInput = document.getElementById('search-input');
-            searchInput.addEventListener('input', function () {
-                const query = searchInput.value;
-                const xhr = new XMLHttpRequest();
-                xhr.open('GET', `{% url 'product_list' %}?query=${query}`, true);
-                xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-                xhr.onload = function () {
-                    if (xhr.status === 200) {
-                        const parser = new DOMParser();
-                        const doc = parser.parseFromString(xhr.responseText, 'text/html');
-                        const products = doc.getElementById('products');
-                        const pagination = doc.querySelector('.pagination');
-                        document.getElementById('products').innerHTML = products.innerHTML;
-                        document.querySelector('.pagination').innerHTML = pagination.innerHTML;
-                    }
-                };
-                xhr.send();
-            });
-        });
-    </script>
+    document.querySelector('.close-menu').addEventListener('click', function() {
+        document.querySelector('.mobile-menu').classList.remove('active');
+    });</script>
 </body>
 </html>

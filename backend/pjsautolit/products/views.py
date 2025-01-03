@@ -833,6 +833,27 @@ def terms_view(request):
             "cart_count": cart_count,
         },
     )
+def contact_view(request):
+    cart_count = 0
+
+    # Check if there's a cart in the session
+    cart_id = request.session.get("cart_id")
+    if cart_id:
+        try:
+            # Get all cart items related to the cart
+            cart_items = CartItem.objects.filter(cart_id=cart_id)
+            # Sum up the quantity of all items in the cart to get the cart count
+            cart_count = sum(item.quantity for item in cart_items)
+        except CartItem.DoesNotExist:
+            # If the cart items don't exist, the cart is empty or invalid
+            cart_count = 0
+    return render(
+        request,
+        "pages/contact.html",
+        {
+            "cart_count": cart_count,
+        },
+    )
 
 
 def admin_page(request):
