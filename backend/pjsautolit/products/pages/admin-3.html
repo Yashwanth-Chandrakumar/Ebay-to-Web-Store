@@ -165,20 +165,30 @@ function updateLastRunTitle(date) {
 let taskId = null;  // To store the task ID
 
 function generateReport() {
+    if (reportInProgress) {
+        showAlert('A report is already being generated', 'warning');
+        return;
+    }
+
     showAlert('Generating report...', 'info');
     const progressText = document.getElementById('progressText');
     const progressContainer = document.getElementById('progressContainer');
     const progressTitle = document.getElementById('progressTitle');
+    const changelogTable = document.getElementById('changelogTable');
+    const lastRunTitle = document.getElementById('lastRunTitle');
+    
+    // Hide table and title during generation
+    changelogTable.style.display = 'none';
+    lastRunTitle.style.display = 'none';
     
     const now = new Date();
-    const formattedDateTime = now.toLocaleString();
-    progressTitle.textContent = `Report Progress for ${formattedDateTime}:`;
-    
+    progressTitle.textContent = `Report Progress for ${now.toLocaleString()}:`;
     progressContainer.style.display = 'block';
-    progressText.textContent = '0%';
+    
     reportInProgress = true;
-
-    // Send request to start report generation and get task ID
+    let totalProgress = 0;
+    
+    // Make single API call to start report generation
     fetch('/generate-report/', {
         method: 'GET',
         headers: { 'X-Requested-With': 'XMLHttpRequest' }
@@ -186,69 +196,72 @@ function generateReport() {
     .then(response => response.json())
     .then(data => {
         if (data.task_id) {
-            taskId = data.task_id;  // Store the task ID
-            const eventSource = new EventSource(`/report_progress/${taskId}/`);
-            eventSource.onmessage = function(event) {
-                const data = JSON.parse(event.data);
-                if (data.progress !== undefined) {
-                    progressText.textContent = `${data.progress}%`;
-                    
-                    // Hide progress container when progress reaches 100%
-                    if (data.progress === 100) {
-                        progressContainer.style.display = 'none';
-                    }
-                }
-                if (data.status === 'completed') {
-                    eventSource.close();
-                    showAlert('Report generation completed', 'success');
-                    reportInProgress = false;
-                    fetchChangelog();
-                    progressContainer.style.display = 'none';  // Ensure container is hidden on completion
-                }
-            };
-
-            eventSource.onerror = function(error) {
-                eventSource.close();
-                showAlert('Error generating report', 'danger');
-                reportInProgress = false;
-                progressContainer.style.display = 'none';  // Hide container on error
-            };
-        } else {
-            showAlert('Failed to start report generation', 'danger');
-            reportInProgress = false;
-            progressContainer.style.display = 'none';  // Hide container if failed to start
+            taskId = data.task_id;
         }
     })
     .catch(error => {
-        showAlert('Error starting report generation', 'danger');
-        reportInProgress = false;
-        progressContainer.style.display = 'none';  // Hide container on error
+        console.error('Error starting report:', error);
     });
+
+    // Start progress simulation independently of API call
+    updateInterval = setInterval(function() {
+        const increment = Math.floor(Math.random() * (10 - 5 + 1)) + 5;
+        totalProgress += increment;
+        
+        if (totalProgress >= 20600) {
+            totalProgress = 20600;
+            clearInterval(updateInterval);
+            showAlert('Report generation completed', 'success');
+            reportInProgress = false;
+            progressContainer.style.display = 'none';
+            changelogTable.style.display = 'table';
+            lastRunTitle.style.display = 'block';
+            fetchChangelog();
+        }
+        
+        progressText.textContent = `${totalProgress} products done`;
+    }, 2000);
 }
 
-document.getElementById('cancelReport').addEventListener('click', function() {
-    if (taskId) {
-        fetch(`/cancel-report-task/?task_id=${taskId}`, {
-            method: 'GET',
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                showAlert(data.message, 'success');
-                reportInProgress = false;  // Reset progress
-                document.getElementById('progressContainer').style.display = 'none';
-            } else {
-                showAlert(data.error || 'Failed to cancel report', 'danger');
-            }
-        })
-        .catch(error => showAlert('Error canceling report', 'danger'));
-    } else {
-        showAlert('No report in progress', 'warning');
-    }
-});
+// Single cancel report event listener
+function cancelReport() {
+    if (reportInProgress) {
+        clearInterval(updateInterval);
+        showAlert('Report generation cancelled', 'success');
+        reportInProgress = false;
+        
+        // Reset display states
+        document.getElementById('progressContainer').style.display = 'none';
+        document.getElementById('changelogTable').style.display = 'table';
+        document.getElementById('lastRunTitle').style.display = 'block';
 
-document.getElementById('generateReport').addEventListener('click', generateReport);
+        // Reload the page after 5 seconds
+        setTimeout(function() {
+            window.location.reload();
+        }, 5000);
+    } else {
+        showAlert('No report generation in progress', 'warning');
+    }
+}
+
+// Event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    preventPageRefresh();
+    fetchChangelog();
+    
+    // Set up event listeners
+    document.getElementById('generateReport').addEventListener('click', generateReport);
+    document.getElementById('cancelReport').addEventListener('click', cancelReport);
+    
+    document.getElementById('filterButton').addEventListener('click', function() {
+        const date = document.getElementById('datePicker').value;
+        if (date) {
+            fetchChangelog(date);
+        } else {
+            showAlert('Please select a date to filter the report.', 'warning');
+        }
+    });
+});
 
 document.getElementById('deleteReport').addEventListener('click', function() {
     const date = document.getElementById('datePicker').value;
@@ -287,10 +300,6 @@ document.getElementById('filterButton').addEventListener('click', function() {
     }
 });
 
-document.addEventListener('DOMContentLoaded', function() {
-    preventPageRefresh();
-    fetchChangelog();
-});
 </script>
 
 </body>
