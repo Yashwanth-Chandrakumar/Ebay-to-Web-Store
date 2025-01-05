@@ -594,7 +594,7 @@
 }
 
 .calendar-container {
-    max-width: 800px;
+    
     margin: 0 auto;
     background-color: #fff;
     border-radius: 15px;
@@ -1157,107 +1157,159 @@
         document.querySelector('.close-menu').addEventListener('click', function() {
             document.querySelector('.mobile-menu').classList.remove('active');
         });
-    document.addEventListener('DOMContentLoaded', function() {
-            const calendarBody = document.getElementById('calendarBody');
-            const currentMonthElement = document.getElementById('currentMonth');
-            const prevMonthButton = document.getElementById('prevMonth');
-            const nextMonthButton = document.getElementById('nextMonth');
-            const eventModal = document.getElementById('eventModal');
-            const eventTitle = document.getElementById('eventTitle');
-            const eventDescription = document.getElementById('eventDescription');
-            const eventLocation = document.getElementById('eventLocation');
+        document.addEventListener('DOMContentLoaded', function() {
+    const calendarBody = document.getElementById('calendarBody');
+    const currentMonthElement = document.getElementById('currentMonth');
+    const prevMonthButton = document.getElementById('prevMonth');
+    const nextMonthButton = document.getElementById('nextMonth');
+    const eventModal = document.getElementById('eventModal');
+    const eventTitle = document.getElementById('eventTitle');
+    const eventDescription = document.getElementById('eventDescription');
+    const eventLocation = document.getElementById('eventLocation');
 
-            let currentDate = new Date();
+    const events = {{ events_json|safe }};
+    let currentDate = new Date();
 
-            // Sample events data (replace this with data from your backend)
-            const events = {{ events_json|safe }};
+    function formatDate(date) {
+        return date.substring(0, 10);
+    }
 
-            function renderCalendar() {
-                const year = currentDate.getFullYear();
-                const month = currentDate.getMonth();
+    function isDateInRange(checkDate, startDate, endDate) {
+        const check = new Date(checkDate);
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        check.setHours(0, 0, 0, 0);
+        start.setHours(0, 0, 0, 0);
+        end.setHours(0, 0, 0, 0);
+        return check >= start && check <= end;
+    }
 
-                currentMonthElement.textContent = `${currentDate.toLocaleString('default', { month: 'long' })} ${year}`;
+    function getEventsForDate(dateStr) {
+        return Object.values(events).filter(event => 
+            isDateInRange(dateStr, event.start_date, event.end_date)
+        );
+    }
 
-                const firstDay = new Date(year, month, 1);
-                const lastDay = new Date(year, month + 1, 0);
-                const daysInMonth = lastDay.getDate();
-                const startingDay = firstDay.getDay();
+    function renderCalendar() {
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
 
-                let dateCounter = 1;
-                let calendarHTML = '';
+        currentMonthElement.textContent = `${currentDate.toLocaleString('default', { month: 'long' })} ${year}`;
 
-                for (let i = 0; i < 6; i++) {
-                    let row = '<tr>';
-                    for (let j = 0; j < 7; j++) {
-                        if (i === 0 && j < startingDay) {
-                            row += '<td></td>';
-                        } else if (dateCounter > daysInMonth) {
-                            row += '<td></td>';
-                        } else {
-                            const date = `${year}-${String(month + 1).padStart(2, '0')}-${String(dateCounter).padStart(2, '0')}`;
-                            const event = events[date];
-                            const eventTitleHTML = event ? `<div class="event-title">${event.title}</div>` : '';
-                            row += `
-                                <td data-date="${date}">
-                                    <div class="date">${dateCounter}</div>
-                                    ${eventTitleHTML}
-                                </td>`;
-                            dateCounter++;
-                        }
+        const firstDay = new Date(year, month, 1);
+        const lastDay = new Date(year, month + 1, 0);
+        const daysInMonth = lastDay.getDate();
+        const startingDay = firstDay.getDay();
+
+        let dateCounter = 1;
+        let calendarHTML = '';
+
+        for (let i = 0; i < 6; i++) {
+            let row = '<tr>';
+            for (let j = 0; j < 7; j++) {
+                if (i === 0 && j < startingDay) {
+                    row += '<td></td>';
+                } else if (dateCounter > daysInMonth) {
+                    row += '<td></td>';
+                } else {
+                    const currentDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(dateCounter).padStart(2, '0')}`;
+                    const dateEvents = getEventsForDate(currentDateStr);
+                    let cellClasses = [];
+                    let eventContent = '';
+
+                    if (dateEvents.length > 0) {
+                        cellClasses.push('has-event');
+                        
+                        dateEvents.forEach(event => {
+                            // Check if it's the start date of the event
+                            if (formatDate(event.start_date) === currentDateStr) {
+                                cellClasses.push('event-start');
+                                eventContent += `<div class="event-title">${event.title}</div>`;
+                            }
+                            // Check if it's in the middle of the event
+                            else if (isDateInRange(currentDateStr, event.start_date, event.end_date) && 
+                                     formatDate(event.end_date) !== currentDateStr) {
+                                cellClasses.push('event-middle');
+                                eventContent += `<div class="event-title">${event.title}</div>`;
+                            }
+                            // Check if it's the end date of the event
+                            else if (formatDate(event.end_date) === currentDateStr) {
+                                cellClasses.push('event-end');
+                                eventContent += `<div class="event-title">${event.title}</div>`;
+                            }
+                        });
                     }
-                    row += '</tr>';
-                    calendarHTML += row;
-                }
 
-                calendarBody.innerHTML = calendarHTML;
-
-                // Add event listeners to cells with events
-                document.querySelectorAll('td[data-date]').forEach(cell => {
-                    const date = cell.getAttribute('data-date');
-                    if (events[date]) {
-                        cell.addEventListener('mouseenter', (e) => showEventModal(e, date));
-                        cell.addEventListener('mouseleave', hideEventModal);
-                    }
-                });
-            }
-
-            function showEventModal(e, date) {
-                const event = events[date];
-                if (event) {
-                    eventTitle.textContent = event.title;
-                    eventDescription.textContent = event.description;
-                    eventLocation.textContent = `Location: ${event.location}`;
-                    
-                    eventModal.style.display = 'block';
-                    
-                    // Position the modal near the cell but not directly under the cursor
-                    const rect = e.target.getBoundingClientRect();
-                    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-                    
-                    eventModal.style.left = `${rect.left + rect.width}px`;
-                    eventModal.style.top = `${rect.top + scrollTop}px`;
-                    
-                    setTimeout(() => eventModal.classList.add('show'), 10);
+                    const classString = cellClasses.length ? ` class="${cellClasses.join(' ')}"` : '';
+                    row += `
+                        <td data-date="${currentDateStr}"${classString}>
+                            <div class="date">${dateCounter}</div>
+                            ${eventContent}
+                            ${cellClasses.includes('event-middle') ? '<div class="event-line"></div>' : ''}
+                        </td>`;
+                    dateCounter++;
                 }
             }
+            row += '</tr>';
+            calendarHTML += row;
+        }
 
-            function hideEventModal() {
-                eventModal.classList.remove('show');
-                setTimeout(() => eventModal.style.display = 'none', 300);
+        calendarBody.innerHTML = calendarHTML;
+
+        // Add event listeners to cells with events
+        document.querySelectorAll('td[data-date]').forEach(cell => {
+            const date = cell.getAttribute('data-date');
+            if (cell.classList.contains('has-event')) {
+                cell.addEventListener('mouseenter', (e) => showEventModal(e, date));
+                cell.addEventListener('mouseleave', hideEventModal);
             }
-
-            prevMonthButton.addEventListener('click', () => {
-                currentDate.setMonth(currentDate.getMonth() - 1);
-                renderCalendar();
-            });
-
-            nextMonthButton.addEventListener('click', () => {
-                currentDate.setMonth(currentDate.getMonth() + 1);
-                renderCalendar();
-            });
-
-            renderCalendar();
         });
+    }
+
+    function showEventModal(e, date) {
+        const dateEvents = getEventsForDate(date);
+        
+        if (dateEvents.length > 0) {
+            eventTitle.textContent = dateEvents.map(e => e.title).join(', ');
+            eventDescription.textContent = dateEvents.map(e => e.description).join('\n\n');
+            
+            const locationText = dateEvents.map(event => {
+                const startDate = new Date(event.start_date);
+                const endDate = new Date(event.end_date);
+                return `${event.location}\nFrom: ${startDate.toLocaleDateString()} to ${endDate.toLocaleDateString()}`;
+            }).join('\n\n');
+            
+            eventLocation.textContent = locationText;
+
+            eventModal.style.display = 'block';
+            
+            const rect = e.target.getBoundingClientRect();
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+
+            eventModal.style.left = `${rect.left + rect.width}px`;
+            eventModal.style.top = `${rect.top + scrollTop}px`;
+
+            setTimeout(() => eventModal.classList.add('show'), 10);
+        }
+    }
+
+    function hideEventModal() {
+        eventModal.classList.remove('show');
+        setTimeout(() => eventModal.style.display = 'none', 300);
+    }
+
+    prevMonthButton.addEventListener('click', () => {
+        currentDate.setMonth(currentDate.getMonth() - 1);
+        renderCalendar();
+    });
+
+    nextMonthButton.addEventListener('click', () => {
+        currentDate.setMonth(currentDate.getMonth() + 1);
+        renderCalendar();
+    });
+
+    renderCalendar();
+});
     </script>
       <script>
          document.getElementById('home-link').addEventListener('click', function(event) {

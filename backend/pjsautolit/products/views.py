@@ -781,26 +781,24 @@ def landing_page(request):
             # Sum up the quantity of all items in the cart to get the cart count
             cart_count = sum(item.quantity for item in cart_items)
         except CartItem.DoesNotExist:
-            # If the cart items don't exist, the cart is empty or invalid
             cart_count = 0
-    
 
     # Fetch calendar events
-    # Remove the date filtering if you want to return ALL events
     events = CalendarEvent.objects.all().order_by("start_date")
 
-    # Convert events to a dictionary format suitable for JavaScript
-    events_dict = {}
-    for event in events:
-        date_key = event.start_date.strftime("%Y-%m-%d")
-        events_dict[date_key] = {
-            "title": event.title,
-            "description": event.description,
-            "location": event.location,
+    # Convert events to a dictionary format with both start and end dates
+    events_dict = {
+        str(event.id): {
+            'title': event.title,
+            'description': event.description,
+            'location': event.location,
+            'start_date': event.start_date.isoformat(),
+            'end_date': event.end_date.isoformat()
         }
+        for event in events
+    }
 
-    events_json = json.dumps(events_dict, cls=DjangoJSONEncoder)
-    
+    events_json = json.dumps(events_dict, default=str)
 
     return render(
         request,
@@ -810,7 +808,6 @@ def landing_page(request):
             "events_json": events_json,
         },
     )
-
 
 def terms_view(request):
     cart_count = 0
