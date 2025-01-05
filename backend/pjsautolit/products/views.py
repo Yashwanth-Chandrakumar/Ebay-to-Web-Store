@@ -1628,19 +1628,10 @@ def generate_report_async(self):
         max_price += price_increment
 
     fields_to_check = [
-        "item_id",
-        "title",
-        "global_id",
-        "category_id",
-        "category_name",
-        "gallery_url",
-        "view_item_url",
-        "auto_pay",
-        "postal_code",
-        "location",
-        "country",
-        "shipping_type",
-        "ship_to_locations",
+        "title", "global_id", "category_id", "category_name",
+        "gallery_url", "view_item_url", "auto_pay", "postal_code",
+        "location", "country", "shipping_type", "ship_to_locations", 
+        "price", "short_description"
     ]
 
     field_mapping = {
