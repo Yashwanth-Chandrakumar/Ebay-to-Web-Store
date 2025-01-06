@@ -1,6 +1,10 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>PJ's Auto Literature</title>
+    <link rel="icon" type="image/png" href="https://i.postimg.cc/VkGmFmx1/Untitled-design-2.png">
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -237,12 +241,40 @@
             background: #E2E8F0;
             color: #2D3748;
         }
+         .info-box {
+            background: #e6f7ff;
+            border-left: 6px solid #1890ff;
+            padding: 1rem;
+            margin-bottom: 2rem;
+            border-radius: 8px;
+            color: #0050b3;
+        }
+
+        .info-box h2 {
+            margin-top: 0;
+            color: #003a8c;
+        }
+
+        .info-box ul {
+            padding-left: 20px;
+            list-style-type: disc;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Single Item Update</h1>
-        
+         <div class="info-box">
+            <h2>Note:</h2>
+            <p>
+                The <strong>Single Item Update</strong> process works as follows:
+                <ul>
+                    <li>If the product has been deleted on eBay but still exists on the site, it will be removed from the site.</li>
+                    <li>If the product is on eBay but not on the site, it will be added to the site.</li>
+                    <li>If the product exists in both places, all attributes of the listing will be synchronized to ensure they match.</li>
+                </ul>
+            </p>
+        </div>
         <div class="input-panel">
             <div>
                 <label for="item-ids">Enter Item ID(s)</label>
