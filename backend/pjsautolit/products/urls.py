@@ -88,5 +88,6 @@ urlpatterns = [
     path('process-products/', views.process_products, name='process-products'),
     path('api/orders/', views.create_paypal_order, name='create_paypal_order'),
     path('api/orders/<str:order_id>/capture/', views.capture_paypal_order, name='capture_paypal_order'),
-
+    path('order-status/<str:order_id>/', views.check_order_status, name='check_order_status'),
+    path('update-delivery-status/<int:order_id>/', views.update_delivery_status, name='update_delivery_status'),
 ]

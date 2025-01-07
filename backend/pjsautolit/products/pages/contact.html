@@ -26,7 +26,7 @@
             font-weight: 700;
         }
         body {
-            margin: 0;
+            /* margin-top: 5rem; */
             height: 100vh;
             display: flex;
             flex-direction: column;
@@ -46,6 +46,7 @@
         }
 
         .navbar {
+            /* height: 5rem; */
             padding: 10px 20px;
             display: flex;
             justify-content: space-between;
@@ -238,14 +239,14 @@
                 padding: 1px 5px;
             }
         }
-        .contact-info {
+        .contact-info-card {
             text-align: center;
             background-color: white;
             padding: 2rem;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-        .contact-info a {
+        .contact-info-card a {
             display: block;
             color: #333;
             text-decoration: none;
@@ -253,8 +254,54 @@
             margin: 10px 0;
             font-weight: bold;
         }
-        .contact-info a:hover {
+        .contact-info-card a:hover {
             color: #666;
+        }
+        .order-status {
+            text-align: center;
+            background-color: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-top: 2rem;
+        }
+        .order-status h2 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        .order-status form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .order-status label {
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        .order-status input {
+            padding: 0.5rem;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: 100%;
+            max-width: 300px;
+        }
+        .order-status button {
+            padding: 0.5rem 1rem;
+            font-size: 1rem;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .order-status button:hover {
+            background-color: var(--dark-color);
+        }
+        #order-status-result {
+            margin-top: 1rem;
+            font-size: 1rem;
         }
     </style>
 </head>
@@ -335,9 +382,18 @@
            <a href="/contact/" class="nav-link">Contact</a>
         </div>
     </div>
-    <div class="contact-info">
+    <div class="contact-info-card">
         <a href="tel:319-345-6760"><i class="fas fa-phone"></i>&nbsp;&nbsp;&nbsp;&nbsp;319-345-6760</a>
         <a href="mailto:pjsautolit@aol.com"> <i class="fas fa-envelope"></i>&nbsp;&nbsp;&nbsp;&nbsp;pjsautolit@aol.com</a>
+    </div>
+    <div class="order-status">
+        <h2>Check Your Order Status</h2>
+        <form id="order-status-form">
+            <label for="order-id">Enter your Order ID:</label>
+            <input type="text" id="order-id" name="order-id" required>
+            <button type="submit">Check Status</button>
+        </form>
+        <div id="order-status-result"></div>
     </div>
     <script>document.querySelector('.menu-icon').addEventListener('click', function() {
         document.querySelector('.mobile-menu').classList.add('active');
@@ -345,6 +401,24 @@
 
     document.querySelector('.close-menu').addEventListener('click', function() {
         document.querySelector('.mobile-menu').classList.remove('active');
+    });
+
+    document.getElementById('order-status-form').addEventListener('submit', function(event) {
+        event.preventDefault();
+        const orderId = document.getElementById('order-id').value;
+        fetch(`/order-status/${orderId}/`)
+            .then(response => response.json())
+            .then(data => {
+                const resultDiv = document.getElementById('order-status-result');
+                if (data.status === 'success') {
+                    resultDiv.innerHTML = `<p>Order Status: ${data.delivery_status}</p>`;
+                } else {
+                    resultDiv.innerHTML = `<p>${data.message}</p>`;
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching order status:', error);
+            });
     });</script>
 </body>
 </html>

@@ -249,6 +249,16 @@ class Order(models.Model):
     notes = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    
+    DELIVERY_STATUS_CHOICES = (
+        ('in_progress', 'In Progress'),
+        ('shipped', 'Shipped'),
+        ('delivered', 'Delivered'),
+        ('cancelled', 'Cancelled'),
+    )
+    delivery_status = models.CharField(
+        max_length=20, choices=DELIVERY_STATUS_CHOICES, default='in_progress'
+    )
 
     def save(self, *args, **kwargs):
         if not self.order_number:

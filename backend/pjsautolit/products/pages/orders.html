@@ -21,6 +21,7 @@
                     <th class="p-3 text-right">Subtotal</th>
                     <th class="p-3 text-right">Shipping Cost</th>
                     <th class="p-3 text-right">Total Amount</th>
+                    <th class="p-3 text-left">Delivery Status</th>
                     <th class="p-3 text-center">Actions</th>
                 </tr>
             </thead>
@@ -33,6 +34,14 @@
                     <td class="p-3 text-right">${{ order.subtotal }}</td>
                     <td class="p-3 text-right">${{ order.shipping_cost }}</td>
                     <td class="p-3 text-right">${{ order.total_amount }}</td>
+                    <td class="p-3">
+                        <select class="delivery-status-select" data-order-id="{{ order.id }}">
+                            <option value="in_progress" {% if order.delivery_status == 'in_progress' %}selected{% endif %}>In Progress</option>
+                            <option value="shipped" {% if order.delivery_status == 'shipped' %}selected{% endif %}>Shipped</option>
+                            <option value="delivered" {% if order.delivery_status == 'delivered' %}selected{% endif %}>Delivered</option>
+                            <option value="cancelled" {% if order.delivery_status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                        </select>
+                    </td>
                     <td class="p-3 text-center">
                         <button 
                             @click="openModal({{ order.id }})" 
@@ -109,6 +118,30 @@
         }
     }
 }
+
+document.querySelectorAll('.delivery-status-select').forEach(select => {
+    select.addEventListener('change', function() {
+        const orderId = this.getAttribute('data-order-id');
+        const newStatus = this.value;
+        fetch(`/update-delivery-status/${orderId}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({ delivery_status: newStatus })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status !== 'success') {
+                alert('Failed to update delivery status');
+            }
+        })
+        .catch(error => {
+            console.error('Error updating delivery status:', error);
+        });
+    });
+});
     </script>
 </body>
 </html>

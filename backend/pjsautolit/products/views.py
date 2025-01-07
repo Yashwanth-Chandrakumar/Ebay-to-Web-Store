@@ -890,6 +890,29 @@ def order_details(request, order_id):
     html = render_to_string('pages/order_details.html', context)
     return HttpResponse(html)
 
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from .models import Order
+
+def check_order_status(request, order_id):
+    try:
+        order = Order.objects.get(order_number=order_id)
+        return JsonResponse({'status': 'success', 'delivery_status': order.get_delivery_status_display()})
+    except Order.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Order not found'})
+
+@csrf_exempt
+def update_delivery_status(request, order_id):
+    if request.method == 'POST':
+        try:
+            order = Order.objects.get(id=order_id)
+            data = json.loads(request.body)
+            order.delivery_status = data['delivery_status']
+            order.save()
+            return JsonResponse({'status': 'success'})
+        except Order.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'Order not found'})
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
 # views.py
 
 
