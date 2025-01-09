@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Order #{{ order.order_number }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            line-height: 1.5;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            padding: 8px;
+            border: 1px solid #ddd;
+        }
+        th {
+            background-color: #f0f0f0;
+            text-align: left;
+        }
+        .section-title {
+            background-color: #f0f0f0;
+            padding: 10px;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        .text-right {
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Order Details</h1>
+        <p>Order #{{ order.order_number }}</p>
+    </div>
+
+    <div class="section-title">Order Information</div>
+    <table>
+        <tr>
+            <th>Order Number</th>
+            <td>{{ order.order_number }}</td>
+        </tr>
+        <tr>
+            <th>Square Payment ID</th>
+            <td>{{ order.square_payment_id }}</td>
+        </tr>
+        <tr>
+            <th>Order Date</th>
+            <td>{{ order.created_at }}</td>
+        </tr>
+        <tr>
+            <th>Status</th>
+            <td>{{ order.get_status_display }}</td>
+        </tr>
+        <tr>
+            <th>Delivery Status</th>
+            <td>{{ order.get_delivery_status_display }}</td>
+        </tr>
+    </table>
+
+    {% if shipping_address %}
+    <div class="section-title">Shipping Address</div>
+    <table>
+        <tr>
+            <th>Name</th>
+            <td>{{ shipping_address.first_name }} {{ shipping_address.last_name }}</td>
+        </tr>
+        <tr>
+            <th>Email</th>
+            <td>{{ shipping_address.email }}</td>
+        </tr>
+        <tr>
+            <th>Phone</th>
+            <td>{{ shipping_address.phone }}</td>
+        </tr>
+        <tr>
+            <th>Address</th>
+            <td>
+                {{ shipping_address.address_line1 }}
+                {% if shipping_address.address_line2 %}
+                    <br>{{ shipping_address.address_line2 }}
+                {% endif %}
+                <br>{{ shipping_address.city }}, {{ shipping_address.state }} {{ shipping_address.postal_code }}
+                <br>{{ shipping_address.country }}
+            </td>
+        </tr>
+    </table>
+    {% endif %}
+
+    <div class="section-title">Order Items</div>
+    <table>
+        <thead>
+            <tr>
+                <th>Product ID</th>
+                <th>Product Title</th>
+                <th class="text-right">Quantity</th>
+                <th class="text-right">Price</th>
+                <th class="text-right">Subtotal</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in order_items %}
+            <tr>
+                <td>{{ item.product_id }}</td>
+                <td>{{ item.product_title }}</td>
+                <td class="text-right">{{ item.quantity }}</td>
+                <td class="text-right">${{ item.price }}</td>
+                <td class="text-right">${{ item.subtotal }}</td>
+            </tr>
+            {% endfor %}
+            <tr>
+                <td colspan="4" class="text-right"><strong>Subtotal:</strong></td>
+                <td class="text-right">${{ order.subtotal }}</td>
+            </tr>
+            <tr>
+                <td colspan="4" class="text-right"><strong>Shipping Cost:</strong></td>
+                <td class="text-right">${{ order.shipping_cost }}</td>
+            </tr>
+            <tr>
+                <td colspan="4" class="text-right"><strong>Total Amount:</strong></td>
+                <td class="text-right">${{ order.total_amount }}</td>
+            </tr>
+        </tbody>
+    </table>
+</body>
+</html>

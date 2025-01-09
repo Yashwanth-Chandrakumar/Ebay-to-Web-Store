@@ -1,3 +1,55 @@
+<script>
+    function downloadPDF(orderId) {
+        // Show loading state
+        const button = event.target.closest('button');
+        const originalText = button.innerHTML;
+        button.disabled = true;
+        button.innerHTML = `
+            <svg class="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Generating PDF...
+        `;
+    
+        fetch(`/generate-order-pdf/${orderId}/`, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.blob();
+        })
+        .then(blob => {
+            // Create a URL for the blob
+            const url = window.URL.createObjectURL(blob);
+            // Create a temporary link element
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `order-${orderId}.pdf`; // Set the file name
+            document.body.appendChild(a);
+            a.click(); // Trigger the download
+            window.URL.revokeObjectURL(url); // Clean up
+            document.body.removeChild(a);
+            
+            // Reset button state
+            button.disabled = false;
+            button.innerHTML = originalText;
+        })
+        .catch(error => {
+            console.error('Error downloading PDF:', error);
+            alert('Error generating PDF. Please try again.');
+            // Reset button state
+            button.disabled = false;
+            button.innerHTML = originalText;
+        });
+    }
+    </script>
 <table class="w-full border-collapse">
     <thead class="bg-blue-200">
         <tr>
@@ -20,6 +72,10 @@
         <tr>
             <td class="p-2 font-semibold">Status</td>
             <td class="p-2">{{ order.get_status_display }}</td>
+        </tr>
+        <tr>
+            <td class="p-2 font-semibold">Delivery Status</td>
+            <td class="p-2">{{ order.get_delivery_status_display }}</td>
         </tr>
         <tr>
             <td class="p-2 font-semibold">Subtotal</td>
@@ -95,4 +151,34 @@
         </tr>
         {% endfor %}
     </tbody>
-</table>    
+</table>
+
+<div class="mt-6 flex justify-end">
+    
+    <button 
+        onclick="downloadPDF({{ order.id }})"
+        class="bg-green-500 text-white px-6 py-2 rounded hover:bg-green-600 flex items-center"
+    >
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a2 2 0 002 2h6a2 2 0 002-2v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zm0 8H7v4h6v-4z" clip-rule="evenodd" />
+        </svg>
+        Print Order
+    </button>
+</div>
+
+<style>
+    @media print {
+        .fixed, button {
+            display: none !important;
+        }
+        body {
+            padding: 20px !important;
+        }
+        table {
+            page-break-inside: avoid;
+        }
+        @page {
+            margin: 2cm;
+        }
+    }
+</style>

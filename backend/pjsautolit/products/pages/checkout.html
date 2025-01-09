@@ -913,7 +913,7 @@ form .invalid-feedback.visible {
             document.querySelector('.mobile-menu').classList.remove('active');
         });
 
-    window.paypal.Buttons({
+        window.paypal.Buttons({
     style: {
         shape: "rect",
         layout: "vertical",
@@ -929,23 +929,24 @@ form .invalid-feedback.visible {
             if (!validateShippingForm()) {
                 hideLoading();
                 showToast('Please fill in all required shipping information.', 'error');
-                return;
+                return null;
             }
 
-            // Process shipping form
-            const shippingData = await processShippingForm();
-            if (!shippingData.success) {
-                hideLoading();
-                showToast('Error saving shipping information.', 'error');
-                return;
-            }
+            // Get shipping form data
+            const shippingForm = document.getElementById('shipping-form');
+            const formData = new FormData(shippingForm);
+            const shippingData = Object.fromEntries(formData.entries());
 
+            // Create order with shipping data
             const response = await fetch("/api/orders/", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     "X-CSRFToken": document.querySelector('[name=csrfmiddlewaretoken]').value
-                }
+                },
+                body: JSON.stringify({
+                    shipping_data: shippingData
+                })
             });
 
             if (!response.ok) {
@@ -954,13 +955,25 @@ form .invalid-feedback.visible {
             }
 
             const orderData = await response.json();
+            
+            // Store shipping data in session
+            await fetch('/checkout/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: JSON.stringify(shippingData)
+            });
+
+            hideLoading();
             return orderData.id;
 
         } catch (error) {
             hideLoading();
             console.error('PayPal create order error:', error);
             showToast(error.message || 'Could not initiate PayPal Checkout', 'error');
-            throw error;
+            return null;
         }
     },
 
@@ -975,6 +988,11 @@ form .invalid-feedback.visible {
                     "X-CSRFToken": document.querySelector('[name=csrfmiddlewaretoken]').value
                 }
             });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Payment capture failed');
+            }
 
             const captureData = await response.json();
 
@@ -1003,10 +1021,7 @@ form .invalid-feedback.visible {
         console.error('PayPal error:', err);
         showToast('An error occurred with PayPal. Please try again.', 'error');
     }
-
 }).render("#paypal-button-container");
-
-
     const US_STATES = [
     { value: 'AL', label: 'Alabama' },
     { value: 'AK', label: 'Alaska' },

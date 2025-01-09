@@ -5,6 +5,7 @@ from django.views.generic import TemplateView
 from . import views
 from .sitemaps import CustomPageSitemap, ProductSitemap
 from .views import ProductLookupView
+
 sitemaps = {
     'products': ProductSitemap,
     'static': CustomPageSitemap,
@@ -90,4 +91,5 @@ urlpatterns = [
     path('api/orders/<str:order_id>/capture/', views.capture_paypal_order, name='capture_paypal_order'),
     path('order-status/<str:order_id>/', views.check_order_status, name='check_order_status'),
     path('update-delivery-status/<int:order_id>/', views.update_delivery_status, name='update_delivery_status'),
+    path('generate-order-pdf/<int:order_id>/', views.generate_order_pdf, name='generate_order_pdf'),
 ]

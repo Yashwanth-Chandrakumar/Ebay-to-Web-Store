@@ -892,7 +892,9 @@ def order_details(request, order_id):
 
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+
 from .models import Order
+
 
 def check_order_status(request, order_id):
     try:
@@ -3642,16 +3644,24 @@ def calculate_usps_media_mail_cost(weight):
 @require_http_methods(["POST"])
 def create_paypal_order(request):
     try:
-        # Get cart and shipping info from session
+        # Get cart from session
         cart_id = request.session.get("cart_id")
-        shipping_data = request.session.get("shipping_data")
+        if not cart_id:
+            return JsonResponse({"error": "No cart found"}, status=400)
+            
+        # Get shipping data from request
+        data = json.loads(request.body)
+        shipping_data = data.get('shipping_data')
         
-        if not cart_id or not shipping_data:
-            return JsonResponse({"error": "Missing cart or shipping information"}, status=400)
+        if not shipping_data:
+            return JsonResponse({"error": "Missing shipping information"}, status=400)
+            
+        # Store shipping data in session
+        request.session['shipping_data'] = shipping_data
             
         cart = Cart.objects.get(id=cart_id)
         
-        # Get PayPal access token with better error handling
+        # Get PayPal access token
         try:
             access_token = get_paypal_access_token()
         except ValueError as e:
@@ -3665,7 +3675,6 @@ def create_paypal_order(request):
         handling_fee = Decimal('2.00')
         shipping_cost = base_shipping_cost + handling_fee
         total_including_shipping = cart_total + shipping_cost
-        
         
         # Create PayPal order
         url = "https://api-m.sandbox.paypal.com/v2/checkout/orders"
@@ -3691,6 +3700,19 @@ def create_paypal_order(request):
                         }
                     }
                 },
+                "shipping": {
+                    "name": {
+                        "full_name": f"{shipping_data['first_name']} {shipping_data['last_name']}"
+                    },
+                    "address": {
+                        "address_line_1": shipping_data['address_line1'],
+                        "address_line_2": shipping_data.get('address_line2', ''),
+                        "admin_area_2": shipping_data['city'],
+                        "admin_area_1": shipping_data['state'],
+                        "postal_code": shipping_data['postal_code'],
+                        "country_code": "US"
+                    }
+                },
                 "items": [
                     {
                         "name": item.product.title,
@@ -3705,12 +3727,14 @@ def create_paypal_order(request):
         }
         
         response = requests.post(url, headers=headers, json=payload)
+        if not response.ok:
+            return JsonResponse({"error": "Failed to create PayPal order"}, status=response.status_code)
+            
         return JsonResponse(response.json())
         
     except Exception as e:
         print(f"Error creating PayPal order: {str(e)}")
         return JsonResponse({"error": str(e)}, status=500)
-
 
 
 @csrf_exempt
@@ -4061,3 +4085,197 @@ def log_product_changes(item_id, title, before_dict, changes):
     )
     change_log.set_changes(before_dict, {**before_dict, **changes})
     change_log.save()
+
+
+# pdf
+
+from django.http import HttpResponse, JsonResponse
+from django.shortcuts import get_object_or_404
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+import logging
+
+logger = logging.getLogger(__name__)
+
+def generate_order_pdf(request, order_id):
+    try:
+        # Get the order
+        order = get_object_or_404(Order.objects.select_related('shipping_address'), id=order_id)
+        
+        # Create the HttpResponse object
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="order-{order.id}.pdf"'
+        
+        # Create the PDF document
+        doc = SimpleDocTemplate(
+            response,
+            pagesize=letter,
+            rightMargin=72,
+            leftMargin=72,
+            topMargin=72,
+            bottomMargin=72
+        )
+        
+        # Styles setup
+        elements = []
+        styles = getSampleStyleSheet()
+        styles.add(ParagraphStyle(
+            name='CustomHeading',
+            parent=styles['Heading1'],
+            fontSize=16,
+            spaceAfter=20,
+            textColor=colors.HexColor('#2d5c8a')
+        ))
+        
+        # Title
+        elements.append(Paragraph(f"Order #{getattr(order, 'order_number', 'N/A')}", styles['CustomHeading']))
+        elements.append(Spacer(1, 10))
+        
+        # Order Information Table
+        elements.append(Paragraph("Order Information", styles['Heading2']))
+        elements.append(Spacer(1, 10))
+        
+        order_data = [
+            ["Order Number:", str(getattr(order, 'order_number', 'N/A'))],
+            ["Square Payment ID:", str(getattr(order, 'square_payment_id', 'N/A'))],
+            ["Order Date:", order.created_at.strftime("%Y-%m-%d %H:%M:%S") if hasattr(order, 'created_at') else 'N/A'],
+            ["Status:", str(getattr(order, 'get_status_display', lambda: 'N/A')())],
+            ["Delivery Status:", str(getattr(order, 'get_delivery_status_display', lambda: 'N/A')())]
+        ]
+        
+        order_table = Table(order_data, colWidths=[2*inch, 4*inch])
+        order_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#f5f5f5')),
+            ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 0), (-1, -1), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
+            ('TOPPADDING', (0, 0), (-1, -1), 12),
+            ('GRID', (0, 0), (-1, -1), 1, colors.grey)
+        ]))
+        elements.append(order_table)
+        elements.append(Spacer(1, 20))
+        
+        # Customer Information Table
+        shipping_address = getattr(order, 'shipping_address', None)
+        if shipping_address:
+            elements.append(Paragraph("Customer Information", styles['Heading2']))
+            elements.append(Spacer(1, 10))
+            
+            customer_data = [
+                ["Name:", f"{getattr(shipping_address, 'first_name', '')} {getattr(shipping_address, 'last_name', '')}"],
+                ["Email:", getattr(shipping_address, 'email', '')],
+                ["Phone:", getattr(shipping_address, 'phone', '')],
+                ["Address:", getattr(shipping_address, 'address_line1', '')],
+            ]
+            
+            # Add address line 2 if it exists
+            if getattr(shipping_address, 'address_line2', ''):
+                customer_data.append(["", getattr(shipping_address, 'address_line2', '')])
+            
+            customer_data.append([
+                "",
+                f"{getattr(shipping_address, 'city', '')}, {getattr(shipping_address, 'state', '')} {getattr(shipping_address, 'postal_code', '')}"
+            ])
+            customer_data.append(["", getattr(shipping_address, 'country', '')])
+            
+            customer_table = Table(customer_data, colWidths=[2*inch, 4*inch])
+            customer_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#f5f5f5')),
+                ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
+                ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+                ('FONTSIZE', (0, 0), (-1, -1), 10),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
+                ('TOPPADDING', (0, 0), (-1, -1), 12),
+                ('GRID', (0, 0), (-1, -1), 1, colors.grey)
+            ]))
+            elements.append(customer_table)
+            elements.append(Spacer(1, 20))
+        
+        # Order Items Table
+        elements.append(Paragraph("Order Items", styles['Heading2']))
+        elements.append(Spacer(1, 10))
+        
+        # Column widths adjusted for better product title display
+        col_widths = [1.2*inch, 3.3*inch, 0.8*inch, 1*inch, 1.2*inch]
+        
+        items_data = [["Product ID", "Product Title", "Quantity", "Price", "Subtotal"]]
+        
+        # Try to get order items using different possible attribute names
+        order_items = []
+        possible_relations = ['items', 'order_items', 'orderitems', 'line_items']
+        
+        for relation in possible_relations:
+            try:
+                items = getattr(order, relation, None)
+                if items is not None and hasattr(items, 'all'):
+                    order_items = items.all()
+                    break
+            except Exception:
+                continue
+
+        # If we found order items, add them to the table
+        if order_items:
+            for item in order_items:
+                # Wrap product title in Paragraph for automatic text wrapping
+                product_title = Paragraph(
+                    str(getattr(item, 'product_title', 'N/A')),
+                    ParagraphStyle('ProductTitle', fontSize=10, leading=12)
+                )
+                
+                items_data.append([
+                    str(getattr(item, 'product_id', 'N/A')),
+                    product_title,
+                    str(getattr(item, 'quantity', 0)),
+                    f"${getattr(item, 'price', 0):.2f}",
+                    f"${getattr(item, 'subtotal', 0):.2f}"
+                ])
+
+        # Add totals with clear separation
+        items_data.extend([
+            ["", "", "", "", ""],  # Empty row for spacing
+            ["", "", "", "Subtotal:", f"${getattr(order, 'subtotal', 0):.2f}"],
+            ["", "", "", "Shipping:", f"${getattr(order, 'shipping_cost', 0):.2f}"],
+            ["", "", "", "Total:", f"${getattr(order, 'total_amount', 0):.2f}"]
+        ])
+        
+        items_table = Table(items_data, colWidths=col_widths)
+        items_table.setStyle(TableStyle([
+            # Header style
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2d5c8a')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            # Content style
+            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 0), (-1, -1), 10),
+            ('ALIGN', (0, 0), (0, -1), 'LEFT'),  # Product ID
+            ('ALIGN', (1, 0), (1, -1), 'LEFT'),  # Product Title
+            ('ALIGN', (2, 0), (-1, -1), 'RIGHT'),  # Quantity, Price, Subtotal
+            # Grid style
+            ('GRID', (0, 0), (-1, -5), 1, colors.grey),
+            # Totals style
+            ('LINEABOVE', (-2, -3), (-1, -3), 1, colors.black),
+            ('FONTNAME', (-2, -3), (-1, -1), 'Helvetica-Bold'),
+            # Padding
+            ('TOPPADDING', (0, 0), (-1, -1), 12),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
+            ('LEFTPADDING', (0, 0), (-1, -1), 6),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 6),
+        ]))
+        elements.append(items_table)
+        
+        # Build PDF
+        doc.build(elements)
+        return response
+        
+    except Exception as e:
+        logger.error(f"Error generating PDF for order {order_id}: {str(e)}", exc_info=True)
+        return JsonResponse({
+            'error': 'Failed to generate PDF',
+            'details': str(e)
+        }, status=500)

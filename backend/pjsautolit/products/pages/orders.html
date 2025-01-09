@@ -66,7 +66,7 @@
         >
             <div 
                 @click.stop 
-                class="bg-white p-6 rounded-lg max-w-4xl w-full max-h-[90vh] relative"
+                class="bg-white mt-52 p-6 rounded-lg max-w-4xl w-full max-h-[90vh] relative"
             >
                 <button 
                     @click="closeModal" 
@@ -91,57 +91,105 @@
     </div>
 
     <script>
+        function downloadPDF(orderId) {
+            // Show loading state
+            const button = event.target.closest('button');
+            const originalText = button.innerHTML;
+            button.disabled = true;
+            button.innerHTML = `
+                <svg class="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Generating PDF...
+            `;
+        
+            fetch(`/generate-order-pdf/${orderId}/`, {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.blob();
+            })
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `order-${orderId}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                
+                // Reset button state
+                button.disabled = false;
+                button.innerHTML = originalText;
+            })
+            .catch(error => {
+                console.error('Error downloading PDF:', error);
+                alert('Error generating PDF. Please try again.');
+                // Reset button state
+                button.disabled = false;
+                button.innerHTML = originalText;
+            });
+        }
+
         function orderTable() {
-    return {
-        isModalOpen: false,
-        modalContent: '',
-        openModal(orderId) {
-            fetch(`/order-details/${orderId}/`)
-                .then(response => response.text())
-                .then(html => {
-                    // Remove any potential top margin or padding from the fetched content
-                    html = html.replace(/class="(.*?)"/g, (match, p1) => {
-                        return `class="${p1.replace(/mt-\d+\s?/g, '').replace(/pt-\d+\s?/g, '')}"`;
-                    });
-                    this.modalContent = html;
-                    this.isModalOpen = true;
+            return {
+                isModalOpen: false,
+                modalContent: '',
+                openModal(orderId) {
+                    fetch(`/order-details/${orderId}/`)
+                        .then(response => response.text())
+                        .then(html => {
+                            html = html.replace(/class="(.*?)"/g, (match, p1) => {
+                                return `class="${p1.replace(/mt-\d+\s?/g, '').replace(/pt-\d+\s?/g, '')}"`;
+                            });
+                            this.modalContent = html;
+                            this.isModalOpen = true;
+                        })
+                        .catch(error => {
+                            console.error('Error fetching order details:', error);
+                            this.modalContent = 'Error loading order details';
+                            this.isModalOpen = true;
+                        });
+                },
+                closeModal() {
+                    this.isModalOpen = false;
+                    this.modalContent = '';
+                }
+            }
+        }
+
+        document.querySelectorAll('.delivery-status-select').forEach(select => {
+            select.addEventListener('change', function() {
+                const orderId = this.getAttribute('data-order-id');
+                const newStatus = this.value;
+                fetch(`/update-delivery-status/${orderId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify({ delivery_status: newStatus })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status !== 'success') {
+                        alert('Failed to update delivery status');
+                    }
                 })
                 .catch(error => {
-                    console.error('Error fetching order details:', error);
-                    this.modalContent = 'Error loading order details';
-                    this.isModalOpen = true;
+                    console.error('Error updating delivery status:', error);
                 });
-        },
-        closeModal() {
-            this.isModalOpen = false;
-            this.modalContent = '';
-        }
-    }
-}
-
-document.querySelectorAll('.delivery-status-select').forEach(select => {
-    select.addEventListener('change', function() {
-        const orderId = this.getAttribute('data-order-id');
-        const newStatus = this.value;
-        fetch(`/update-delivery-status/${orderId}/`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': '{{ csrf_token }}'
-            },
-            body: JSON.stringify({ delivery_status: newStatus })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status !== 'success') {
-                alert('Failed to update delivery status');
-            }
-        })
-        .catch(error => {
-            console.error('Error updating delivery status:', error);
+            });
         });
-    });
-});
     </script>
 </body>
 </html>
