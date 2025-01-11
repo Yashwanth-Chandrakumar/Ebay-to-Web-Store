@@ -32,10 +32,18 @@
                     <tbody class="text-gray-600 text-sm font-light">
                         {% for discount in discounts %}
                         <tr class="border-b border-gray-200 hover:bg-gray-100">
-                            <td class="py-3 px-6">{{ discount.name }}</td>
+                            <td class="py-3 px-6">
+    {% if discount.discount_type == 'COUPON' %}
+        Coupon Code ({{ discount.name }})
+    {% else %}
+        {{ discount.name }}
+    {% endif %}
+</td>
                             <td class="py-3 px-6">{{ discount.get_discount_type_display }}</td>
-                            <td>
-                                {% if discount.discount_type == 'PERCENTAGE' %}
+                            <td class="py-3 px-6">
+                                {% if discount.discount_type == 'COUPON' %}
+                                    {{ discount.discount_value }}% off
+                                {% elif discount.discount_type == 'PERCENTAGE' %}
                                     {{ discount.discount_value }}%
                                 {% else %}
                                     ${{ discount.discount_value }}

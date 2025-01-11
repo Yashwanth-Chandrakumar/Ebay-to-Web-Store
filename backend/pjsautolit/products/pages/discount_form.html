@@ -4,6 +4,27 @@
     <meta charset="UTF-8">
     <title>{% if form.instance.pk %}Edit{% else %}Create{% endif %} Discount</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        input:invalid {
+        border-color: #EF4444;
+    }
+    
+    input:invalid:focus {
+        border-color: #EF4444;
+        ring-color: #FEE2E2;
+    }
+    
+    /* Helper text styles */
+    .helper-text {
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+    }
+    
+    .error-text {
+        color: #EF4444;
+    }
+
+    </style>
 </head>
 <body class="bg-gray-100 min-h-screen flex items-center justify-center py-6">
     <div class="w-full max-w-2xl px-4">
@@ -73,6 +94,76 @@
     </div>
 
     <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const discountTypeSelect = document.querySelector('select[name="discount_type"]');
+            const nameInput = document.querySelector('input[name="name"]');
+            const nameLabel = nameInput?.parentElement?.querySelector('label');
+            const descriptionDiv = document.querySelector('textarea[name="description"]')?.parentElement;
+        
+            function updateFormForCoupon() {
+                const isCoupon = discountTypeSelect.value === 'COUPON';
+                
+                // Update label
+                if (nameLabel) {
+                    nameLabel.textContent = isCoupon ? 'Coupon Code *' : 'Name *';
+                }
+                
+                // Update input
+                if (nameInput) {
+                    nameInput.placeholder = isCoupon ? 
+                        'Enter coupon code (e.g., SUMMER2024)' : 
+                        'Enter discount name';
+                    
+                    // Force uppercase for coupon codes
+                    nameInput.style.textTransform = isCoupon ? 'uppercase' : 'none';
+                    
+                    // Update validation attributes
+                    if (isCoupon) {
+                        nameInput.pattern = '[A-Za-z0-9\-_]+';
+                        nameInput.title = 'Enter a valid coupon code using letters, numbers, hyphens, or underscores';
+                        nameInput.minLength = '4';
+                        nameInput.maxLength = '20';
+                    } else {
+                        nameInput.removeAttribute('pattern');
+                        nameInput.removeAttribute('title');
+                        nameInput.removeAttribute('minLength');
+                        nameInput.maxLength = '200';  // Original max length
+                    }
+                }
+        
+                // Show/hide description field
+                if (descriptionDiv) {
+                    descriptionDiv.style.display = isCoupon ? 'none' : 'block';
+                }
+            }
+        
+            // Handle input changes
+            if (nameInput) {
+                nameInput.addEventListener('input', function() {
+                    if (discountTypeSelect.value === 'COUPON') {
+                        this.value = this.value.toUpperCase();
+                    }
+                });
+            }
+        
+            // Listen for discount type changes
+            if (discountTypeSelect) {
+                discountTypeSelect.addEventListener('change', updateFormForCoupon);
+                // Run once on initial load
+                updateFormForCoupon();
+            }
+        });
+        </script>
+
+    <script>
+        document.querySelector('select[name="discount_type"]').addEventListener('change', function() {
+        const helperText = document.getElementById('nameHelperText');
+        if (this.value === 'COUPON') {
+            helperText.textContent = 'Coupon code must be 4-20 characters long and can contain letters, numbers, hyphens, and underscores.';
+        } else {
+            helperText.textContent = '';
+        }
+    });
     document.addEventListener('DOMContentLoaded', function() {
         const productTagsGroup = document.querySelector('.product-tags-group');
         const applyToSelect = document.querySelector('select[name="apply_to"]');

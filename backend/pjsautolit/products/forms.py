@@ -10,6 +10,7 @@ class ShippingAddressForm(forms.ModelForm):
                  'address_line1', 'address_line2', 'city', 'state', 
                  'postal_code', 'country']
         widgets = {
+            
             'address_line2': forms.TextInput(attrs={'placeholder': 'Apartment, suite, etc. (optional)'}),
             'phone': forms.TextInput(attrs={'placeholder': 'Format: (123) 456-7890'}),
             'postal_code': forms.TextInput(attrs={'placeholder': '5-digit ZIP code'})
@@ -48,7 +49,11 @@ class DiscountForm(forms.ModelForm):
             'minimum_purchase_amount', 'is_active'
         ]
         widgets = {
-            'name': forms.TextInput(attrs={'class': 'w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'}),
+            'name': forms.TextInput(attrs={
+                'class': 'w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
+                'pattern': '[A-Za-z0-9\-_]+',  # Allow letters, numbers, hyphens, and underscores
+                'title': 'Enter a valid coupon code using letters, numbers, hyphens, or underscores'
+            }),
             'description': forms.Textarea(attrs={'class': 'w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500', 'rows': 3}),
             'discount_type': forms.Select(attrs={'class': 'w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'}),
             'discount_value': forms.NumberInput(attrs={'class': 'w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'}),
@@ -96,3 +101,24 @@ class DiscountForm(forms.ModelForm):
             raise forms.ValidationError("End date must be after start date")
 
         return cleaned_data
+    
+
+    def clean_name(self):
+        name = self.cleaned_data.get('name')
+        discount_type = self.cleaned_data.get('discount_type')
+
+        if discount_type == 'COUPON':
+            # Convert to uppercase for coupon codes
+            name = name.upper()
+            
+            # Validate coupon code format
+            if not name.replace('-', '').replace('_', '').isalnum():
+                raise forms.ValidationError("Coupon code can only contain letters, numbers, hyphens, and underscores")
+            if len(name) < 4 or len(name) > 20:
+                raise forms.ValidationError("Coupon code must be between 4 and 20 characters")
+
+            # Check if coupon code already exists
+            if Discount.objects.filter(name=name).exclude(pk=self.instance.pk if self.instance else None).exists():
+                raise forms.ValidationError("This coupon code already exists")
+
+        return name

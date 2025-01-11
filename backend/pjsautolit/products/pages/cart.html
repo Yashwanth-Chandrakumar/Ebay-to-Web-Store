@@ -414,6 +414,35 @@
     margin-top: 20px;
     font-size: 1.2em;
 }
+.voucher-section {
+    margin: 20px 0;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.voucher-input-wrapper {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.voucher-input-wrapper input {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.error-message {
+    color: #dc3545;
+    margin-top: 10px;
+}
+
+.success-message {
+    color: #28a745;
+    margin-top: 10px;
+}
     </style>
 </head>
 <body>
@@ -540,62 +569,91 @@
                     </tr>
                 </tfoot>
             </table>
-        
+            <div class="voucher-section">
+                <h3>Have a Voucher Code?</h3>
+                <form id="voucher-form" method="POST" action="{% url 'apply_voucher' %}">
+                    {% csrf_token %}
+                    <div class="voucher-input-wrapper">
+                        <input type="text" name="voucher_code" id="voucher-code" placeholder="Enter voucher code" required>
+                        <button type="submit" class="btn">Apply Voucher</button>
+                    </div>
+                    {% if voucher_error %}
+                        <p class="error-message">{{ voucher_error }}</p>
+                    {% endif %}
+                    {% if voucher_success %}
+                        <p class="success-message">{{ voucher_success }}</p>
+                    {% endif %}
+                </form>
+            </div>
+            
             <!-- Inside the discounts-section -->
-<div class="discounts-section">
-    <h3>Applied Discounts</h3>
-    {% if total_product_discount > 0 or total_cart_discount > 0 %}
-        <ul>
-            {% for item in cart_items %}
-                {% if item.applied_product_discounts %}
-                    {% for discount in item.applied_product_discounts %}
-                        <li>
-                            {% if discount.type == 'PRODUCT_PRICE' %}
-                                {{ discount.name }}: 
-                                {% if discount.amount > 0 %}
-                                    {% if discount.amount|floatformat:2 == "0.00" %}
-                                        {{ discount.name }} (No applicable discount)
-                                    {% else %}
-                                        {% if 'Percentage' in discount.name %}
-                                            {{ discount.amount|floatformat:2 }} off on eligible products
-                                        {% else %}
-                                            ${{ discount.amount|floatformat:2 }} off per item
+            <div class="discounts-section">
+                <h3>Applied Discounts</h3>
+                {% if total_product_discount > 0 or total_cart_discount > 0 or voucher_discount > 0 %}
+                    <ul>
+                        {% for item in cart_items %}
+                            {% if item.applied_product_discounts %}
+                                {% for discount in item.applied_product_discounts %}
+                                    <li>
+                                        {% if discount.type == 'PRODUCT_PRICE' %}
+                                            {{ discount.name }}: 
+                                            {% if discount.amount > 0 %}
+                                                {% if discount.amount|floatformat:2 == "0.00" %}
+                                                    {{ discount.name }} (No applicable discount)
+                                                {% else %}
+                                                    {% if 'Percentage' in discount.name %}
+                                                        {{ discount.amount|floatformat:2 }} off on eligible products
+                                                    {% else %}
+                                                        ${{ discount.amount|floatformat:2 }} off per item
+                                                    {% endif %}
+                                                {% endif %}
+                                            {% endif %}
+                                        {% elif discount.type == 'SPECIFIC_PRODUCTS' %}
+                                            {{ discount.name }}: 
+                                            {% if discount.amount > 0 %}
+                                                {% if 'Percentage' in discount.name %}
+                                                    {{ discount.amount|floatformat:2 }} off on products with tags: {{ discount.tags|join:", " }}
+                                                {% else %}
+                                                    ${{ discount.amount|floatformat:2 }} off for products with tags: {{ discount.tags|join:", " }}
+                                                {% endif %}
+                                            {% endif %}
                                         {% endif %}
-                                    {% endif %}
-                                {% endif %}
-                            {% elif discount.type == 'SPECIFIC_PRODUCTS' %}
-                                {{ discount.name }}: 
-                                {% if discount.amount > 0 %}
-                                    {% if 'Percentage' in discount.name %}
-                                        {{ discount.amount|floatformat:2 }} off on products with tags: {{ discount.tags|join:", " }}
-                                    {% else %}
-                                        ${{ discount.amount|floatformat:2 }} off for products with tags: {{ discount.tags|join:", " }}
-                                    {% endif %}
-                                {% endif %}
+                                    </li>
+                                {% endfor %}
                             {% endif %}
-                        </li>
-                    {% endfor %}
-                {% endif %}
-            {% endfor %}
-
-            {% for discount in applicable_discounts %}
-                {% if discount.apply_to == 'CART' %}
-                    <li>
-                        <i class="fas fa-shopping-cart"></i>Cart Discount:
-                        {% if discount.discount_type == 'PERCENTAGE' %}
-                            {{ discount.discount_value }}% off entire cart
-                        {% else %}
-                            Flat ${{ discount.discount_value }} off
+                        {% endfor %}
+            
+                        {% for discount in applicable_discounts %}
+                            {% if discount.apply_to == 'CART' %}
+                                <li>
+                                    <i class="fas fa-shopping-cart"></i>Cart Discount:
+                                    {% if discount.discount_type == 'PERCENTAGE' %}
+                                        {{ discount.discount_value }}% off entire cart
+                                    {% else %}
+                                        Flat ${{ discount.discount_value }} off
+                                    {% endif %}
+                                    <span class="discount-amount">(Total Cart Discount: ${{ total_cart_discount|floatformat:2 }})</span>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+            
+                        {% if voucher_applied %}
+                            <li>
+                                <i class="fas fa-ticket-alt"></i>
+                                Voucher Discount ({{ voucher_applied.code }}):
+                                {{ voucher_applied.description }}
+                                <span class="discount-amount">(Savings: ${{ voucher_applied.amount|floatformat:2 }})</span>
+                                <form method="post" action="{% url 'remove_voucher' %}" class="remove-voucher-form">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-small">Remove Voucher</button>
+                                </form>
+                            </li>
                         {% endif %}
-                        <span class="discount-amount">(Total Cart Discount: ${{ total_cart_discount|floatformat:2 }})</span>
-                    </li>
+                    </ul>
+                {% else %}
+                    <p>No discounts applied.</p>
                 {% endif %}
-            {% endfor %}
-        </ul>
-    {% else %}
-        <p>No discounts applied.</p>
-    {% endif %}
-</div>
+            </div>
         
             <div class="final-total">
                 <h3>Final Total: ${{ cart_total|floatformat:2 }}</h3>

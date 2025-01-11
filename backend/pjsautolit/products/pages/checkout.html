@@ -812,17 +812,42 @@ form .invalid-feedback.visible {
                 
                 <!-- Discount Summary -->
                 <li class="list-group-item">
-                    <li class="list-group-item d-flex justify-content-between">
-                        <span>Product Discounts</span>
-                        <strong class="text-success">-${{ total_product_discount|floatformat:2 }} </strong>
-                    </li>
-                    {% if total_cart_discount > 0 %}
-                    <div class="d-flex justify-content-between mt-2">
-                        <span>Cart Discounts</span>
-                        <strong class="text-success">-${{ total_cart_discount|floatformat:2 }}</strong>
+                    <div class="discount-summary">
+                    {% if total_product_discount > 0 %}
+                    <div class="d-flex justify-content-between mb-2">
+                    <span>Product-Level Discounts</span>
+                    <strong class="text-success">-${{ total_product_discount|floatformat:2 }}</strong>
                     </div>
                     {% endif %}
-                </li>
+                    
+                    {% if applied_cart_discounts %}
+                    <div class="cart-wide-discounts">
+                    <div class="d-flex justify-content-between">
+                    <span>Cart-Wide Discounts:</span>
+                    <span></span>
+                    </div>
+                    {% for discount in applied_cart_discounts %}
+                    <div class="d-flex justify-content-between ps-3 mb-1">
+                    <small>
+                    <i class="fas fa-shopping-cart"></i>
+                    {{ discount.name }}
+                    {% if discount.type == 'PERCENTAGE' %}
+                    ({{ discount.value }}%)
+                    {% else %}
+                    (${{ discount.value }})
+                    {% endif %}
+                    </small>
+                    <strong class="text-success">-${{ discount.amount|floatformat:2 }}</strong>
+                    </div>
+                    {% endfor %}
+                    <div class="d-flex justify-content-between mt-1 border-top pt-1">
+                    <span>Total Cart Discounts</span>
+                    <strong class="text-success">-${{ total_cart_discount|floatformat:2 }}</strong>
+                    </div>
+                    </div>
+                    {% endif %}
+                    </div>
+                    </li>
                 <li class="list-group-item d-flex justify-content-between">
                     <span>Total Weight</span>
                     <strong>{{ total_weight_major }} lb {{ total_weight_minor }} oz</strong>

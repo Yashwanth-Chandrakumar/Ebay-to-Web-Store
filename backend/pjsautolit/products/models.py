@@ -314,6 +314,7 @@ class Discount(models.Model):
     DISCOUNT_TYPES = (
         ('PERCENTAGE', 'Percentage Discount'),
         ('FIXED', 'Fixed Amount Discount'),
+        ('COUPON', 'Coupon/Voucher Code'),  # New type added
     )
     
     APPLY_TO_CHOICES = (
@@ -356,10 +357,17 @@ class Discount(models.Model):
         if self.discount_type == 'PERCENTAGE':
             if self.discount_value < 0 or self.discount_value > 100:
                 raise ValidationError("Percentage discount must be between 0 and 100")
-        else:
+        elif self.discount_type in ['FIXED', 'COUPON']:
             if self.discount_value < 0:
-                raise ValidationError("Fixed discount cannot be negative")
-    
+                raise ValidationError("Discount value cannot be negative")
+
+        # Validate coupon code (name) format
+        if self.discount_type == 'COUPON':
+            if not self.name.replace('-', '').replace('_', '').isalnum():
+                raise ValidationError("Coupon code can only contain letters, numbers, hyphens, and underscores")
+            if len(self.name) < 4 or len(self.name) > 20:
+                raise ValidationError("Coupon code must be between 4 and 20 characters")
+            
     def is_valid(self):
         now = timezone.now()
         return (
