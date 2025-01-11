@@ -3579,8 +3579,8 @@ from django.views.decorators.http import require_http_methods
 
 def get_paypal_access_token():
     try:
-        # For sandbox mode
-        base_url = "https://api-m.sandbox.paypal.com/v1/oauth2/token"
+        # For production mode
+        base_url = "https://api-m.paypal.com/v1/oauth2/token"
         
         headers = {
             "Accept": "application/json",
@@ -3677,7 +3677,7 @@ def create_paypal_order(request):
         total_including_shipping = cart_total + shipping_cost
         
         # Create PayPal order
-        url = "https://api-m.sandbox.paypal.com/v2/checkout/orders"
+        url = "https://api-m.paypal.com/v2/checkout/orders"
         headers = {
             "Content-Type": "application/json",
             "Authorization": f"Bearer {access_token}"
@@ -3773,7 +3773,7 @@ def capture_paypal_order(request, order_id):
         access_token = get_paypal_access_token()
         
         # Capture PayPal order
-        url = f"https://api-m.sandbox.paypal.com/v2/checkout/orders/{order_id}/capture"
+        url = f"https://api-m.paypal.com/v2/checkout/orders/{order_id}/capture"
         headers = {
             "Content-Type": "application/json",
             "Authorization": f"Bearer {access_token}"
