@@ -570,12 +570,12 @@
                 </tfoot>
             </table>
             <div class="voucher-section">
-                <h3>Have a Voucher Code?</h3>
+                <h3>Have a Coupon Code?</h3>
                 <form id="voucher-form" method="POST" action="{% url 'apply_voucher' %}">
                     {% csrf_token %}
                     <div class="voucher-input-wrapper">
-                        <input type="text" name="voucher_code" id="voucher-code" placeholder="Enter voucher code" required>
-                        <button type="submit" class="btn">Apply Voucher</button>
+                        <input type="text" name="voucher_code" id="voucher-code" placeholder="Enter coupon code" required>
+                        <button type="submit" class="btn">Apply Coupon</button>
                     </div>
                     {% if voucher_error %}
                         <p class="error-message">{{ voucher_error }}</p>
@@ -640,7 +640,7 @@
                         {% if voucher_applied %}
                             <li>
                                 <i class="fas fa-ticket-alt"></i>
-                                Voucher Discount ({{ voucher_applied.code }}):
+                                Coupon Discount ({{ voucher_applied.code }}):
                                 {{ voucher_applied.description }}
                                 <span class="discount-amount">(Savings: ${{ voucher_applied.amount|floatformat:2 }})</span>
                                 <form method="post" action="{% url 'remove_voucher' %}" class="remove-voucher-form">

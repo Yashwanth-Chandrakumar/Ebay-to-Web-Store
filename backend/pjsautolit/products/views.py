@@ -2807,10 +2807,17 @@ def checkout(request):
         now = timezone.now()
         
         # Get all applicable discounts
+        applied_voucher_code = request.session.get('applied_voucher', {}).get('code')
+        
+        # Get applicable discounts excluding vouchers
         applicable_discounts = Discount.objects.filter(
             Q(is_active=True) &
             Q(start_date__lte=now) &
-            (Q(end_date__isnull=True) | Q(end_date__gte=now))
+            (Q(end_date__isnull=True) | Q(end_date__gte=now)) &
+            (
+                Q(discount_type__in=['PERCENTAGE', 'FIXED']) |  # Regular discounts
+                (Q(discount_type='COUPON') & Q(name__iexact=applied_voucher_code))  # Applied voucher only
+            )
         )
         detailed_cart_items = []
         cart_subtotal = Decimal('0.00')
@@ -3334,6 +3341,8 @@ def apply_voucher(request):
             messages.error(request, "Cart not found.")
             
     return redirect('view_cart')
+
+
 def remove_voucher(request):
     if request.method == "POST":
         if 'applied_voucher' in request.session:
