@@ -2805,8 +2805,10 @@ def checkout(request):
             return None
 
         now = timezone.now()
-        applied_voucher = request.session.get('applied_voucher')
-        voucher_code = applied_voucher.get('code') if applied_voucher else None
+        
+        # Get voucher information safely
+        applied_voucher = request.session.get('applied_voucher', {})
+        voucher_code = applied_voucher.get('code', '').strip() if applied_voucher else ''
         
         # Get applicable discounts including coupons
         applicable_discounts = Discount.objects.filter(
@@ -2829,6 +2831,7 @@ def checkout(request):
             for discount in applicable_discounts:
                 if discount.discount_type != 'COUPON' or (
                     discount.discount_type == 'COUPON' and 
+                    voucher_code and
                     discount.name.lower() == voucher_code.lower()
                 ):
                     is_applicable = False
@@ -2890,6 +2893,7 @@ def checkout(request):
             if discount.apply_to == 'CART':
                 if discount.discount_type != 'COUPON' or (
                     discount.discount_type == 'COUPON' and 
+                    voucher_code and
                     discount.name.lower() == voucher_code.lower()
                 ):
                     # Determine if percentage or fixed discount
@@ -2931,6 +2935,7 @@ def checkout(request):
         total_including_shipping = cart_total + shipping_cost
         total_including_shipping = total_including_shipping.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
         request.session['total_including_shipping'] = str(total_including_shipping)
+        
         context = {
             'detailed_cart_items': detailed_cart_items,
             'cart_subtotal': cart_subtotal,
@@ -2948,12 +2953,13 @@ def checkout(request):
             'cart_count': cart_items.count(),
         }
         
-        if applied_voucher:
+        # Only add voucher information to context if there's a valid voucher
+        if voucher_code:
             context['voucher_applied'] = {
                 'code': voucher_code,
                 'amount': voucher_discount,
                 'description': f"{voucher_code}: {applied_voucher.get('discount_value')}% off",
-                'type': 'percentage' if applied_voucher.get('discount_type', 'percentage') == 'percentage' else 'fixed',
+                'type': applied_voucher.get('discount_type', 'percentage'),
                 'value': applied_voucher.get('discount_value'),
                 'apply_to': applied_voucher.get('apply_to')
             }
@@ -2974,7 +2980,6 @@ def checkout(request):
             
         messages.error(request, "An error occurred during checkout. Please try again.")
         return redirect("view_cart")
-
 
 
 logger = logging.getLogger(__name__)
