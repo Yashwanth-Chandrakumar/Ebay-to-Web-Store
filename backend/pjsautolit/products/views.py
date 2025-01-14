@@ -2930,7 +2930,7 @@ def checkout(request):
         shipping_cost = calculate_usps_media_mail_cost(cart_total_weight) + Decimal('2.00')
         total_including_shipping = cart_total + shipping_cost
         total_including_shipping = total_including_shipping.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
-        
+        request.session['total_including_shipping'] = str(total_including_shipping)
         context = {
             'detailed_cart_items': detailed_cart_items,
             'cart_subtotal': cart_subtotal,
@@ -3787,34 +3787,6 @@ def get_paypal_access_token():
         raise ValueError("Failed to authenticate with PayPal")
     
 
-
-import json
-import uuid
-from decimal import Decimal
-
-import requests
-from django.conf import settings
-from django.db import transaction
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_http_methods
-
-
-def calculate_usps_media_mail_cost(weight):
-    rate_brackets = [
-        (1, Decimal('4.63')), (2, Decimal('5.37')), (3, Decimal('6.11')), 
-        (4, Decimal('6.85')), (5, Decimal('7.59')), (6, Decimal('8.33')), 
-        (7, Decimal('9.07')), (8, Decimal('9.82')), (9, Decimal('10.57')), 
-        (10, Decimal('11.32')), (15, Decimal('15.07')), (20, Decimal('18.82')), 
-        (30, Decimal('26.32')), (40, Decimal('33.82')), (50, Decimal('41.32')), 
-        (60, Decimal('48.82')), (70, Decimal('56.32')),
-    ]
-    rounded_weight = int(weight) if weight == int(weight) else int(weight) + 1
-    for max_weight, rate in rate_brackets:
-        if rounded_weight <= max_weight:
-            return rate
-    return None
-
 @csrf_exempt
 @require_http_methods(["POST"])
 def create_paypal_order(request):
@@ -3841,15 +3813,9 @@ def create_paypal_order(request):
             access_token = get_paypal_access_token()
         except ValueError as e:
             return JsonResponse({"error": str(e)}, status=500)
-        
-        cart_total = cart.total_amount()
-        base_shipping_cost = calculate_usps_media_mail_cost(cart.total_weight())
-        if base_shipping_cost is None:
-            return JsonResponse({"error": "Invalid shipping weight"}, status=400)
-        
-        handling_fee = Decimal('2.00')
-        shipping_cost = base_shipping_cost + handling_fee
-        total_including_shipping = cart_total + shipping_cost
+
+        # Get total from session
+        total_including_shipping = Decimal(request.session.get('total_including_shipping'))
         
         # Create PayPal order
         url = "https://api-m.paypal.com/v2/checkout/orders"
@@ -3863,17 +3829,7 @@ def create_paypal_order(request):
             "purchase_units": [{
                 "amount": {
                     "currency_code": "USD",
-                    "value": str(total_including_shipping),
-                    "breakdown": {
-                        "item_total": {
-                            "currency_code": "USD",
-                            "value": str(cart_total)
-                        },
-                        "shipping": {
-                            "currency_code": "USD",
-                            "value": str(shipping_cost)
-                        }
-                    }
+                    "value": str(total_including_shipping)
                 },
                 "shipping": {
                     "name": {
@@ -3887,17 +3843,7 @@ def create_paypal_order(request):
                         "postal_code": shipping_data['postal_code'],
                         "country_code": "US"
                     }
-                },
-                "items": [
-                    {
-                        "name": item.product.title,
-                        "quantity": str(item.quantity),
-                        "unit_amount": {
-                            "currency_code": "USD",
-                            "value": str(item.product.price)
-                        }
-                    } for item in cart.cartitem_set.all()
-                ]
+                }
             }]
         }
         
@@ -3911,38 +3857,22 @@ def create_paypal_order(request):
         print(f"Error creating PayPal order: {str(e)}")
         return JsonResponse({"error": str(e)}, status=500)
 
-
 @csrf_exempt
 @require_http_methods(["POST"])
 @transaction.atomic
 def capture_paypal_order(request, order_id):
-    def calculate_usps_media_mail_cost(weight):
-        rate_brackets = [
-            (1, 4.63), (2, 5.37), (3, 6.11), (4, 6.85), (5, 7.59),
-            (6, 8.33), (7, 9.07), (8, 9.82), (9, 10.57), (10, 11.32),
-            (15, 15.07), (20, 18.82), (30, 26.32), (40, 33.82),
-            (50, 41.32), (60, 48.82), (70, 56.32),
-        ]
-        rounded_weight = int(weight) if weight == int(weight) else int(weight) + 1
-        for max_weight, rate in rate_brackets:
-            if rounded_weight <= max_weight:
-                return rate
-        return None
     try:
-        # Start transaction savepoint
         sid = transaction.savepoint()
         
         # Get cart and shipping info
         cart_id = request.session.get("cart_id")
         shipping_data = request.session.get("shipping_data")
+        total_including_shipping = Decimal(request.session.get('total_including_shipping'))
         
         if not cart_id or not shipping_data:
             raise ValueError("Missing cart or shipping information")
             
         cart = Cart.objects.get(id=cart_id)
-        cart_total = cart.total_amount()
-        shipping_cost = calculate_usps_media_mail_cost(cart.total_weight()) + Decimal('2.00')
-        total_including_shipping = cart_total + shipping_cost
         
         # Get PayPal access token
         access_token = get_paypal_access_token()
@@ -3963,15 +3893,13 @@ def capture_paypal_order(request, order_id):
         # Create shipping address
         shipping_address = ShippingAddress.objects.create(**shipping_data)
         
-        # Create order
+        # Create order using the total from session
         order = Order.objects.create(
             cart=cart,
             shipping_address=shipping_address,
-            subtotal=cart_total,
-            shipping_cost=shipping_cost,
             total_amount=total_including_shipping,
             status='completed',
-            square_payment_id=f"PP_{capture_data['id']}"  # Store PayPal ID with PP_ prefix
+            square_payment_id=f"PP_{capture_data['id']}"
         )
         
         # Create order items
@@ -3987,6 +3915,7 @@ def capture_paypal_order(request, order_id):
         # Clear session data
         del request.session['cart_id']
         del request.session['shipping_data']
+        del request.session['total_including_shipping']
         
         # Commit transaction
         transaction.savepoint_commit(sid)
@@ -4005,8 +3934,6 @@ def capture_paypal_order(request, order_id):
             "error": "Payment processing failed",
             "details": str(e)
         }, status=500)
-    
-
 
 
 # single product alter
