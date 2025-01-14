@@ -33,16 +33,30 @@
                         {% for discount in discounts %}
                         <tr class="border-b border-gray-200 hover:bg-gray-100">
                             <td class="py-3 px-6">
-    {% if discount.discount_type == 'COUPON' %}
-        Coupon Code ({{ discount.name }})
-    {% else %}
-        {{ discount.name }}
-    {% endif %}
-</td>
-                            <td class="py-3 px-6">{{ discount.get_discount_type_display }}</td>
+                                {% if discount.discount_type == 'COUPON' %}
+                                    Coupon Code ({{ discount.name }})
+                                {% else %}
+                                    {{ discount.name }}
+                                {% endif %}
+                            </td>
                             <td class="py-3 px-6">
                                 {% if discount.discount_type == 'COUPON' %}
-                                    {{ discount.discount_value }}% off
+                                    {% if discount.description == 'Percentage Discount' %}
+                                        Percentage Coupon
+                                    {% else %}
+                                        Fixed Amount Coupon
+                                    {% endif %}
+                                {% else %}
+                                    {{ discount.get_discount_type_display }}
+                                {% endif %}
+                            </td>
+                            <td class="py-3 px-6">
+                                {% if discount.discount_type == 'COUPON' %}
+                                    {% if discount.description == 'Percentage Discount' %}
+                                        {{ discount.discount_value }}%
+                                    {% else %}
+                                        ${{ discount.discount_value }}
+                                    {% endif %}
                                 {% elif discount.discount_type == 'PERCENTAGE' %}
                                     {{ discount.discount_value }}%
                                 {% else %}

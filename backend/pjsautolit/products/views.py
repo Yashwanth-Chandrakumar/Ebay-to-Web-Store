@@ -2476,7 +2476,8 @@ def view_cart(request):
                                 applied_product_discounts.append({
                                     'name': discount.name,
                                     'amount': discount_amount,
-                                    'type': 'PRODUCT_PRICE'
+                                    'type': 'PRODUCT_PRICE',
+                                    'description': f"{discount.discount_value}% off"
                                 })
                             else:
                                 # Calculate fixed amount discount
@@ -2487,7 +2488,8 @@ def view_cart(request):
                                 applied_product_discounts.append({
                                     'name': discount.name,
                                     'amount': discount_amount,
-                                    'type': 'PRODUCT_PRICE'
+                                    'type': 'PRODUCT_PRICE',
+                                    'description': f"${discount.discount_value} off"
                                 })
                         
                         # Discount for specific products
@@ -2507,7 +2509,8 @@ def view_cart(request):
                                         'name': discount.name,
                                         'amount': discount_amount,
                                         'type': 'SPECIFIC_PRODUCTS',
-                                        'tags': product_tags
+                                        'tags': product_tags,
+                                        'description': f"{discount.discount_value}% off selected items"
                                     })
                                 else:
                                     # Calculate fixed amount discount
@@ -2519,7 +2522,8 @@ def view_cart(request):
                                         'name': discount.name,
                                         'amount': discount_amount,
                                         'type': 'SPECIFIC_PRODUCTS',
-                                        'tags': product_tags
+                                        'tags': product_tags,
+                                        'description': f"${discount.discount_value} off selected items"
                                     })
 
                     # Calculate final item subtotal after product discounts
@@ -2552,14 +2556,16 @@ def view_cart(request):
                             total_cart_discount += cart_discount
                             applied_cart_discounts.append({
                                 'name': discount.name,
-                                'amount': cart_discount
+                                'amount': cart_discount,
+                                'description': f"{discount.discount_value}% off entire cart"
                             })
                         else:
                             cart_discount = min(Decimal(str(discount.discount_value)), product_subtotal)
                             total_cart_discount += cart_discount
                             applied_cart_discounts.append({
                                 'name': discount.name,
-                                'amount': cart_discount
+                                'amount': cart_discount,
+                                'description': f"${discount.discount_value} off entire cart"
                             })
 
                 # Calculate intermediate cart total before voucher
@@ -2580,21 +2586,27 @@ def view_cart(request):
                         if voucher.is_valid():
                             subtotal_before_voucher = cart_total
                             
-                            # Apply voucher discount based on type
+                            # Determine discount type and format description accordingly
+                            is_percentage = voucher.description.lower() == 'percentage discount'
+                            discount_description = (
+                                f"{voucher.discount_value}% off" if is_percentage
+                                else f"${voucher.discount_value} off"
+                            )
+                            
+                            # Apply voucher discount based on type and description
                             if voucher.apply_to == 'CART':
-                                if voucher.discount_type == 'PERCENTAGE':
+                                if is_percentage:
                                     voucher_discount = subtotal_before_voucher * (Decimal(str(voucher.discount_value)) / 100)
-                                else:  # FIXED amount
+                                else:
                                     voucher_discount = min(Decimal(str(voucher.discount_value)), subtotal_before_voucher)
                                     
                             elif voucher.apply_to == 'PRODUCT_PRICE':
-                                # Apply to all products
-                                if voucher.discount_type == 'PERCENTAGE':
+                                if is_percentage:
                                     voucher_discount = sum(
                                         item['final_subtotal'] * (Decimal(str(voucher.discount_value)) / 100)
                                         for item in cart_items
                                     )
-                                else:  # FIXED amount
+                                else:
                                     voucher_discount = sum(
                                         min(Decimal(str(voucher.discount_value)) * item['quantity'], item['final_subtotal'])
                                         for item in cart_items
@@ -2602,27 +2614,33 @@ def view_cart(request):
                                     
                             elif voucher.apply_to == 'SPECIFIC_PRODUCTS':
                                 product_tags = voucher.get_product_tags()
-                                # Apply only to matching products
+                                voucher_discount = Decimal('0.00')
                                 for item in cart_items:
                                     if any(tag.lower() in item['product'].title.lower() for tag in product_tags):
-                                        if voucher.discount_type == 'PERCENTAGE':
+                                        if is_percentage:
                                             item_discount = item['final_subtotal'] * (Decimal(str(voucher.discount_value)) / 100)
-                                        else:  # FIXED amount
+                                        else:
                                             item_discount = min(Decimal(str(voucher.discount_value)) * item['quantity'], item['final_subtotal'])
                                         voucher_discount += item_discount
+
+                                # Update description for specific products
+                                discount_description = f"{discount_description} on selected items"
 
                             # Ensure voucher discount doesn't make total negative
                             voucher_discount = min(voucher_discount, subtotal_before_voucher)
                             cart_total = max(subtotal_before_voucher - voucher_discount, Decimal('0.00'))
                             
+                            # Create detailed voucher information
                             context['voucher_applied'] = {
                                 'code': voucher_code,
                                 'amount': voucher_discount,
-                                'description': f"{voucher.name}: {'{}% off'.format(voucher.discount_value) if voucher.discount_type == 'PERCENTAGE' else '${} off'.format(voucher.discount_value)}"
+                                'description': f"{voucher.name}: {discount_description}",
+                                'type': 'percentage' if is_percentage else 'fixed',
+                                'value': voucher.discount_value,
+                                'apply_to': voucher.apply_to
                             }
                             
                     except Discount.DoesNotExist:
-                        # Invalid or expired voucher in session, remove it
                         del request.session['applied_voucher']
                         messages.error(request, "The previously applied voucher is no longer valid.")
 
@@ -2639,7 +2657,7 @@ def view_cart(request):
                     "total_cart_discount": total_cart_discount,
                     "voucher_discount": voucher_discount,
                     "applied_product_discounts": applied_product_discounts,
-                    "applied_cart_discounts": applied_cart_discounts,
+                    "applied_cart_discounts": applied_cart_discounts
                 })
 
                 # Update session with cart details
@@ -2659,7 +2677,6 @@ def view_cart(request):
                 print("Cart not found in database")
                 del request.session['cart_id']
             except Exception as e:
-                # Comprehensive error logging
                 print("Error processing cart:")
                 print(traceback.format_exc())
                 messages.error(request, f"An error occurred while processing your cart: {str(e)}")
@@ -2667,12 +2684,10 @@ def view_cart(request):
         return render(request, "pages/cart.html", context)
 
     except Exception as e:
-        # Top-level error handling
         print("Unexpected error in view_cart:")
         print(traceback.format_exc())
         messages.error(request, f"An unexpected error occurred: {str(e)}")
         return render(request, "pages/cart.html", context)
-
 
 def update_cart(request, item_id):
     try:
@@ -2726,13 +2741,9 @@ def checkout(request):
         # Handle AJAX POST request for shipping form
         if request.method == 'POST' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             try:
-                # Parse JSON data from request
                 data = json.loads(request.body)
-                
-                # Validate the form data
                 form = ShippingAddressForm(data)
                 if form.is_valid():
-                    # Store shipping data in session
                     request.session['shipping_data'] = form.cleaned_data
                     return JsonResponse({'success': True})
                 else:
@@ -2740,7 +2751,6 @@ def checkout(request):
                         'success': False,
                         'errors': form.errors
                     })
-                    
             except json.JSONDecodeError:
                 return JsonResponse({
                     'success': False,
@@ -2786,54 +2796,41 @@ def checkout(request):
                 (70, 56.32),
             ]
 
-            # Round up weight to the nearest whole number
             rounded_weight = int(weight) if weight == int(weight) else int(weight) + 1
-
-            # Find the appropriate rate bracket
+            
             for max_weight, rate in rate_brackets:
                 if rounded_weight <= max_weight:
-                    return Decimal(str(rate))  # Convert to Decimal
-
-            # If weight exceeds the highest bracket, return None or handle as needed
+                    return Decimal(str(rate))
+                    
             return None
-        
-        # Robust retrieval of cart total and discounts
-        cart_total = Decimal(request.session.get('discounted_cart_total', str(cart.total_amount()))).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
-        total_product_discount = Decimal(request.session.get('total_product_discount', '0.00')).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
-        total_cart_discount = Decimal(request.session.get('total_cart_discount', '0.00')).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
-        
-        # Prepare detailed cart items with discount information
-        
+
         now = timezone.now()
+        applied_voucher = request.session.get('applied_voucher')
+        voucher_code = applied_voucher.get('code') if applied_voucher else None
         
-        # Get all applicable discounts
-        applied_voucher_code = request.session.get('applied_voucher', {}).get('code')
-        
-        # Get applicable discounts excluding vouchers
+        # Get applicable discounts including coupons
         applicable_discounts = Discount.objects.filter(
             Q(is_active=True) &
             Q(start_date__lte=now) &
-            (Q(end_date__isnull=True) | Q(end_date__gte=now)) &
-            (
-                Q(discount_type__in=['PERCENTAGE', 'FIXED']) |  # Regular discounts
-                (Q(discount_type='COUPON') & Q(name__iexact=applied_voucher_code))  # Applied voucher only
-            )
+            (Q(end_date__isnull=True) | Q(end_date__gte=now))
         )
+
         detailed_cart_items = []
         cart_subtotal = Decimal('0.00')
         total_product_discount = Decimal('0.00')
 
         for item in cart_items:
-            # Calculate original subtotal before discounts
             original_subtotal = item.product.price * item.quantity
             cart_subtotal += original_subtotal
             
-            # Find applicable discounts for this item
             item_discounts = []
             total_item_discount = Decimal('0.00')
             
             for discount in applicable_discounts:
-                if discount.apply_to in ['PRODUCT_PRICE', 'SPECIFIC_PRODUCTS']:
+                if discount.discount_type != 'COUPON' or (
+                    discount.discount_type == 'COUPON' and 
+                    discount.name.lower() == voucher_code.lower()
+                ):
                     is_applicable = False
                     
                     if discount.apply_to == 'PRODUCT_PRICE':
@@ -2846,23 +2843,28 @@ def checkout(request):
                         )
                     
                     if is_applicable:
-                        if discount.discount_type == 'PERCENTAGE':
+                        # Handle both percentage and fixed discounts
+                        if discount.discount_type == 'COUPON':
+                            is_percentage = discount.description.lower() == 'percentage discount'
+                        else:
+                            is_percentage = discount.discount_type == 'PERCENTAGE'
+
+                        if is_percentage:
                             discount_amount = original_subtotal * (discount.discount_value / 100)
                         else:
                             discount_amount = min(
-                                Decimal(str(discount.discount_value * item.quantity)), 
+                                discount.discount_value * item.quantity,
                                 original_subtotal
                             )
                         
                         total_item_discount += discount_amount
                         item_discounts.append({
                             'name': discount.name,
-                            'type': discount.discount_type,
-                            'value': f"{discount.discount_value}%" if discount.discount_type == 'PERCENTAGE' else f"${discount.discount_value}",
+                            'type': 'PERCENTAGE' if is_percentage else 'FIXED',
+                            'value': f"{discount.discount_value}%" if is_percentage else f"${discount.discount_value}",
                             'amount': discount_amount
                         })
             
-            # Calculate final item prices
             final_subtotal = max(original_subtotal - total_item_discount, Decimal('0.00'))
             per_unit_price = final_subtotal / item.quantity if item.quantity > 0 else Decimal('0.00')
             
@@ -2882,27 +2884,42 @@ def checkout(request):
         subtotal_after_product_discounts = cart_subtotal - total_product_discount
         total_cart_discount = Decimal('0.00')
         applied_cart_discounts = []
+        voucher_discount = Decimal('0.00')
         
         for discount in applicable_discounts:
             if discount.apply_to == 'CART':
-                if discount.discount_type == 'PERCENTAGE':
-                    cart_discount = subtotal_after_product_discounts * (discount.discount_value / 100)
-                else:
-                    cart_discount = min(
-                        Decimal(str(discount.discount_value)),
-                        subtotal_after_product_discounts
-                    )
-                
-                total_cart_discount += cart_discount
-                applied_cart_discounts.append({
-                    'name': discount.name,
-                    'type': discount.discount_type,
-                    'value': discount.discount_value,
-                    'amount': cart_discount
-                })
+                if discount.discount_type != 'COUPON' or (
+                    discount.discount_type == 'COUPON' and 
+                    discount.name.lower() == voucher_code.lower()
+                ):
+                    # Determine if percentage or fixed discount
+                    if discount.discount_type == 'COUPON':
+                        is_percentage = discount.description.lower() == 'percentage discount'
+                    else:
+                        is_percentage = discount.discount_type == 'PERCENTAGE'
+
+                    if is_percentage:
+                        cart_discount = subtotal_after_product_discounts * (discount.discount_value / 100)
+                    else:
+                        cart_discount = min(
+                            discount.discount_value,
+                            subtotal_after_product_discounts
+                        )
+                    
+                    if discount.discount_type == 'COUPON':
+                        voucher_discount = cart_discount
+                    else:
+                        total_cart_discount += cart_discount
+                        
+                    applied_cart_discounts.append({
+                        'name': discount.name,
+                        'type': 'PERCENTAGE' if is_percentage else 'FIXED',
+                        'value': discount.discount_value,
+                        'amount': cart_discount
+                    })
         
         # Calculate final totals
-        cart_total = max(subtotal_after_product_discounts - total_cart_discount, Decimal('0.00'))
+        cart_total = max(subtotal_after_product_discounts - total_cart_discount - voucher_discount, Decimal('0.00'))
         cart_total = cart_total.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
         
         # Calculate shipping and final total
@@ -2920,6 +2937,7 @@ def checkout(request):
             'cart_total': cart_total,
             'total_product_discount': total_product_discount,
             'total_cart_discount': total_cart_discount,
+            'voucher_discount': voucher_discount,
             'applied_cart_discounts': applied_cart_discounts,
             'total_weight_major': total_weight_major,
             'total_weight_minor': total_weight_minor,
@@ -2929,6 +2947,16 @@ def checkout(request):
             'square_location_id': settings.SQUARE_LOCATION_ID,
             'cart_count': cart_items.count(),
         }
+        
+        if applied_voucher:
+            context['voucher_applied'] = {
+                'code': voucher_code,
+                'amount': voucher_discount,
+                'description': f"{voucher_code}: {applied_voucher.get('discount_value')}% off",
+                'type': 'percentage' if applied_voucher.get('discount_type', 'percentage') == 'percentage' else 'fixed',
+                'value': applied_voucher.get('discount_value'),
+                'apply_to': applied_voucher.get('apply_to')
+            }
         
         return render(request, "pages/checkout.html", context)
         
@@ -2947,7 +2975,8 @@ def checkout(request):
         messages.error(request, "An error occurred during checkout. Please try again.")
         return redirect("view_cart")
 
-        
+
+
 logger = logging.getLogger(__name__)
 
 
