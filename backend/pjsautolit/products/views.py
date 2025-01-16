@@ -2935,6 +2935,8 @@ def checkout(request):
         total_including_shipping = cart_total + shipping_cost
         total_including_shipping = total_including_shipping.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
         request.session['total_including_shipping'] = str(total_including_shipping)
+        request.session['cart_total'] = str(cart_total)
+        request.session['shipping_cost'] = str(shipping_cost)
         
         context = {
             'detailed_cart_items': detailed_cart_items,
@@ -3873,7 +3875,9 @@ def capture_paypal_order(request, order_id):
         cart_id = request.session.get("cart_id")
         shipping_data = request.session.get("shipping_data")
         total_including_shipping = Decimal(request.session.get('total_including_shipping'))
-        
+        shipping_cost = Decimal(request.session.get('shipping_cost'))
+        cart_total = Decimal(request.session.get('cart_total'))
+
         if not cart_id or not shipping_data:
             raise ValueError("Missing cart or shipping information")
             
@@ -3903,6 +3907,8 @@ def capture_paypal_order(request, order_id):
             cart=cart,
             shipping_address=shipping_address,
             total_amount=total_including_shipping,
+            shipping_cost = shipping_cost,
+            subtotal = cart_total,
             status='completed',
             square_payment_id=f"PP_{capture_data['id']}"
         )

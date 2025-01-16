@@ -29,7 +29,13 @@
                 {% for order in orders %}
                 <tr class="border-b hover:bg-gray-100">
                     <td class="p-3">{{ order.order_number }}</td>
-                    <td class="p-3">{{ order.square_payment_id }}</td>
+                    <td class="p-3">
+                        {% if order.square_payment_id|slice:":3" == "PP_" %}
+                            (PayPal)&nbsp;&nbsp;{{ order.square_payment_id|slice:"3:" }}
+                        {% else %}
+                            {{ order.square_payment_id }}
+                        {% endif %}
+                    </td>
                     <td class="p-3">{{ order.get_status_display }}</td>
                     <td class="p-3 text-right">${{ order.subtotal }}</td>
                     <td class="p-3 text-right">${{ order.shipping_cost }}</td>
