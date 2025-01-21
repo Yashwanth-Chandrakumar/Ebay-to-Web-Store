@@ -705,6 +705,12 @@ form .invalid-feedback.visible {
         <div class="shipping-info mb-4">
             <h3>Shipping Information</h3>
             <form id="shipping-form" class="needs-validation" novalidate>
+                <div class="mb-3 d-flex gap-2">
+                    
+                    <button type="button" id="loadSavedForm" class="btn btn-secondary" style="display: none;">
+                        <i class="fas fa-history"></i> Load saved address
+                    </button>
+                </div>
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label for="first_name">First Name *</label>
@@ -763,6 +769,12 @@ form .invalid-feedback.visible {
                         <div class="error-message" id="postal_code-error"></div>
                     </div>
                     <input type="hidden" name="country" value="United States">
+                </div>
+                <div class="mb-3 d-flex gap-2">
+                    <button type="button" id="saveFormData" class="btn btn-secondary">
+                        <i class="fas fa-save"></i> Save form data for future use
+                    </button>
+                    
                 </div>
             </form>
         </div>
@@ -930,6 +942,79 @@ form .invalid-feedback.visible {
 <!-- <script src="https://sandbox.web.squarecdn.com/v1/square.js"></script> -->
 
 <script>
+    function saveFormDataToStorage() {
+    const form = document.getElementById('shipping-form');
+    const formData = {};
+    
+    // Get all form field values
+    const fields = ['first_name', 'last_name', 'email', 'phone', 
+                   'address_line1', 'address_line2', 'city', 'state', 
+                   'postal_code'];
+    
+    // Check if required fields are filled
+    let hasEmptyFields = false;
+    fields.forEach(field => {
+        const input = form.querySelector(`#${field}`);
+        if (input && (!input.value.trim() && input.required)) {
+            hasEmptyFields = true;
+        }
+    });
+
+    if (hasEmptyFields) {
+        showToast('Please fill in all required fields before saving', 'error');
+        return;
+    }
+    
+    // Save all field values
+    fields.forEach(field => {
+        const input = form.querySelector(`#${field}`);
+        if (input) {
+            formData[field] = input.value;
+        }
+    });
+    
+    // Save to localStorage
+    localStorage.setItem('savedShippingData', JSON.stringify(formData));
+    showToast('Address information saved successfully!', 'success');
+    
+    // Show the load button since we now have saved data
+    document.getElementById('loadSavedForm').style.display = 'block';
+}
+
+// Function to load saved form data
+function loadSavedFormData() {
+    const savedData = localStorage.getItem('savedShippingData');
+    if (savedData) {
+        const formData = JSON.parse(savedData);
+        const form = document.getElementById('shipping-form');
+        
+        // Fill each form field
+        Object.entries(formData).forEach(([field, value]) => {
+            const input = form.querySelector(`#${field}`);
+            if (input) {
+                input.value = value;
+                validateField(input); // Revalidate the field
+            }
+        });
+        
+        showToast('Saved address loaded successfully!', 'success');
+    } else {
+        showToast('No saved address found', 'error');
+    }
+}
+
+// Function to check if saved data exists
+function checkForSavedData() {
+    const savedData = localStorage.getItem('savedShippingData');
+    const loadButton = document.getElementById('loadSavedForm');
+    if (savedData) {
+        loadButton.style.display = 'block';
+    } else {
+        loadButton.style.display = 'none';
+    }
+}
+
+
     document.querySelector('.menu-icon').addEventListener('click', function() {
             document.querySelector('.mobile-menu').classList.add('active');
         });
@@ -1341,6 +1426,13 @@ function showToast(message, type = 'info', duration = 3000) {
 document.addEventListener('DOMContentLoaded', () => {
     // You can keep the existing initialization code
     window.showToast = showToast;
+    checkForSavedData();
+    
+    // Add save button handler
+    document.getElementById('saveFormData').addEventListener('click', saveFormDataToStorage);
+    
+    // Add load button handler
+    document.getElementById('loadSavedForm').addEventListener('click', loadSavedFormData);
 });
     function validateField(field) {
     const errorElement = document.getElementById(`${field.id}-error`);
