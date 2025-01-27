@@ -3,23 +3,27 @@ on:
   push:
     branches:
       - main
-
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
-      
+
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
-      
+
     - name: Login to Docker Hub
       uses: docker/login-action@v2
       with:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
-        
+
+    - name: Build and push Docker image
+      run: |
+        docker build -t yashwanthsc/pjsauto:latest ./backend/pjsautolit
+        docker push yashwanthsc/pjsauto:latest
+
     - name: Deploy to AWS EC2
       uses: appleboy/ssh-action@master
       with:
@@ -30,31 +34,25 @@ jobs:
           # Enable maintenance mode
           sudo touch /var/www/html/maintenance.flag
           
-          # Wait for existing requests to complete (adjust time as needed)
+          # Wait for existing requests to complete
           sleep 10
-          
-          # Your existing deployment steps
-          cd /home/${{ secrets.EC2_USER }}/
-          if [ ! -d "Ebay-to-Web-Store" ]; then
-            git clone https://github.com/Yashwanth-Chandrakumar/Ebay-to-Web-Store.git
-            cd Ebay-to-Web-Store
-          else
-            cd Ebay-to-Web-Store
-            git pull
-          fi
           
           # Clean up Docker resources
           docker system prune -a --volumes -f
           
-          # Build and deploy new container
-          docker build -t yashwanthsc/pjsauto:latest ./backend/pjsautolit
+          # Pull the latest Docker image from Docker Hub
+          docker pull yashwanthsc/pjsauto:latest
+          
+          # Stop and remove the existing container if it's running
           if docker ps --format '{{.Names}}' | grep -q pjs; then
             docker stop pjs
             docker rm pjs
           fi
+          
+          # Run the new container
           docker run -d --name pjs -p 8000:8000 yashwanthsc/pjsauto:latest
           
-          # Wait for new container to be ready (adjust time as needed)
+          # Wait for the new container to be ready
           sleep 15
           
           # Disable maintenance mode
