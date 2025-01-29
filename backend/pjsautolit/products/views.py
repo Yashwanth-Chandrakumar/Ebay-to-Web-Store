@@ -16,6 +16,7 @@ from datetime import datetime, timedelta
 from decimal import ROUND_HALF_UP, Decimal
 from signal import signal
 from threading import Lock
+from django.contrib.auth.decorators import login_required
 
 import requests
 from bs4 import BeautifulSoup
@@ -852,17 +853,42 @@ def contact_view(request):
         },
     )
 
-
+@login_required(login_url='/login/')
 def admin_page(request):
     return render(request, "pages/admin.html")
 
+@login_required(login_url='/login/')
+def admin_links(request):
+    return render(request, "pages/ad.html")
 
+@login_required(login_url='/login/')
 def admin_page2(request):
     return render(request, "pages/admin-2.html")
 
-
+@login_required(login_url='/login/')
 def admin_page3(request):
     return render(request, "pages/admin-3.html")
+
+from django.contrib.auth import login, authenticate
+from django.shortcuts import redirect
+from django.contrib.auth.forms import AuthenticationForm
+
+def login_view(request):
+    if request.method == 'POST':
+        form = AuthenticationForm(request, data=request.POST)
+        if form.is_valid():
+            username = form.cleaned_data.get('username')
+            password = form.cleaned_data.get('password')
+            user = authenticate(username=username, password=password)
+            if user is not None:
+                login(request, user)
+                # Redirect to the page user was trying to access
+                next_page = request.GET.get('next', '/')
+                return redirect(next_page)
+    else:
+        form = AuthenticationForm()
+    return render(request, 'pages/login.html', {'form': form})
+
 
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render
@@ -870,11 +896,12 @@ from django.template.loader import render_to_string
 
 from .models import Order, OrderItem, ShippingAddress
 
-
+@login_required(login_url='/login/')
 def order_list(request):
     orders = Order.objects.all().order_by('-created_at')
     return render(request, 'pages/orders.html', {'orders': orders})
 
+@login_required(login_url='/login/')
 def order_details(request, order_id):
     order = get_object_or_404(Order, id=order_id)
     order_items = order.items.all()
@@ -3200,7 +3227,7 @@ from django.views.decorators.http import require_POST
 
 from .models import CalendarEvent
 
-
+@login_required(login_url='/login/')
 def add_event(request):
     if request.method == "POST":
         try:
@@ -3255,7 +3282,8 @@ def delete_event(request, event_id):
         return JsonResponse({"message": "Event deleted successfully!"}, status=200)
     except Exception as e:
         return JsonResponse({"message": f"Failed to delete event: {str(e)}"}, status=400)
-
+    
+@login_required(login_url='/login/')
 def admin_page4(request):
     events = CalendarEvent.objects.all().order_by("-start_date")
     return render(request, "pages/admin-4.html", {"events": events})
@@ -3269,7 +3297,7 @@ from django.urls import reverse_lazy
 from .forms import DiscountForm
 from .models import Discount
 
-
+@login_required(login_url='/login/')
 def discount_list(request):
     discounts = Discount.objects.all()
     return render(request, 'pages/discount_list.html', {'discounts': discounts})
@@ -3283,6 +3311,7 @@ from .models import Discount
 
 
 # views.py
+@login_required(login_url='/login/')
 def discount_create(request):
     if request.method == 'POST':
         form = DiscountForm(request.POST)

@@ -1,3 +1,4 @@
+from django.contrib.auth import views as auth_views
 from django.contrib.sitemaps.views import sitemap
 from django.urls import path
 from django.views.generic import TemplateView
@@ -94,4 +95,7 @@ urlpatterns = [
     path('order-status/<str:order_id>/', views.check_order_status, name='check_order_status'),
     path('update-delivery-status/<int:order_id>/', views.update_delivery_status, name='update_delivery_status'),
     path('generate-order-pdf/<int:order_id>/', views.generate_order_pdf, name='generate_order_pdf'),
+    path('login/', views.login_view, name='login'),
+    path('logout/', auth_views.LogoutView.as_view(next_page='/'), name='logout'),
+    path('pjsadmin/', views.admin_links, name='admin'),
 ]

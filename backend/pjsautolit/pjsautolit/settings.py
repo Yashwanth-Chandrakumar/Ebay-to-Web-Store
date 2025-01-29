@@ -83,6 +83,8 @@ SQUARE_LOCATION_ID = "1CYN2MHX8D40J"
 PAYPAL_CLIENT_ID = "AYfg3k8qH8o96bwGi5NZgB8DzLYsKxaDKHAd-oluuzNb_9HlpBBspytNOR8gl2E_ARiFzH-wrw6j7VKJ"
 PAYPAL_CLIENT_SECRET = "EJplgEiegxZgCQXs977oppMcUxoCVrcGhZAVSVv_7iFcGpbUNROWmyukBdJqHWNIhM0l1m6VcZja3pN2"
 
+LOGIN_URL = '/login/'
+LOGIN_REDIRECT_URL = '/'
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
