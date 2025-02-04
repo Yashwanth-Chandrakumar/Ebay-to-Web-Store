@@ -16,13 +16,13 @@ from datetime import datetime, timedelta
 from decimal import ROUND_HALF_UP, Decimal
 from signal import signal
 from threading import Lock
-from django.contrib.auth.decorators import login_required
 
 import requests
 from bs4 import BeautifulSoup
 from celery import shared_task
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.paginator import Paginator
@@ -869,9 +869,10 @@ def admin_page2(request):
 def admin_page3(request):
     return render(request, "pages/admin-3.html")
 
-from django.contrib.auth import login, authenticate
-from django.shortcuts import redirect
+from django.contrib.auth import authenticate, login
 from django.contrib.auth.forms import AuthenticationForm
+from django.shortcuts import redirect
+
 
 def login_view(request):
     if request.method == 'POST':
@@ -895,6 +896,7 @@ from django.shortcuts import get_object_or_404, render
 from django.template.loader import render_to_string
 
 from .models import Order, OrderItem, ShippingAddress
+
 
 @login_required(login_url='/login/')
 def order_list(request):
@@ -3227,53 +3229,45 @@ from django.views.decorators.http import require_POST
 
 from .models import CalendarEvent
 
+
 @login_required(login_url='/login/')
 def add_event(request):
     if request.method == "POST":
         try:
-            # Check if eventId exists to update an event, otherwise create a new one
             event_id = request.POST.get("eventId")
             if event_id:
                 event = get_object_or_404(CalendarEvent, id=event_id)
             else:
                 event = CalendarEvent()
 
-            # Setting event data from form input
             event.title = request.POST["title"]
             event.description = request.POST.get("description", "")
 
-            # Parsing and setting start and end dates
-            start_date = datetime.strptime(request.POST["start_date"], "%Y-%m-%dT%H:%M")
-            end_date = datetime.strptime(request.POST["end_date"], "%Y-%m-%dT%H:%M")
+            # Parse dates without time
+            start_date = datetime.strptime(request.POST["start_date"], "%Y-%m-%d").date()
+            end_date = datetime.strptime(request.POST["end_date"], "%Y-%m-%d").date()
 
-            # Storing as timezone-aware datetimes
-            event.start_date = timezone.make_aware(start_date, timezone.get_current_timezone())
-            event.end_date = timezone.make_aware(end_date, timezone.get_current_timezone())
-
-            # Storing location
+            event.start_date = start_date
+            event.end_date = end_date
             event.location = request.POST.get("location", "")
             event.save()
 
-            # Success message and return JSON response
             return JsonResponse({
                 "message": "Event saved successfully!", 
                 "event": {
                     "id": event.id,
                     "title": event.title,
-                    "start_date": event.start_date.strftime("%Y-%m-%d %H:%M"),
-                    "end_date": event.end_date.strftime("%Y-%m-%d %H:%M"),
+                    "start_date": event.start_date.strftime("%Y-%m-%d"),
+                    "end_date": event.end_date.strftime("%Y-%m-%d"),
                     "location": event.location
                 }
             }, status=200)
 
         except Exception as e:
-            # Handle exceptions and return error response
             return JsonResponse({"message": f"Failed to save event: {str(e)}"}, status=400)
 
-    # Fetch all events to display them below the form
     events = CalendarEvent.objects.all().order_by("-start_date")
     return render(request, "pages/admin-4.html", {"events": events})
-
 @require_POST
 def delete_event(request, event_id):
     try:
@@ -3296,6 +3290,7 @@ from django.urls import reverse_lazy
 
 from .forms import DiscountForm
 from .models import Discount
+
 
 @login_required(login_url='/login/')
 def discount_list(request):

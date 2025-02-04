@@ -23,12 +23,12 @@
                 <textarea class="form-control" id="description" name="description" rows="3"></textarea>
             </div>
             <div class="mb-3">
-                <label for="start_date" class="form-label">Start Date and Time</label>
-                <input type="datetime-local" class="form-control" id="start_date" name="start_date" required>
+                <label for="start_date" class="form-label">Start Date</label>
+                <input type="date" class="form-control" id="start_date" name="start_date" required>
             </div>
             <div class="mb-3">
-                <label for="end_date" class="form-label">End Date and Time</label>
-                <input type="datetime-local" class="form-control" id="end_date" name="end_date" required>
+                <label for="end_date" class="form-label">End Date</label>
+                <input type="date" class="form-control" id="end_date" name="end_date" required>
             </div>
             <div class="mb-3">
                 <label for="location" class="form-label">Location</label>
@@ -54,11 +54,11 @@
                 <tr id="event-{{ event.id }}">
                     <td>{{ event.title }}</td>
                     <td>{{ event.description }}</td>
-                    <td>{{ event.start_date|date:"Y-m-d H:i" }}</td>
-                    <td>{{ event.end_date|date:"Y-m-d H:i" }}</td>
+                    <td>{{ event.start_date|date:"Y-m-d" }}</td>
+<td>{{ event.end_date|date:"Y-m-d" }}</td>
                     <td>{{ event.location }}</td>
                     <td>
-                        <button class="btn btn-warning btn-sm me-1" onclick="editEvent({{ event.id }}, '{{ event.title|escapejs }}', '{{ event.description|escapejs }}', '{{ event.start_date|date:'Y-m-d\TH:i' }}', '{{ event.end_date|date:'Y-m-d\TH:i' }}', '{{ event.location|escapejs }}')">Edit</button>
+                        <button class="btn btn-warning btn-sm me-1" onclick="editEvent({{ event.id }}, '{{ event.title|escapejs }}', '{{ event.description|escapejs }}', '{{ event.start_date|date:'Y-m-d' }}', '{{ event.end_date|date:'Y-m-d' }}', '{{ event.location|escapejs }}')">Edit</button>
                         <button class="btn btn-danger btn-sm" onclick="deleteEvent({{ event.id }})">Delete</button>
                     </td>
                 </tr>
@@ -118,13 +118,13 @@
         }
 
         function editEvent(eventId, title, description, startDate, endDate, location) {
-            document.getElementById('eventId').value = eventId;
-            document.getElementById('title').value = title;
-            document.getElementById('description').value = description;
-            document.getElementById('start_date').value = startDate;
-            document.getElementById('end_date').value = endDate;
-            document.getElementById('location').value = location;
-        }
+    document.getElementById('eventId').value = eventId;
+    document.getElementById('title').value = title;
+    document.getElementById('description').value = description;
+    document.getElementById('start_date').value = startDate.split('T')[0]; // Get only the date part
+    document.getElementById('end_date').value = endDate.split('T')[0];     // Get only the date part
+    document.getElementById('location').value = location;
+}
 
         async function deleteEvent(eventId) {
             if (!confirm('Are you sure you want to delete this event?')) return;
