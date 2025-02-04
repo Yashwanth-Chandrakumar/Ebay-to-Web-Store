@@ -36,7 +36,7 @@ from django.views.decorators.http import require_GET
 from django.views.generic.detail import DetailView
 from requests.exceptions import HTTPError, RequestException
 
-from .models import (Cart, CartItem, FetchStatus, Order, Product,
+from .models import (Cart, CartItem, FetchStatus, Order, OrderDiscount, Product,
                      ProductChangeLog)
 
 EBAY_APP_ID = settings.EBAY_APP_ID
@@ -902,20 +902,20 @@ from .models import Order, OrderItem, ShippingAddress
 def order_list(request):
     orders = Order.objects.all().order_by('-created_at')
     return render(request, 'pages/orders.html', {'orders': orders})
-
 @login_required(login_url='/login/')
 def order_details(request, order_id):
     order = get_object_or_404(Order, id=order_id)
     order_items = order.items.all()
     shipping_address = order.shipping_address
+    discounts = order.discounts.all()  # Add this line
 
     context = {
         'order': order,
         'order_items': order_items,
-        'shipping_address': shipping_address
+        'shipping_address': shipping_address,
+        'discounts': discounts  # Add this line
     }
 
-    # Render details as an HTML fragment for the modal
     html = render_to_string('pages/order_details.html', context)
     return HttpResponse(html)
 
@@ -2201,6 +2201,48 @@ def download_excel(request):
 
 # Cart
 
+from django.db.models import F
+from decimal import Decimal
+from django.conf import settings
+from .models import OrderDiscount, Order
+
+
+def save_order_discounts(request, order, detailed_cart_items, applied_cart_discounts, voucher_discount=None):
+    # Save product-specific discounts
+    for item in detailed_cart_items:
+        for discount in item['discounts']:
+            OrderDiscount.objects.create(
+                order=order,
+                discount_name=discount['name'],
+                discount_type=discount['type'],
+                discount_value=float(discount['value'].strip('%$')),
+                amount_saved=discount['amount'],
+                applied_to='SPECIFIC_PRODUCTS',
+                product_id=item['item'].product.item_id
+            )
+
+    # Save cart-wide discounts
+    for discount in applied_cart_discounts:
+        OrderDiscount.objects.create(
+            order=order,
+            discount_name=discount['name'],
+            discount_type=discount['type'],
+            discount_value=discount['value'],
+            amount_saved=discount['amount'],
+            applied_to='CART'
+        )
+
+    # Save voucher discount if present
+    if voucher_discount and voucher_discount > 0:
+        OrderDiscount.objects.create(
+            order=order,
+            discount_name=f"Voucher: {request.session.get('applied_voucher', {}).get('code', '')}",
+            discount_type=request.session.get('applied_voucher', {}).get('discount_type', 'PERCENTAGE'),
+            discount_value=request.session.get('applied_voucher', {}).get('discount_value', 0),
+            amount_saved=voucher_discount,
+            applied_to='CART'
+        )
+
 
 import json
 import uuid
@@ -2361,6 +2403,13 @@ def process_payment(request):
             total_amount=total_including_shipping,
             status='completed',
             square_payment_id=result.body.get('payment', {}).get('id')
+        )
+        save_order_discounts(
+            request = request,
+            order=order,
+            detailed_cart_items=request.session.get('detailed_cart_items', []),
+            applied_cart_discounts=request.session.get('applied_cart_discounts', []),
+            voucher_discount=request.session.get('voucher_discount', 0)
         )
 
         # Create order items
@@ -2966,7 +3015,15 @@ def checkout(request):
         request.session['total_including_shipping'] = str(total_including_shipping)
         request.session['cart_total'] = str(cart_total)
         request.session['shipping_cost'] = str(shipping_cost)
-        
+        request.session['detailed_cart_items'] = [
+            {
+                'item': {'product': {'item_id': item['item'].product.item_id}},
+                'discounts': item['discounts']
+            }
+            for item in detailed_cart_items
+        ]
+        request.session['applied_cart_discounts'] = applied_cart_discounts
+        request.session['voucher_discount'] = float(voucher_discount)
         context = {
             'detailed_cart_items': detailed_cart_items,
             'cart_subtotal': cart_subtotal,
@@ -4408,6 +4465,40 @@ def generate_order_pdf(request, order_id):
         ]))
         elements.append(items_table)
         
+        discounts = order.discounts.all()
+        if discounts:
+            elements.append(Spacer(1, 20))
+            elements.append(Paragraph("Applied Discounts", styles['Heading2']))
+            elements.append(Spacer(1, 10))
+            
+            discount_data = [["Discount", "Type", "Applied To", "Value", "Amount Saved"]]
+            
+            for discount in discounts:
+                applied_to = f"Product: {discount.product_id}" if discount.product_id else discount.applied_to
+                discount_data.append([
+                    str(discount.discount_name),
+                    str(discount.discount_type),
+                    applied_to,
+                    f"${discount.discount_value:.2f}",
+                    f"${discount.amount_saved:.2f}"
+                ])
+            
+            discount_table = Table(discount_data, colWidths=[2*inch, 1.5*inch, 1.5*inch, 1*inch, 1.5*inch])
+            discount_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2d5c8a')),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+                ('FONTSIZE', (0, 0), (-1, -1), 10),
+                ('ALIGN', (0, 0), (2, -1), 'LEFT'),
+                ('ALIGN', (3, 0), (-1, -1), 'RIGHT'),
+                ('GRID', (0, 0), (-1, -1), 1, colors.grey),
+                ('TOPPADDING', (0, 0), (-1, -1), 12),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
+                ('LEFTPADDING', (0, 0), (-1, -1), 6),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 6),
+            ]))
+            elements.append(discount_table)
         # Build PDF
         doc.build(elements)
         return response

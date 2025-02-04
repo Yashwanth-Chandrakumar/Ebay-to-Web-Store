@@ -153,6 +153,40 @@
     </tbody>
 </table>
 
+{% if discounts %}
+<table class="w-full border-collapse mt-4">
+    <thead class="bg-blue-200">
+        <tr>
+            <th colspan="5" class="p-3 text-left text-xl font-bold">Applied Discounts</th>
+        </tr>
+        <tr>
+            <th class="p-2 text-left">Discount</th>
+            <th class="p-2 text-left">Type</th>
+            <th class="p-2 text-left">Applied To</th>
+            <th class="p-2 text-right">Value</th>
+            <th class="p-2 text-right">Amount Saved</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for discount in discounts %}
+        <tr>
+            <td class="p-2">{{ discount.discount_name }}</td>
+            <td class="p-2">{{ discount.discount_type }}</td>
+            <td class="p-2">
+                {% if discount.product_id %}
+                    Product: {{ discount.product_id }}
+                {% else %}
+                    {{ discount.applied_to }}
+                {% endif %}
+            </td>
+            <td class="p-2 text-right">{{ discount.discount_value }}</td>
+            <td class="p-2 text-right">${{ discount.amount_saved }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+
 <div class="mt-6 flex justify-end">
     
     <button 

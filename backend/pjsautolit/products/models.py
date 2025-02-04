@@ -289,6 +289,19 @@ class OrderItem(models.Model):
     def __str__(self):
         return f"{self.quantity}x {self.product_title}"
     
+
+class OrderDiscount(models.Model):
+    order = models.ForeignKey(Order, related_name='discounts', on_delete=models.CASCADE)
+    discount_name = models.CharField(max_length=200)
+    discount_type = models.CharField(max_length=20)
+    discount_value = models.DecimalField(max_digits=10, decimal_places=2)
+    amount_saved = models.DecimalField(max_digits=10, decimal_places=2)
+    applied_to = models.CharField(max_length=20)  # CART, PRODUCT_PRICE, or SPECIFIC_PRODUCTS
+    product_id = models.CharField(max_length=100, null=True, blank=True)  # For product-specific discounts
+
+    def __str__(self):
+        return f"{self.discount_name} - {self.amount_saved}"
+    
 from django.db import models
 
 
