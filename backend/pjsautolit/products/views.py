@@ -2208,38 +2208,42 @@ from .models import OrderDiscount, Order
 
 
 def save_order_discounts(request, order, detailed_cart_items, applied_cart_discounts, voucher_discount=None):
-    # Save product-specific discounts
+    # Product discounts
     for item in detailed_cart_items:
         for discount in item['discounts']:
+            value = discount['value']
+            if isinstance(value, str):
+                value = Decimal(value.strip('%$'))
+                
             OrderDiscount.objects.create(
                 order=order,
                 discount_name=discount['name'],
                 discount_type=discount['type'],
-                discount_value=float(discount['value'].strip('%$')),
-                amount_saved=discount['amount'],
+                discount_value=value,
+                amount_saved=Decimal(str(discount['amount'])),
                 applied_to='SPECIFIC_PRODUCTS',
-                product_id=item['item'].product.item_id
+                product_id=item['item']['product']['item_id']
             )
 
-    # Save cart-wide discounts
+    # Cart discounts
     for discount in applied_cart_discounts:
         OrderDiscount.objects.create(
             order=order,
             discount_name=discount['name'],
             discount_type=discount['type'],
-            discount_value=discount['value'],
-            amount_saved=discount['amount'],
+            discount_value=Decimal(str(discount['value'])),
+            amount_saved=Decimal(str(discount['amount'])),
             applied_to='CART'
         )
 
-    # Save voucher discount if present
-    if voucher_discount and voucher_discount > 0:
+    # Voucher discount
+    if voucher_discount and Decimal(str(voucher_discount)) > 0:
         OrderDiscount.objects.create(
             order=order,
             discount_name=f"Voucher: {request.session.get('applied_voucher', {}).get('code', '')}",
             discount_type=request.session.get('applied_voucher', {}).get('discount_type', 'PERCENTAGE'),
-            discount_value=request.session.get('applied_voucher', {}).get('discount_value', 0),
-            amount_saved=voucher_discount,
+            discount_value=Decimal(str(request.session.get('applied_voucher', {}).get('discount_value', 0))),
+            amount_saved=Decimal(str(voucher_discount)),
             applied_to='CART'
         )
 
@@ -2817,6 +2821,8 @@ def checkout(request):
         print("Starting checkout process...")
         
         # Handle AJAX POST request for shipping form
+        print(f"Request method: {request.method}")
+        print(f"X-Requested-With header: {request.headers.get('X-Requested-With')}")
         if request.method == 'POST' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             try:
                 data = json.loads(request.body)
@@ -2843,14 +2849,25 @@ def checkout(request):
             print("No cart ID found in session")
             return redirect("view_cart")
         
-        cart = get_object_or_404(Cart, id=cart_id)
+        try:
+            cart = get_object_or_404(Cart, id=cart_id)
+            print(f"Cart retrieved successfully: {cart}")
+        except Exception as cart_error:
+            print(f"Error retrieving cart: {cart_error}")
+            raise
+
         cart_items = cart.cartitem_set.all()
         print(f"Found cart with {cart_items.count()} items")
+        
         
         if not cart_items.exists():
             print("Cart is empty")
             messages.error(request, "Your cart is empty")
             return redirect("view_cart")
+
+        print("Cart Items:")
+        for item in cart_items:
+            print(f"Product: {item.product}, Quantity: {item.quantity}, Price: {item.product.price}")
         
         # Calculate shipping cost function
         def calculate_usps_media_mail_cost(weight):
@@ -3022,8 +3039,19 @@ def checkout(request):
             }
             for item in detailed_cart_items
         ]
-        request.session['applied_cart_discounts'] = applied_cart_discounts
+        request.session['applied_cart_discounts'] = [
+    {
+        'name': discount['name'],
+        'type': discount['type'],
+        'value': str(discount['value']),
+        'amount': str(discount['amount'])
+    }
+    for discount in applied_cart_discounts
+]
         request.session['voucher_discount'] = float(voucher_discount)
+        # print(request.session['detailed_cart_items'])
+        # print(request.session['voucher_discount'])
+
         context = {
             'detailed_cart_items': detailed_cart_items,
             'cart_subtotal': cart_subtotal,
@@ -3040,7 +3068,7 @@ def checkout(request):
             'square_location_id': settings.SQUARE_LOCATION_ID,
             'cart_count': cart_items.count(),
         }
-        
+        # print(context)
         # Only add voucher information to context if there's a valid voucher
         if voucher_code:
             context['voucher_applied'] = {
@@ -3068,6 +3096,7 @@ def checkout(request):
             
         messages.error(request, "An error occurred during checkout. Please try again.")
         return redirect("view_cart")
+
 
 
 logger = logging.getLogger(__name__)
