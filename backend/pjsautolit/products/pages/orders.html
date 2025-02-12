@@ -17,7 +17,7 @@
                 <tr>
                     <th class="p-3 text-left">Order Number</th>
                     <th class="p-3 text-left">Square Payment ID</th>
-                    <th class="p-3 text-left">Status</th>
+                    <th class="p-3 text-left">Date</th>
                     <th class="p-3 text-right">Subtotal</th>
                     <th class="p-3 text-right">Shipping Cost</th>
                     <th class="p-3 text-right">Total Amount</th>
@@ -36,7 +36,7 @@
                             {{ order.square_payment_id }}
                         {% endif %}
                     </td>
-                    <td class="p-3">{{ order.get_status_display }}</td>
+                    <td class="p-3">{{ order.created_at}}</td>
                     <td class="p-3 text-right">${{ order.subtotal }}</td>
                     <td class="p-3 text-right">${{ order.shipping_cost }}</td>
                     <td class="p-3 text-right">${{ order.total_amount }}</td>
