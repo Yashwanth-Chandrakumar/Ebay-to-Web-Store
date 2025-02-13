@@ -52,44 +52,89 @@
             </div>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- First, render discount_type -->
                 {% for field in form %}
-                    {% if field.name != 'is_active' %}
-                    <div class="mb-4 {% if field.name == 'name' or field.name == 'description' or field.name == 'apply_to' or field.name == 'product_tags' %}md:col-span-2{% endif %} 
-                        {% if field.name == 'product_tags' %}product-tags-group{% endif %}
-                        {% if field.name == 'description' %}description-group{% endif %}" 
-                        {% if field.name == 'product_tags' %}style="display: none;"{% endif %}>
-                        <label class="block text-gray-700 text-sm font-bold mb-2" for="{{ field.id_for_label }}">
-                            {{ field.label }}{% if field.field.required %} *{% endif %}
-                        </label>
-                        {% if field.name == 'description' %}
-                            <div class="regular-description">
-                                {{ field }}
-                            </div>
-                            <div class="coupon-description-select hidden">
-                                <select name="coupon_description" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                    <option value="" selected disabled>--Select Discount Type--</option>
-                                    <option value="PERCENTAGE">Percentage Discount</option>
-                                    <option value="FIXED">Fixed Amount Discount</option>
-                                </select>
-                            </div>
-                            
-                        {% else %}
+                    {% if field.name == 'discount_type' %}
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-sm font-bold mb-2" for="{{ field.id_for_label }}">
+                                {{ field.label }}{% if field.field.required %} *{% endif %}
+                            </label>
                             {{ field }}
-                        {% endif %}
-                        {% if field.name == 'product_tags' %}
-                        <p class="text-gray-600 text-xs italic mt-1">
-                            For specific product discounts, enter comma-separated tags. 
-                            Example: "smartphone, apple, 2023" will apply to products 
-                            containing any of these tags.
-                        </p>
-                        {% endif %}
-                        {% if field.errors %}
-                            <p class="text-red-500 text-xs italic">{{ field.errors }}</p>
-                        {% endif %}
-                    </div>
+                            {% if field.errors %}
+                                <p class="text-red-500 text-xs italic">{{ field.errors }}</p>
+                            {% endif %}
+                        </div>
                     {% endif %}
                 {% endfor %}
+
+                <!-- Then, render name -->
+                {% for field in form %}
+                    {% if field.name == 'name' %}
+                        <div class="mb-4 md:col-span-2">
+                            <label class="block text-gray-700 text-sm font-bold mb-2" for="{{ field.id_for_label }}">
+                                {{ field.label }}{% if field.field.required %} *{% endif %}
+                            </label>
+                            {{ field }}
+                            {% if field.errors %}
+                                <p class="text-red-500 text-xs italic">{{ field.errors }}</p>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+
+                <!-- Regular description for non-coupon type -->
+                <div class="mb-4 md:col-span-2 regular-description">
+                    {% for field in form %}
+                        {% if field.name == 'description' %}
+                            <label class="block text-gray-700 text-sm font-bold mb-2" for="{{ field.id_for_label }}">
+                                Description{% if field.field.required %} *{% endif %}
+                            </label>
+                            {{ field }}
+                            {% if field.errors %}
+                                <p class="text-red-500 text-xs italic">{{ field.errors }}</p>
+                            {% endif %}
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                <!-- Coupon discount type selector (appears after discount_value for coupons) -->
+                <div class="mb-4 md:col-span-2 coupon-description-select hidden">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">
+                        Coupon Discount Type *
+                    </label>
+                    <select name="coupon_description" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="" selected disabled>--Select Discount Type--</option>
+                        <option value="PERCENTAGE">Percentage Discount</option>
+                        <option value="FIXED">Fixed Amount Discount</option>
+                    </select>
+                </div>
+
+                <!-- Render other fields except is_active, description, and already rendered fields -->
+                {% for field in form %}
+                    {% if field.name != 'is_active' and field.name != 'description' and field.name != 'name' and field.name != 'discount_type' %}
+                        <div class="mb-4 {% if field.name == 'apply_to' or field.name == 'product_tags' %}md:col-span-2{% endif %} 
+                            {% if field.name == 'product_tags' %}product-tags-group{% endif %}"
+                            {% if field.name == 'product_tags' %}style="display: none;"{% endif %}>
+                            <label class="block text-gray-700 text-sm font-bold mb-2" for="{{ field.id_for_label }}">
+                                {{ field.label }}{% if field.field.required %} *{% endif %}
+                            </label>
+                            {{ field }}
+                            {% if field.name == 'product_tags' %}
+                                <p class="text-gray-600 text-xs italic mt-1">
+                                    For specific product discounts, enter comma-separated tags. 
+                                    Example: "smartphone, apple, 2023" will apply to products 
+                                    containing any of these tags.
+                                </p>
+                            {% endif %}
+                            {% if field.errors %}
+                                <p class="text-red-500 text-xs italic">{{ field.errors }}</p>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+
                 
+
+                <!-- Is Active checkbox -->
                 <div class="mb-4 col-span-2 flex items-center">
                     {{ form.is_active }}
                     <label class="ml-2 text-gray-700 text-sm font-bold" for="{{ form.is_active.id_for_label }}">
@@ -111,44 +156,53 @@
             const discountTypeSelect = document.querySelector('select[name="discount_type"]');
             const nameInput = document.querySelector('input[name="name"]');
             const nameLabel = nameInput?.parentElement?.querySelector('label');
-            const descriptionDiv = document.querySelector('.description-group');
             const regularDescription = document.querySelector('.regular-description');
             const couponDescriptionSelect = document.querySelector('.coupon-description-select');
             const descriptionTextarea = document.querySelector('textarea[name="description"]');
             const couponDescriptionDropdown = document.querySelector('select[name="coupon_description"]');
             const discountValueInput = document.querySelector('input[name="discount_value"]');
+
             if (discountValueInput) {
-        // Format initial value to whole number
-        if (discountValueInput.value) {
-            discountValueInput.value = Math.floor(parseFloat(discountValueInput.value));
-        }
+                // Format initial value to whole number
+                if (discountValueInput.value) {
+                    discountValueInput.value = Math.floor(parseFloat(discountValueInput.value));
+                }
 
-        // Prevent decimal input
-        discountValueInput.addEventListener('input', function() {
-            // Remove any decimal points and non-numeric characters
-            this.value = this.value.replace(/[^\d]/g, '');
-            
-            // Ensure the value is not negative
-            if (this.value < 0) this.value = 0;
-        });
+                // Prevent decimal input
+                discountValueInput.addEventListener('input', function() {
+                    this.value = this.value.replace(/[^\d]/g, '');
+                    if (this.value < 0) this.value = 0;
+                });
 
-        // Prevent decimal point from being entered
-        discountValueInput.addEventListener('keydown', function(e) {
-            // Prevent decimal point and comma
-            if (e.key === '.' || e.key === ',') {
-                e.preventDefault();
+                discountValueInput.addEventListener('keydown', function(e) {
+                    if (e.key === '.' || e.key === ',') {
+                        e.preventDefault();
+                    }
+                });
+
+                discountValueInput.form.addEventListener('submit', function() {
+                    if (discountValueInput.value) {
+                        discountValueInput.value = Math.floor(parseFloat(discountValueInput.value));
+                    }
+                });
             }
-        });
 
-        // Format value on form submission
-        discountValueInput.form.addEventListener('submit', function() {
-            if (discountValueInput.value) {
-                discountValueInput.value = Math.floor(parseFloat(discountValueInput.value));
-            }
-        });
-    }
             function updateFormForCoupon() {
                 const isCoupon = discountTypeSelect.value === 'COUPON';
+                if (isCoupon) {
+            // Initialize coupon discount type based on existing description
+            if (descriptionTextarea.value === 'Percentage Discount') {
+                couponDescriptionDropdown.value = 'PERCENTAGE';
+            } else if (descriptionTextarea.value === 'Fixed Amount Discount') {
+                couponDescriptionDropdown.value = 'FIXED';
+            }
+            
+            regularDescription.classList.add('hidden');
+            couponDescriptionSelect.classList.remove('hidden');
+        } else {
+            regularDescription.classList.remove('hidden');
+            couponDescriptionSelect.classList.add('hidden');
+        }
                 
                 // Update name field label and attributes
                 if (nameLabel) {
@@ -170,18 +224,11 @@
                     }
                 }
                 
-                // Update the description label text
-                const descriptionLabel = document.querySelector('.description-group label');
-                if (descriptionLabel) {
-                    descriptionLabel.textContent = isCoupon ? 'Coupon Discount Type *' : 'Description *';
-                }
-                
-                // Toggle description fields if coupon discount type is selected
+                // Toggle description/coupon discount type visibility
                 if (regularDescription && couponDescriptionSelect) {
                     if (isCoupon) {
                         regularDescription.classList.add('hidden');
                         couponDescriptionSelect.classList.remove('hidden');
-                        // Check the selected value and update description accordingly
                         const selectedValue = couponDescriptionDropdown.value;
                         if (selectedValue === 'PERCENTAGE') {
                             descriptionTextarea.value = 'Percentage Discount';
@@ -226,7 +273,7 @@
             }
         });
         
-        // Existing product tags visibility logic
+        // Product tags visibility logic
         document.addEventListener('DOMContentLoaded', function() {
             const productTagsGroup = document.querySelector('.product-tags-group');
             const applyToSelect = document.querySelector('select[name="apply_to"]');
@@ -240,9 +287,6 @@
                 toggleProductTagsVisibility();
             }
         });
-        </script>
-        
-        
-        
+    </script>
 </body>
 </html>
