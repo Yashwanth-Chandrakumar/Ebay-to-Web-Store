@@ -34,6 +34,21 @@ from django.utils import timezone
 from .models import Discount
 
 
+from django import forms
+from django.utils import timezone
+from django.forms.widgets import NumberInput
+
+class WholeNumberInput(NumberInput):
+    def format_value(self, value):
+        # Convert float/decimal to integer if not None
+        if value is not None:
+            try:
+                return str(int(float(value)))
+            except (ValueError, TypeError):
+                return value
+        return value
+
+
 class DiscountForm(forms.ModelForm):
     start_date = forms.DateField(
         widget=forms.DateInput(
@@ -53,6 +68,19 @@ class DiscountForm(forms.ModelForm):
             }
         ),
         required=False,
+    )
+    discount_value = forms.DecimalField(
+        widget=WholeNumberInput(
+            attrs={
+                "class": "w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500",
+                "step": "1",
+                "min": "0",
+                "inputmode": "numeric",
+                "pattern": "[0-9]*"
+            }
+        ),
+        decimal_places=0,
+        max_digits=10
     )
 
     class Meta:
@@ -88,12 +116,12 @@ class DiscountForm(forms.ModelForm):
                     "class": "w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 }
             ),
-            "discount_value": forms.NumberInput(
-                attrs={
-                    "class": "w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500",
-                    "step": "1",
-                }
-            ),
+            # "discount_value": forms.NumberInput(
+            #     attrs={
+            #         "class": "w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500",
+            #         "step": "1",
+            #     }
+            # ),
             "apply_to": forms.Select(
                 attrs={
                     "class": "w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"

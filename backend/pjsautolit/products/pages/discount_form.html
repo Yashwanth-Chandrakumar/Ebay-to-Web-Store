@@ -118,19 +118,35 @@
             const couponDescriptionDropdown = document.querySelector('select[name="coupon_description"]');
             const discountValueInput = document.querySelector('input[name="discount_value"]');
             if (discountValueInput) {
-    // Prevent decimal input
-    discountValueInput.addEventListener('input', function() {
-        this.value = Math.floor(this.value);
-        if (this.value < 0) this.value = 0;
-    });
-
-    // Prevent decimal point from being entered
-    discountValueInput.addEventListener('keydown', function(e) {
-        if (e.key === '.' || e.key === ',') {
-            e.preventDefault();
+        // Format initial value to whole number
+        if (discountValueInput.value) {
+            discountValueInput.value = Math.floor(parseFloat(discountValueInput.value));
         }
-    });
-}
+
+        // Prevent decimal input
+        discountValueInput.addEventListener('input', function() {
+            // Remove any decimal points and non-numeric characters
+            this.value = this.value.replace(/[^\d]/g, '');
+            
+            // Ensure the value is not negative
+            if (this.value < 0) this.value = 0;
+        });
+
+        // Prevent decimal point from being entered
+        discountValueInput.addEventListener('keydown', function(e) {
+            // Prevent decimal point and comma
+            if (e.key === '.' || e.key === ',') {
+                e.preventDefault();
+            }
+        });
+
+        // Format value on form submission
+        discountValueInput.form.addEventListener('submit', function() {
+            if (discountValueInput.value) {
+                discountValueInput.value = Math.floor(parseFloat(discountValueInput.value));
+            }
+        });
+    }
             function updateFormForCoupon() {
                 const isCoupon = discountTypeSelect.value === 'COUPON';
                 
