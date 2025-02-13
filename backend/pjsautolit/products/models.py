@@ -351,8 +351,8 @@ class Discount(models.Model):
         help_text="Enter comma-separated tags. Example: smartphone,apple,2023"
     )
     
-    start_date = models.DateTimeField(default=timezone.now)
-    end_date = models.DateTimeField(null=True, blank=True)
+    start_date = models.DateField(default=timezone.now)
+    end_date = models.DateField(null=True, blank=True)
     
     minimum_purchase_amount = models.DecimalField(
         max_digits=10, 

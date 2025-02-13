@@ -67,10 +67,12 @@
                             </div>
                             <div class="coupon-description-select hidden">
                                 <select name="coupon_description" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <option value="" selected disabled>--Select Discount Type--</option>
                                     <option value="PERCENTAGE">Percentage Discount</option>
                                     <option value="FIXED">Fixed Amount Discount</option>
                                 </select>
                             </div>
+                            
                         {% else %}
                             {{ field }}
                         {% endif %}
@@ -114,23 +116,33 @@
             const couponDescriptionSelect = document.querySelector('.coupon-description-select');
             const descriptionTextarea = document.querySelector('textarea[name="description"]');
             const couponDescriptionDropdown = document.querySelector('select[name="coupon_description"]');
-        
+            const discountValueInput = document.querySelector('input[name="discount_value"]');
+            if (discountValueInput) {
+    // Prevent decimal input
+    discountValueInput.addEventListener('input', function() {
+        this.value = Math.floor(this.value);
+        if (this.value < 0) this.value = 0;
+    });
+
+    // Prevent decimal point from being entered
+    discountValueInput.addEventListener('keydown', function(e) {
+        if (e.key === '.' || e.key === ',') {
+            e.preventDefault();
+        }
+    });
+}
             function updateFormForCoupon() {
                 const isCoupon = discountTypeSelect.value === 'COUPON';
                 
-                // Update name field
+                // Update name field label and attributes
                 if (nameLabel) {
                     nameLabel.textContent = isCoupon ? 'Coupon Code *' : 'Name *';
                 }
-                
                 if (nameInput) {
-                    nameInput.placeholder = isCoupon ? 
-                        'Enter coupon code (e.g., SUMMER2024)' : 
-                        'Enter discount name';
+                    nameInput.placeholder = isCoupon ? 'Enter coupon code (e.g., SUMMER2024)' : 'Enter discount name';
                     nameInput.style.textTransform = isCoupon ? 'uppercase' : 'none';
-                    
                     if (isCoupon) {
-                        nameInput.pattern = '[A-Za-z0-9\-_]+';
+                        nameInput.pattern = '[A-Za-z0-9\\-_]+';
                         nameInput.title = 'Enter a valid coupon code using letters, numbers, hyphens, or underscores';
                         nameInput.minLength = '4';
                         nameInput.maxLength = '20';
@@ -141,25 +153,35 @@
                         nameInput.maxLength = '200';
                     }
                 }
-        
-                // Toggle description fields
+                
+                // Update the description label text
+                const descriptionLabel = document.querySelector('.description-group label');
+                if (descriptionLabel) {
+                    descriptionLabel.textContent = isCoupon ? 'Coupon Discount Type *' : 'Description *';
+                }
+                
+                // Toggle description fields if coupon discount type is selected
                 if (regularDescription && couponDescriptionSelect) {
                     if (isCoupon) {
                         regularDescription.classList.add('hidden');
                         couponDescriptionSelect.classList.remove('hidden');
-                        
-                        // Update hidden description field based on selection
+                        // Check the selected value and update description accordingly
                         const selectedValue = couponDescriptionDropdown.value;
-                        descriptionTextarea.value = selectedValue === 'PERCENTAGE' ? 
-                            'Percentage Discount' : 'Fixed Amount Discount';
+                        if (selectedValue === 'PERCENTAGE') {
+                            descriptionTextarea.value = 'Percentage Discount';
+                        } else if (selectedValue === 'FIXED') {
+                            descriptionTextarea.value = 'Fixed Amount Discount';
+                        } else {
+                            descriptionTextarea.value = '';
+                        }
                     } else {
                         regularDescription.classList.remove('hidden');
                         couponDescriptionSelect.classList.add('hidden');
                     }
                 }
             }
-        
-            // Handle input changes
+            
+            // Transform name input for coupon codes
             if (nameInput) {
                 nameInput.addEventListener('input', function() {
                     if (discountTypeSelect.value === 'COUPON') {
@@ -168,33 +190,43 @@
                 });
             }
             
-            // Handle coupon description changes
+            // Update description when coupon discount type changes
             if (couponDescriptionDropdown) {
                 couponDescriptionDropdown.addEventListener('change', function() {
-                    descriptionTextarea.value = this.value === 'PERCENTAGE' ? 
-                        'Percentage Discount' : 'Fixed Amount Discount';
+                    if (this.value === 'PERCENTAGE') {
+                        descriptionTextarea.value = 'Percentage Discount';
+                    } else if (this.value === 'FIXED') {
+                        descriptionTextarea.value = 'Fixed Amount Discount';
+                    } else {
+                        descriptionTextarea.value = '';
+                    }
                 });
             }
-        
-            // Listen for discount type changes
+            
+            // Listen for discount type changes and update the form accordingly
             if (discountTypeSelect) {
                 discountTypeSelect.addEventListener('change', updateFormForCoupon);
-                updateFormForCoupon();
+                updateFormForCoupon(); // Initial update on page load
             }
         });
-
+        
         // Existing product tags visibility logic
         document.addEventListener('DOMContentLoaded', function() {
             const productTagsGroup = document.querySelector('.product-tags-group');
             const applyToSelect = document.querySelector('select[name="apply_to"]');
-
+            
             function toggleProductTagsVisibility() {
                 productTagsGroup.style.display = applyToSelect.value === 'SPECIFIC_PRODUCTS' ? 'block' : 'none';
             }
-
-            applyToSelect.addEventListener('change', toggleProductTagsVisibility);
-            toggleProductTagsVisibility();
+            
+            if (applyToSelect) {
+                applyToSelect.addEventListener('change', toggleProductTagsVisibility);
+                toggleProductTagsVisibility();
+            }
         });
-    </script>
+        </script>
+        
+        
+        
 </body>
 </html>

@@ -79,8 +79,8 @@
                                     {{ discount.get_apply_to_display }}
                                 {% endif %}
                             </td>
-                            <td class="py-3 px-6">{{ discount.start_date|date:"Y-m-d H:i" }}</td>
-                            <td class="py-3 px-6">{{ discount.end_date|default_if_none:"-"|date:"Y-m-d H:i" }}</td>
+                            <td class="py-3 px-6">{{ discount.start_date|date:"Y-m-d" }}</td>
+                            <td class="py-3 px-6">{{ discount.end_date|default_if_none:"-"|date:"Y-m-d" }}</td>
                             <td class="py-3 px-6">
                                 <span class="{% if discount.is_active %}text-green-500{% else %}text-red-500{% endif %}">
                                     {{ discount.is_active|yesno:"Active,Inactive" }}
