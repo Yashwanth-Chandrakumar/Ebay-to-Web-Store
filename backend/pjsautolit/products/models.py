@@ -331,9 +331,9 @@ class Discount(models.Model):
     )
     
     APPLY_TO_CHOICES = (
-        ('CART', 'Entire Cart'),
-        ('PRODUCT_PRICE', 'All Product Prices'),
-        ('SPECIFIC_PRODUCTS', 'Specific Products'),
+        ('CART', 'Total in shopping cart'),
+        ('PRODUCT_PRICE', 'All Products (Does Not Affect Shipping, Handling or Other Fees.)'),
+        ('SPECIFIC_PRODUCTS', 'Specific Products Only (Does Not Affect Shipping, Handling or Other Fees.)'),
     )
 
     name = models.CharField(max_length=200, unique=True)
@@ -382,7 +382,7 @@ class Discount(models.Model):
                 raise ValidationError("Coupon code must be between 4 and 20 characters")
             
     def is_valid(self):
-        now = timezone.now()
+        now = timezone.now().date()  # Convert datetime to date
         return (
             self.is_active and 
             self.start_date <= now and 
