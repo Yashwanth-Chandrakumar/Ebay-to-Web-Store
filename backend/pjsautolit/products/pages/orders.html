@@ -52,9 +52,14 @@
               oninput="validateTrackingCode(this)"
               class="border p-1 w-full"
             >
-            <button onclick="updateTrackingCode({{ order.id }})" class="bg-green-500 text-white px-2 py-1 rounded mt-1">
-              Update
-            </button>
+            <div class="mt-1">
+              <button onclick="updateTrackingCode({{ order.id }})" class="bg-green-500 text-white px-2 py-1 rounded">
+                Update
+              </button>
+              <button onclick="trackPackage({{ order.id }})" class="bg-blue-500 text-white px-2 py-1 rounded ml-2">
+                Track
+              </button>
+            </div>
           </td>
           <td class="p-3">
             <select class="delivery-status-select" data-order-id="{{ order.id }}">
@@ -125,12 +130,12 @@
       var trimmedCode = trackingCode.replace(/\s+/g, '');
       
       // Validate: must have exactly 22 alphanumeric characters ignoring spaces.
-      if (trimmedCode.length>0 && trimmedCode.length !== 22) {
+      if (trimmedCode.length > 0 && trimmedCode.length !== 22) {
         alert('Tracking code must contain exactly 22 alphanumeric characters (excluding spaces).');
         inputElement.focus();
         return;
       }
-      if (trimmedCode.length ==22 && !/^[A-Za-z0-9]+$/.test(trimmedCode)) {
+      if (trimmedCode.length === 22 && !/^[A-Za-z0-9]+$/.test(trimmedCode)) {
         alert('Tracking code must contain only alphabets and numbers.');
         inputElement.focus();
         return;
@@ -157,6 +162,22 @@
         console.error('Error updating tracking code:', error);
         alert('Error updating tracking code.');
       });
+    }
+    
+    // New function: Opens the USPS tracking URL in a new tab.
+    function trackPackage(orderId) {
+      var inputElement = document.getElementById('tracking_code_' + orderId);
+      var trackingCode = inputElement.value;
+      var trimmedCode = trackingCode.replace(/\s+/g, '');
+      
+      if (trimmedCode.length === 0) {
+        alert('Please enter a tracking code.');
+        return;
+      }
+      
+      // Construct the tracking URL using the tracking code without spaces.
+      var url = 'https://tools.usps.com/go/TrackConfirmAction?tLabels=' + trimmedCode;
+      window.open(url, '_blank');
     }
     
     function downloadPDF(orderId) {

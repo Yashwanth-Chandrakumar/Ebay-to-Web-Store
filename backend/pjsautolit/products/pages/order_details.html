@@ -68,14 +68,22 @@
         <tr>
             <td class="p-2 font-semibold">Order Date</td>
             <td class="p-2">{{ order.created_at }}</td>
-        </tr>
+        </tr>   
         <tr>
             <td class="p-2 font-semibold">Status</td>
             <td class="p-2">{{ order.get_status_display }}</td>
         </tr>
         <tr>
             <td class="p-2 font-semibold">Tracking Code</td>
-            <td class="p-2">{{ order.tracking_code }}</td>
+            <td class="p-2">
+                {% if order.tracking_code %}
+                    <a href="https://tools.usps.com/go/TrackConfirmAction?tLabels={{ order.tracking_code|cut:' ' }}" target="_blank" rel="noopener noreferrer" class="text-blue-600 underline">
+                        {{ order.tracking_code }}
+                    </a>
+                {% else %}
+                    {{ order.tracking_code }}
+                {% endif %}
+            </td>
         </tr>
 
         <tr>
