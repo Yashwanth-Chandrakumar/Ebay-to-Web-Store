@@ -944,6 +944,20 @@ def update_delivery_status(request, order_id):
         except Order.DoesNotExist:
             return JsonResponse({'status': 'error', 'message': 'Order not found'})
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
+
+def update_tracking_code(request, order_id):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            tracking_code = data.get('tracking_code', '').strip()
+            order = get_object_or_404(Order, id=order_id)
+            order.tracking_code = tracking_code if tracking_code != '' else None
+            order.save()
+            return JsonResponse({'status': 'success', 'tracking_code': order.tracking_code})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method.'}, status=405)
+
 # views.py
 
 

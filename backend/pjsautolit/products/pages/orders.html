@@ -18,6 +18,7 @@
           <th class="p-3 text-right">Subtotal</th>
           <th class="p-3 text-right">Shipping Cost</th>
           <th class="p-3 text-right">Total Amount</th>
+          <th class="p-3 text-left">Tracking Code</th>
           <th class="p-3 text-left">Delivery Status</th>
         </tr>
       </thead>
@@ -41,6 +42,20 @@
           <td class="p-3 text-right">${{ order.subtotal }}</td>
           <td class="p-3 text-right">${{ order.shipping_cost }}</td>
           <td class="p-3 text-right">${{ order.total_amount }}</td>
+          <td class="p-3">
+            <!-- Input with oninput event for immediate validation -->
+            <input
+              type="text"
+              id="tracking_code_{{ order.id }}"
+              value="{{ order.tracking_code|default:'' }}"
+              placeholder="enter the tracking code"
+              oninput="validateTrackingCode(this)"
+              class="border p-1 w-full"
+            >
+            <button onclick="updateTrackingCode({{ order.id }})" class="bg-green-500 text-white px-2 py-1 rounded mt-1">
+              Update
+            </button>
+          </td>
           <td class="p-3">
             <select class="delivery-status-select" data-order-id="{{ order.id }}">
               <option value="in_progress" {% if order.delivery_status == 'in_progress' %}selected{% endif %}>In Progress</option>
@@ -90,8 +105,62 @@
   </div>
 
   <script>
+    // This function gives real-time feedback on the tracking code input.
+    function validateTrackingCode(input) {
+      var trackingCode = input.value;
+      // Remove all whitespace characters
+      var trimmedCode = trackingCode.replace(/\s+/g, '');
+      // Check for exactly 22 alphanumeric characters
+      if (trimmedCode.length !== 22 || !/^[A-Za-z0-9]+$/.test(trimmedCode)) {
+        input.style.borderColor = 'red';
+      } else {
+        input.style.borderColor = '';
+      }
+    }
+
+    // Called when user clicks the update button.
+    function updateTrackingCode(orderId) {
+      var inputElement = document.getElementById('tracking_code_' + orderId);
+      var trackingCode = inputElement.value;
+      var trimmedCode = trackingCode.replace(/\s+/g, '');
+      
+      // Validate: must have exactly 22 alphanumeric characters ignoring spaces.
+      if (trimmedCode.length>0 && trimmedCode.length !== 22) {
+        alert('Tracking code must contain exactly 22 alphanumeric characters (excluding spaces).');
+        inputElement.focus();
+        return;
+      }
+      if (trimmedCode.length ==22 && !/^[A-Za-z0-9]+$/.test(trimmedCode)) {
+        alert('Tracking code must contain only alphabets and numbers.');
+        inputElement.focus();
+        return;
+      }
+      
+      // If valid, proceed with the AJAX request.
+      fetch(`/update-tracking-code/${orderId}/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({ tracking_code: trackingCode })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.status === 'success') {
+          alert('Tracking code updated successfully.');
+        } else {
+          alert('Error updating tracking code: ' + data.message);
+        }
+      })
+      .catch(error => {
+        console.error('Error updating tracking code:', error);
+        alert('Error updating tracking code.');
+      });
+    }
+    
     function downloadPDF(orderId) {
-      // Show loading state
+      // Existing PDF download code...
       const button = event.target.closest('button');
       const originalText = button.innerHTML;
       button.disabled = true;

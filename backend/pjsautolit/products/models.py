@@ -223,6 +223,8 @@ class ShippingAddress(models.Model):
 
     def __str__(self):
         return f"{self.first_name} {self.last_name} - {self.city}, {self.state}"
+# models.py
+from django.db import models
 
 class Order(models.Model):
     STATUS_CHOICES = (
@@ -236,7 +238,7 @@ class Order(models.Model):
     order_number = models.CharField(max_length=20, unique=True, null=True, blank=True)
     cart = models.OneToOneField('Cart', on_delete=models.CASCADE)
     shipping_address = models.ForeignKey(
-        ShippingAddress, 
+        'ShippingAddress', 
         on_delete=models.CASCADE,
         null=True,
         default=None
@@ -247,6 +249,7 @@ class Order(models.Model):
     total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     square_payment_id = models.CharField(max_length=255, blank=True, null=True)
     notes = models.TextField(blank=True)
+    tracking_code = models.CharField(max_length=50, null=True, blank=True)  # <-- New field
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -273,6 +276,7 @@ class Order(models.Model):
 
     def __str__(self):
         return f"Order {self.order_number or 'New'} - {self.status}"
+
 
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, related_name='items', on_delete=models.CASCADE)

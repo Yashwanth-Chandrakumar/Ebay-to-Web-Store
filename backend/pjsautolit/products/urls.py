@@ -94,6 +94,7 @@ urlpatterns = [
     path('api/orders/<str:order_id>/capture/', views.capture_paypal_order, name='capture_paypal_order'),
     path('order-status/<str:order_id>/', views.check_order_status, name='check_order_status'),
     path('update-delivery-status/<int:order_id>/', views.update_delivery_status, name='update_delivery_status'),
+    path('update-tracking-code/<int:order_id>/', views.update_tracking_code, name='update_tracking_code'),
     path('generate-order-pdf/<int:order_id>/', views.generate_order_pdf, name='generate_order_pdf'),
     path('login/', views.login_view, name='login'),
     path('logout/', auth_views.LogoutView.as_view(next_page='/'), name='logout'),
