@@ -74,6 +74,11 @@
             <td class="p-2">{{ order.get_status_display }}</td>
         </tr>
         <tr>
+            <td class="p-2 font-semibold">Tracking Code</td>
+            <td class="p-2">{{ order.tracking_code }}</td>
+        </tr>
+
+        <tr>
             <td class="p-2 font-semibold">Delivery Status</td>
             <td class="p-2">{{ order.get_delivery_status_display }}</td>
         </tr>
