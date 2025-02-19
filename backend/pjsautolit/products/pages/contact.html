@@ -409,21 +409,28 @@
     });
 
     document.getElementById('order-status-form').addEventListener('submit', function(event) {
-        event.preventDefault();
-        const orderId = document.getElementById('order-id').value;
-        fetch(`/order-status/${orderId}/`)
-            .then(response => response.json())
-            .then(data => {
-                const resultDiv = document.getElementById('order-status-result');
-                if (data.status === 'success') {
-                    resultDiv.innerHTML = `<p>Order Status: ${data.delivery_status}</p>`;
-                } else {
-                    resultDiv.innerHTML = `<p>${data.message}</p>`;
+    event.preventDefault();
+    const orderId = document.getElementById('order-id').value;
+    fetch(`/order-status/${orderId}/`)
+        .then(response => response.json())
+        .then(data => {
+            const resultDiv = document.getElementById('order-status-result');
+            if (data.status === 'success') {
+                let html = `<p>Order Status: ${data.delivery_status}</p>`;
+                if (data.tracking_code) {
+                    // Remove any whitespace from the tracking code.
+                    const trackingCode = data.tracking_code.trim();
+                    const trackingUrl = `https://tools.usps.com/go/TrackConfirmAction?tLabels=${trackingCode}`;
+                    html += `<p>Tracking Code: <a href="${trackingUrl}" target="_blank">${trackingCode}</a></p>`;
                 }
-            })
-            .catch(error => {
-                console.error('Error fetching order status:', error);
-            });
-    });</script>
+                resultDiv.innerHTML = html;
+            } else {
+                resultDiv.innerHTML = `<p>${data.message}</p>`;
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching order status:', error);
+        });
+});</script>
 </body>
 </html>

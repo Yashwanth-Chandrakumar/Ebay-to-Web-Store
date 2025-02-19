@@ -928,7 +928,13 @@ from .models import Order
 def check_order_status(request, order_id):
     try:
         order = Order.objects.get(order_number=order_id)
-        return JsonResponse({'status': 'success', 'delivery_status': order.get_delivery_status_display()})
+        response_data = {
+            'status': 'success',
+            'delivery_status': order.get_delivery_status_display(),
+        }
+        if order.tracking_code:
+            response_data['tracking_code'] = order.tracking_code
+        return JsonResponse(response_data)
     except Order.DoesNotExist:
         return JsonResponse({'status': 'error', 'message': 'Order not found'})
 
